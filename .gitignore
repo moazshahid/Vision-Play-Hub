@@ -48,3 +48,9 @@ Thumbs.db
 *.mov
 *.wmv
 
+#common ignore patterns for React and Django
+backend/venv/
+__pycache__/
+*.sqlite3
+frontend/node_modules/
+frontend/build/
