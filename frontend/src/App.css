@@ -111,3 +111,27 @@ canvas {
     width: 100%;
   }
 }
+
+/* Styles for the game selection menu container */
+.game-selection {
+  padding: 20px; /* Add padding around the menu for spacing */
+  text-align: center; /* Center-align the content */
+}
+
+/* Style the list of games to remove default list styling */
+.game-selection ul {
+  list-style-type: none; /* Remove bullet points */
+  padding: 0; /* Remove default padding */
+}
+
+/* Style each game item in the list */
+.game-selection li {
+  margin: 10px 0; /* Add vertical margin between game items */
+}
+
+/* Style the game selection buttons */
+.game-selection button {
+  padding: 10px 20px; /* Add padding for better click area */
+  font-size: 16px; /* Set font size for readability */
+  cursor: pointer; /* Indicate the button is clickable */
+}
