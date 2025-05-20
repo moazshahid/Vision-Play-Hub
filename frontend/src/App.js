@@ -115,49 +115,38 @@ const App = () => {
           gameObj.updateFingerPosition(fingerX, fingerY, baseX, baseY);
         }
         gameObj.render(ctx);
+        if (gameStartedRef.current && !gameObj.gameOver) {
+          requestAnimationFrame(gameLoop);
+        }
       }
       ctx.restore();
     };
 
-    // Define the SnakeGame class to manage game logic
     class SnakeGame {
       constructor(ctx, stats) {
-        // Initialize array to store snake body points
         this.points = [];
-        // Initialize array to store distances between points
         this.lengths = [];
-        // Track the current length of the snake
         this.currentLength = 0;
-        // Set the maximum allowed length before trimming
         this.totalAllowedLength = 150;
-        // Set initial target and head positions for movement
         this.targetPosition = [640, 360];
         this.headPosition = [640, 360];
-        // Flag to track if a finger is detected
         this.fingerDetected = false;
-        // Initialize the snake at the start
         this.initializeSnake();
-        // Define food dimensions
         this.foodHeight = 60;
         this.foodWidth = 60;
-        // Set initial food location
         this.foodLocation = [0, 0];
         this.setRandomFoodLocation();
-        // Initialize game score and state
         this.score = 0;
         this.gameOver = false;
-        // Store canvas context and stats display
         this.ctx = ctx;
         this.stats = stats;
       }
 
-      // Method to set up the initial snake body
       initializeSnake() {
-        this.points.push([640, 420]); // Starting point 1
-        this.points.push([640, 400]); // Starting point 2
-        this.points.push([640, 380]); // Starting point 3
-        this.points.push([640, 360]); // Head position
-        // Calculate initial lengths between points
+        this.points.push([640, 420]);
+        this.points.push([640, 400]);
+        this.points.push([640, 380]);
+        this.points.push([640, 360]);
         for (let i = 1; i < this.points.length; i++) {
           const dist = Math.hypot(this.points[i - 1][0] - this.points[i][0], this.points[i - 1][1] - this.points[i][1]);
           this.lengths.push(dist);
@@ -167,65 +156,60 @@ const App = () => {
         this.targetPosition = [...this.headPosition];
       }
 
-      // Method to place food at a random location
       setRandomFoodLocation() {
-        const margin = this.foodWidth * 2; // Ensure food stays within bounds
+        const margin = this.foodWidth * 2;
         this.foodLocation = [
           Math.floor(Math.random() * (1280 - margin * 2)) + margin,
           Math.floor(Math.random() * (720 - margin * 2)) + margin,
         ];
       }
 
-      // Method to update snake direction based on finger position
       updateFingerPosition(fingerX, fingerY, baseX, baseY) {
         if (!this.gameOver) {
-          const dirX = fingerX - baseX; // Calculate x-direction from base to finger
-          const dirY = fingerY - baseY; // Calculate y-direction from base to finger
-          const length = Math.sqrt(dirX * dirX + dirY * dirY); // Distance between points
+          const dirX = fingerX - baseX;
+          const dirY = fingerY - baseY;
+          const length = Math.sqrt(dirX * dirX + dirY * dirY);
           if (length > 0) {
-            this.targetPosition = [fingerX, fingerY]; // Update target position
-            this.fingerDetected = true; // Mark finger as detected
+            this.targetPosition = [fingerX, fingerY];
+            this.fingerDetected = true;
           }
         }
       }
 
-      // Method to update game state without rendering
       updateWithoutRender(deltaTime) {
-        if (this.gameOver) return; // Exit if game is over
-        const deltaSeconds = deltaTime / 1000; // Convert deltaTime to seconds
+        if (this.gameOver) return;
+        const deltaSeconds = deltaTime / 1000;
         if (this.fingerDetected) {
-          const moveSpeed = 300 * deltaSeconds; // Set movement speed based on time
-          const dx = this.targetPosition[0] - this.headPosition[0]; // X distance to target
-          const dy = this.targetPosition[1] - this.headPosition[1]; // Y distance to target
-          const dist = Math.sqrt(dx * dx + dy * dy); // Total distance to target
-          if (dist > 3) { // Only move if distance is significant
-            let moveAmount = Math.min(dist, moveSpeed); // Limit movement to speed
-            const ux = dx / dist; // Unit vector x component
-            const uy = dy / dist; // Unit vector y component
-            const newX = this.headPosition[0] + ux * moveAmount; // New x position
-            const newY = this.headPosition[1] + uy * moveAmount; // New y position
-            this.headPosition = [newX, newY]; // Update head position
-            const lastPoint = this.points[this.points.length - 1]; // Get last body point
+          const moveSpeed = 300 * deltaSeconds;
+          const dx = this.targetPosition[0] - this.headPosition[0];
+          const dy = this.targetPosition[1] - this.headPosition[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 3) {
+            let moveAmount = Math.min(dist, moveSpeed);
+            const ux = dx / dist;
+            const uy = dy / dist;
+            const newX = this.headPosition[0] + ux * moveAmount;
+            const newY = this.headPosition[1] + uy * moveAmount;
+            this.headPosition = [newX, newY];
+            const lastPoint = this.points[this.points.length - 1];
             const distToLastPoint = Math.hypot(lastPoint[0] - this.headPosition[0], lastPoint[1] - this.headPosition[1]);
-            if (distToLastPoint > 5) { // Add new point if distance is sufficient
-              this.points.push([...this.headPosition]); // Add new head position
-              this.lengths.push(distToLastPoint); // Record new segment length
-              this.currentLength += distToLastPoint; // Update total length
-              // Trim snake if it exceeds allowed length
+            if (distToLastPoint > 5) {
+              this.points.push([...this.headPosition]);
+              this.lengths.push(distToLastPoint);
+              this.currentLength += distToLastPoint;
               while (this.currentLength > this.totalAllowedLength && this.lengths.length > 0) {
                 const removedLength = this.lengths.shift();
                 this.currentLength -= removedLength;
                 this.points.shift();
               }
-              const [foodX, foodY] = this.foodLocation; // Current food position
-              const [headX, headY] = this.headPosition; // Current head position
-              const distToFood = Math.hypot(headX - foodX, headY - foodY); // Distance to food
-              if (distToFood < (this.foodWidth / 2) + 10) { // Check if snake ate food
-                this.setRandomFoodLocation(); // Move food to new location
-                this.totalAllowedLength += 50; // Increase allowed length
-                this.score += 1; // Increment score
-                this.stats.textContent = `Score: ${this.score}`; // Update score display
-                // Attempt to play eat sound effect
+              const [foodX, foodY] = this.foodLocation;
+              const [headX, headY] = this.headPosition;
+              const distToFood = Math.hypot(headX - foodX, headY - foodY);
+              if (distToFood < (this.foodWidth / 2) + 10) {
+                this.setRandomFoodLocation();
+                this.totalAllowedLength += 50;
+                this.score += 1;
+                this.stats.textContent = `Score: ${this.score}`;
                 try {
                   const eatSound = new Audio('/static/sounds/eat.mp3');
                   eatSound.volume = 0.5;
@@ -234,16 +218,15 @@ const App = () => {
                   console.log('Could not load or play sound:', e);
                 }
               }
-              // Check for self-collision with body segments
               if (this.points.length > 10) {
-                const bodyPoints = this.points.slice(0, -10); // Exclude last 10 points
+                const bodyPoints = this.points.slice(0, -10);
                 for (let i = 0; i < bodyPoints.length - 1; i++) {
                   const segmentStart = bodyPoints[i];
                   const segmentEnd = bodyPoints[i + 1];
                   const dist = this.distanceToLineSegment(this.headPosition, segmentStart, segmentEnd);
-                  if (dist < 15) { // If head is too close to body
-                    this.gameOver = true; // End the game
-                    return; // Exit update loop
+                  if (dist < 15) {
+                    this.gameOver = true;
+                    return;
                   }
                 }
               }
@@ -252,38 +235,87 @@ const App = () => {
         }
       }
 
-      // Placeholder for rendering (to be enhanced in later commits)
+      // Enhance rendering with gradient snake body and eyes
       render(ctx) {
-        ctx.fillStyle = '#FF0000'; // Set red color for food
-        ctx.fillRect(this.foodLocation[0] - 30, this.foodLocation[1] - 30, 60, 60); // Draw food as rectangle
-        ctx.fillStyle = '#c800c8'; // Set purple color for snake head
-        ctx.fillRect(this.headPosition[0] - 10, this.headPosition[1] - 10, 20, 20); // Draw snake head
+        // Set line properties for smooth snake body rendering
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        // Draw the snake body with a gradient effect
+        for (let i = 1; i < this.points.length; i++) {
+          const gradPercent = i / this.points.length; // Calculate gradient position
+          const r = Math.floor(255 - gradPercent * 55); // Red component
+          const g = Math.floor(0 + gradPercent * 0); // Green component (fixed at 0)
+          const b = Math.floor(0 + gradPercent * 200); // Blue component
+          ctx.beginPath();
+          ctx.moveTo(this.points[i - 1][0], this.points[i - 1][1]); // Start of segment
+          ctx.lineTo(this.points[i][0], this.points[i][1]); // End of segment
+          ctx.lineWidth = 20; // Set thickness of the snake body
+          ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`; // Apply gradient color
+          ctx.stroke(); // Draw the segment
+        }
+        // Draw the snake head as a circle
+        ctx.beginPath();
+        ctx.arc(this.headPosition[0], this.headPosition[1], 13.33, 0, 2 * Math.PI);
+        ctx.fillStyle = '#c800c8'; // Purple color for head
+        ctx.fill();
+        // Add eyes to the snake head if body exists
+        if (this.points.length > 1) {
+          const lastPoint = this.points[this.points.length - 2]; // Previous body point
+          let dx = this.headPosition[0] - lastPoint[0]; // Direction x from last point
+          let dy = this.headPosition[1] - lastPoint[1]; // Direction y from last point
+          const len = Math.hypot(dx, dy); // Length of direction vector
+          if (len > 0) {
+            dx /= len; // Normalize x direction
+            dy /= len; // Normalize y direction
+            const perpX = -dy; // Perpendicular x for eye offset
+            const perpY = dx; // Perpendicular y for eye offset
+            const eyeOffset = 6.66; // Distance of eyes from center
+            const leftEyeX = this.headPosition[0] + perpX * eyeOffset; // Left eye x
+            const leftEyeY = this.headPosition[1] + perpY * eyeOffset; // Left eye y
+            const rightEyeX = this.headPosition[0] - perpX * eyeOffset; // Right eye x
+            const rightEyeY = this.headPosition[1] - perpY * eyeOffset; // Right eye y
+            ctx.beginPath();
+            ctx.arc(leftEyeX, leftEyeY, 3, 0, 2 * Math.PI); // Draw left eye
+            ctx.arc(rightEyeX, rightEyeY, 3, 0, 2 * Math.PI); // Draw right eye
+            ctx.fillStyle = 'white'; // White color for eyes
+            ctx.fill();
+          }
+        }
+        // Draw the apple using the loaded image or a fallback
+        if (appleImage.complete) {
+          ctx.drawImage(appleImage, this.foodLocation[0] - 30, this.foodLocation[1] - 30, 60, 60);
+        } else {
+          ctx.beginPath();
+          ctx.arc(this.foodLocation[0], this.foodLocation[1], 30, 0, 2 * Math.PI);
+          ctx.fillStyle = '#FF0000';
+          ctx.fill();
+        }
+        this.stats.textContent = `Score: ${this.score}`;
       }
 
-      // Method to calculate distance from point to line segment
       distanceToLineSegment(point, lineStart, lineEnd) {
-        const A = point[0] - lineStart[0]; // X difference from point to start
-        const B = point[1] - lineStart[1]; // Y difference from point to start
-        const C = lineEnd[0] - lineStart[0]; // X component of line
-        const D = lineEnd[1] - lineStart[1]; // Y component of line
-        const dot = A * C + B * D; // Dot product for projection
-        const lenSq = C * C + D * D; // Square of line length
+        const A = point[0] - lineStart[0];
+        const B = point[1] - lineStart[1];
+        const C = lineEnd[0] - lineStart[0];
+        const D = lineEnd[1] - lineStart[1];
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
         let param = -1;
-        if (lenSq !== 0) param = dot / lenSq; // Parameter along line
+        if (lenSq !== 0) param = dot / lenSq;
         let xx, yy;
         if (param < 0) {
-          xx = lineStart[0]; // Clamp to start if before line
+          xx = lineStart[0];
           yy = lineStart[1];
         } else if (param > 1) {
-          xx = lineEnd[0]; // Clamp to end if beyond line
+          xx = lineEnd[0];
           yy = lineEnd[1];
         } else {
-          xx = lineStart[0] + param * C; // Project onto line
+          xx = lineStart[0] + param * C;
           yy = lineStart[1] + param * D;
         }
-        const dx = point[0] - xx; // X difference to closest point
-        const dy = point[1] - yy; // Y difference to closest point
-        return Math.sqrt(dx * dx + dy * dy); // Return Euclidean distance
+        const dx = point[0] - xx;
+        const dy = point[1] - yy;
+        return Math.sqrt(dx * dx + dy * dy);
       }
     }
 
