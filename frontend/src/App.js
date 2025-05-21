@@ -1,25 +1,53 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
 import './App.css';
+import SnakeGame from './SnakeGame';
 
-function App() {
+// Main App component for the CV Games website
+const App = () => {
+  // State to track the currently selected game, initially null (shows homepage)
+  const [selectedGame, setSelectedGame] = useState(null);
+
+  // Array of available games, each with an id, name, and component to render
+  const games = [
+    { id: 'snake', name: 'Snake Game', component: <SnakeGame /> },
+    // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
+  ];
+
+  // Handle game selection, toggling the selected game (clicking again returns to menu)
+  const handleGameSelect = (gameId) => {
+    setSelectedGame(gameId === selectedGame ? null : gameId);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div>
+      {/* Header for the CV Games website */}
+      <header>
+        <h1>CV Games</h1>
+        <p>Welcome to CV Games! Select a game to play using computer vision.</p>
       </header>
+      {/* Show the game selection menu if no game is selected */}
+      {!selectedGame && (
+        <div className="game-selection">
+          <h2>Games</h2>
+          <ul>
+            {games.map((game) => (
+              <li key={game.id}>
+                <button onClick={() => handleGameSelect(game.id)}>
+                  {game.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {/* Render the selected game's component */}
+      {selectedGame && games.find((game) => game.id === selectedGame).component}
+      {/* Footer for the website */}
+      <footer>
+        <p>CV Games © 2025</p>
+      </footer>
     </div>
   );
-}
+};
 
 export default App;
