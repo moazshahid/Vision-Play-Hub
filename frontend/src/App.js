@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import SnakeGame from './SnakeGame';
+import WhackAMole from './WhackAMole';
 
 // Main App component for the CV Games website
 const App = () => {
@@ -10,39 +11,35 @@ const App = () => {
   // Array of available games, each with an id, name, and component to render
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame /> },
+    { name: 'Whack-a-Mole', component: <WhackAMole /> },
     // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
   ];
 
-  // Handle game selection, toggling the selected game (clicking again returns to menu)
-  const handleGameSelect = (gameId) => {
-    setSelectedGame(gameId === selectedGame ? null : gameId);
-  };
-
   return (
-    <div>
-      {/* Header for the CV Games website */}
+    <div className="App">
       <header>
         <h1>CV Games</h1>
         <p>Welcome to CV Games! Select a game to play using computer vision.</p>
       </header>
-      {/* Show the game selection menu if no game is selected */}
-      {!selectedGame && (
+      {!selectedGame ? (
         <div className="game-selection">
-          <h2>Games</h2>
+          <h2>Game Selection</h2>
           <ul>
-            {games.map((game) => (
-              <li key={game.id}>
-                <button onClick={() => handleGameSelect(game.id)}>
+            {games.map((game, index) => (
+              <li key={index}>
+                <button onClick={() => setSelectedGame(game)}>
                   {game.name}
                 </button>
               </li>
             ))}
           </ul>
         </div>
+      ) : (
+        <div>
+          {selectedGame.component}
+          <button onClick={() => setSelectedGame(null)}>Back to Game Selection</button>
+        </div>
       )}
-      {/* Render the selected game's component */}
-      {selectedGame && games.find((game) => game.id === selectedGame).component}
-      {/* Footer for the website */}
       <footer>
         <p>CV Games © 2025</p>
       </footer>
