@@ -1,38 +1,137 @@
-.App {
-  text-align: center;
+/* Added: Container styles for centering content */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Added: Flexbox for control buttons */
+.controls {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Added: Button styles with hover effect */
+button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+/* Added: Game container for relative positioning */
+.game-container {
+  position: relative;
+}
+
+/* Added: Canvas display */
+canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Added: Game stats overlay */
+.game-stats {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 18px;
+  font-weight: bold;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+/* Added: Game over overlay */
+.game-over {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(76, 175, 80, 0.9);
+  padding: 30px 50px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.game-over h2 {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.game-over p {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Added: Instructions section */
+.instructions {
+  margin-top: 20px;
+}
+
+.instructions ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.instructions li {
+  margin-bottom: 10px;
+}
+
+/* Added: Debug box for error messages */
+.debug-box {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #333;
+  color: #ddd;
+}
+
+/* Added: Warning text style */
+.warning {
+  color: #ff6b6b !important;
+  font-weight: bold;
+}
+
+/* Added: Responsive design for mobile */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    gap: 10px;
   }
-  to {
-    transform: rotate(360deg);
+  button {
+    width: 100%;
   }
+}
+
+/* Styles for the game selection menu container */
+.game-selection {
+  padding: 20px; /* Add padding around the menu for spacing */
+  text-align: center; /* Center-align the content */
+}
+
+/* Style the list of games to remove default list styling */
+.game-selection ul {
+  list-style-type: none; /* Remove bullet points */
+  padding: 0; /* Remove default padding */
+}
+
+/* Style each game item in the list */
+.game-selection li {
+  margin: 10px 0; /* Add vertical margin between game items */
+}
+
+/* Style the game selection buttons */
+.game-selection button {
+  padding: 10px 20px; /* Add padding for better click area */
+  font-size: 16px; /* Set font size for readability */
+  cursor: pointer; /* Indicate the button is clickable */
 }
