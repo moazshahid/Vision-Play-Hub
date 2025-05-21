@@ -7,10 +7,10 @@ const App = () => {
   // State to track the currently selected game, initially null (shows homepage)
   const [selectedGame, setSelectedGame] = useState(null);
 
-  // Array of available games, each with an id, name, and component to render
+  // Array of available games, each with an id, name, and component type
   const games = [
-    { id: 'snake', name: 'Snake Game', component: <SnakeGame /> },
-    // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
+    { id: 'snake', name: 'Snake Game', component: SnakeGame },
+    // More games will be added here, e.g., { id: 'pong', name: 'Pong Game', component: PongGame }
   ];
 
   // Handle game selection, toggling the selected game (clicking again returns to menu)
@@ -18,11 +18,14 @@ const App = () => {
     setSelectedGame(gameId === selectedGame ? null : gameId);
   };
 
+  // Find the selected game
+  const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
+
   return (
     <div>
       {/* Header for the CV Games website */}
       <header>
-        <h1>CV Games</h1>
+        <h1>VisionPlay Hub</h1>
         <p>Welcome to CV Games! Select a game to play using computer vision.</p>
       </header>
       {/* Show the game selection menu if no game is selected */}
@@ -32,16 +35,16 @@ const App = () => {
           <ul>
             {games.map((game) => (
               <li key={game.id}>
-                <button onClick={() => handleGameSelect(game.id)}>
+                <div onClick={() => handleGameSelect(game.id)}>
                   {game.name}
-                </button>
+                </div>
               </li>
             ))}
           </ul>
         </div>
       )}
       {/* Render the selected game's component */}
-      {selectedGame && games.find((game) => game.id === selectedGame).component}
+      {selectedGameData && <selectedGameData.component />}
       {/* Footer for the website */}
       <footer>
         <p>CV Games © 2025</p>
