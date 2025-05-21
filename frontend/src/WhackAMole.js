@@ -16,8 +16,50 @@ const WhackAMole = () => {
   const heartImageRef = useRef(null);
 
   useEffect(() => {
+    const canvas = canvasRef.current.getContext('2d');
+    const video = videoRef.current;
+    const gameStats = gameStatsRef.current;
     const gameOver = gameOverRef.current;
+    const finalScore = finalScoreRef.current;
+    const debug = debugRef.current;
+    
     gameOver.style.display = 'none';
+
+    const moleImage = new Image();
+    moleImage.src = '/static/images/mole.png';
+    moleImage.onload = () => console.log('Mole image loaded successfully');
+
+    hammerImageRef.current = new Image();
+    hammerImageRef.current.src = '/static/images/hammer.png';
+    hammerImageRef.current.onload = () => console.log('Hammer image loaded successfully');
+
+    heartImageRef.current = new Image();
+    heartImageRef.current.src = '/static/images/heart.png';
+    heartImageRef.current.onload = () => console.log('Heart image loaded successfully');
+
+    const initHandDetection = () => {
+      try {
+        handsRef.current = new window.Hands({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+        });
+        handsRef.current.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.7,
+          minTrackingConfidence: 0.7,
+        });
+        handsRef.current.onResults((results) =>
+          onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current, gameOver, finalScore)
+        );
+        console.log('MediaPipe Hands initialized');
+      } catch (error) {
+        debug.innerHTML = `<p class="warning">Hand detection error: ${error.message}</p>`;
+      }
+    };
+
+    initHandDetection();
+
+    return () => {};
   }, []);
 
   return (
