@@ -57,6 +57,45 @@ const WhackAMole = () => {
       }
     };
 
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720, facingMode: 'user', frameRate: 60 },
+        });
+        video.srcObject = stream;
+        await new Promise((resolve) => (video.onloadedmetadata = resolve));
+        video.play();
+        cameraRef.current = new window.Camera(video, {
+          onFrame: async () => await handsRef.current.send({ image: video }),
+          width: 1280,
+          height: 720,
+        });
+        await cameraRef.current.start();
+        console.log('Camera started successfully');
+      } catch (error) {
+        debug.innerHTML = `<p class="warning">Camera error: ${error.message}</p>`;
+      }
+    };
+
+    const startGame = () => {
+      if (!gameStartedRef.current) {
+        startCamera()
+          .then(() => {
+            gameObjectRef.current = new GameLogic(canvas, gameStats, hammerImageRef.current, heartImageRef.current);
+            gameStartedRef.current = true;
+            lastRenderTimeRef.current = performance.now();
+            gameOver.style.display = 'none';
+            requestAnimationFrame(gameLoop);
+          })
+          .catch((error) => {
+            alert('Camera access error: ' + error.message);
+          });
+      }
+    };
+
+    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
+
+
     initHandDetection();
 
     return () => {};
