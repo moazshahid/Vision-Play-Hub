@@ -8,6 +8,12 @@
   font-style: normal;
 }
 
+.gradient-text {
+  background: linear-gradient(90deg, #6254FF, #48FF7C, #44C3A8); /* adjust colors as needed */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 p {
   z-index: 2;
   --inter-weight: 600;

@@ -25,9 +25,18 @@ const App = () => {
     <div>
       {/* Header for the CV Games website */}
       <header>
-        <h1>VisionPlay Hub</h1>
-        <p>Welcome to CV Games! Select a game to play using computer vision.</p>
       </header>
+      <div style={{display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)"}}>
+          <div style={{ position: "relative" }}>
+            <p className="inter" style={{ "--inter-weight": 800, fontSize: "1.2em", color: "#A7A7A7", position: "absolute", top: 0, left: 0, margin: 0 }}>
+              Welcome to the
+            </p>
+            <h1 className="inter gradient-text" style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>
+              Vision Play Hub
+            </h1>
+          </div>
+          <p className="inter" style={{margin: 0}}>Select a game to play using computer vision.</p>
+        </div>
       {/* Show the game selection menu if no game is selected */}
       {!selectedGame && (
         <div className="game-selection">
