@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Added: Meta tags for charset and responsive viewport -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisionPlay Hub</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
-    <!-- MediaPipe scripts for hand detection -->
+    <!-- Added: Page title -->
+    <title>CV Games - Hand Tracker Snake</title>
+    <!-- Added: React and ReactDOM scripts for frontend -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Added: Babel for JSX transpilation -->
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <!-- Added: MediaPipe scripts for hand detection -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Added: Root div for React app -->
     <div id="root"></div>
-    <script src="{% static 'js/app.js' %}"></script>
+    <!-- Added: Script tag for compiled React app with Babel type -->
+    <script type="text/babel" src="/static/js/app.js"></script>
 </body>
 </html>

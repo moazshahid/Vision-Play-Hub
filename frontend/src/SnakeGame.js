@@ -423,13 +423,13 @@ const SnakeGame = () => {
   return (
     <div>
       <div className="controls">
-        <button id="start-btn" style="game-btn">Start Game</button>
-        <button id="restart-btn" style="game-btn">Restart Game</button>
-        <button id="test-camera-btn" style="game-btn">Test Camera</button>
+        <button id="start-btn">Start Game</button>
+        <button id="restart-btn">Restart Game</button>
+        <button id="test-camera-btn">Test Camera</button>
       </div>
-      <div ref={debugRef} className="debug-box" style={{ display: 'none' }}></div>
-      <div className="game-container" style={{ position: 'relative', width: '90vw', height: '90vw' , overflow: hidden, borderRadius: "12px"}}>
-        <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }}></canvas>
+      <div ref={debugRef} className="debug-box"></div>
+      <div className="game-container">
+        <canvas ref={canvasRef} width="1280" height="720"></canvas>
         <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
         <div ref={gameStatsRef} className="game-stats">Score: 0</div>
         <div ref={gameOverRef} className="game-over">
