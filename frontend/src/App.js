@@ -46,6 +46,7 @@ const App = () => {
         </div>
       </div>
       {/* Show the game selection menu if no game is selected */}
+      {/* game section*/}
       {!selectedGame && (
         <div className="game-selection">
           <h2>Games</h2>
