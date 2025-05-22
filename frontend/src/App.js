@@ -18,15 +18,18 @@ const App = () => {
     setSelectedGame(gameId === selectedGame ? null : gameId);
   };
 
-  // Find the selected game
+  
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
-
+  const ballNumbers = Array.from({ length: 16 }, (_, i) => i + 1)
+    .sort(() => Math.random() - 0.5);
+  const ballRotations = Array.from({ length: 10 }, () => Math.floor(Math.random() * 360));
   return (
     <div>
       {/* Header for the CV Games website */}
       <header>
       </header>
       <div style={{position: "relative", minHeight: "50vw", maxHeight: "100vw", width:"100%", display: "flex", justifyContent: "center" }}>
+        
         <img key={0} src={`/images/ball-${ballNumbers[0]}.webp`} alt={`ball-${ballNumbers[0]}`} style={{minWidth: "30vw", maxWidth: "50vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
         <img key={1} src={`/images/ball-${ballNumbers[1]}.webp`} alt={`ball-${ballNumbers[1]}`} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
         <img key={2} src={`/images/ball-${ballNumbers[2]}.webp`} alt={`ball-${ballNumbers[2]}`} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
@@ -46,15 +49,30 @@ const App = () => {
       {!selectedGame && (
         <div className="game-selection">
           <h2>Games</h2>
-          <ul>
-            {games.map((game) => (
-              <li key={game.id}>
-                <div onClick={() => handleGameSelect(game.id)}>
-                  {game.name}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div style={{width: "95vw", backgroundColor: "#f9fafc", padding: "clamp(10px, 2vw, 15px)", borderRadius: "clamp(8px, 2vw, 14px)"}}>
+            <ul style={{margin: 0}}>
+              {games.map((game) => (
+                <li key={game.id} style={{marginTop: 0, marginBottom: 0}}>
+                  <div
+                      style={{
+                        width: "clamp(100px, 15vw, 400px)",
+                        height: "clamp(120px, 17vw, 500px)",
+                        backgroundColor: "#EDF1FA",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: 0
+                      }}
+                      onClick={() => handleGameSelect(game.id)}
+                    >
+                    <p className='inter'>{game.name}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
       {/* Render the selected game's component */}
