@@ -1,5 +1,45 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Users
 
-# Added: Index view to render index.html
-def index(request):
-    return render(request, 'index.html')
+def signup(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password']
+        if Users.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists')
+            return render(request, 'cv_games_app/signup.html')
+        if Users.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists')
+            return render(request, 'cv_games_app/signup.html')
+        user = Users.objects.create(
+            username=username,
+            email=email,
+            password_hash=password
+        )
+        user.save()
+        messages.success(request, 'Account created successfully')
+        return redirect('login')
+    return render(request, 'cv_games_app/signup.html')
+
+def signin(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        try:
+            user = Users.objects.get(username=username)
+            if user.password_hash == password:
+                request.session['user_id'] = user.user_id
+                return redirect('home')
+            else:
+                messages.error(request, 'Invalid password')
+                return render(request, 'cv_games_app/signin.html')
+        except Users.DoesNotExist:
+            messages.error(request, 'Username does not exist')
+            return render(request, 'cv_games_app/signin.html')
+    return render(request, 'cv_games_app/signin.html')
+
+def signout(request):
+    request.session.flush()
+    return redirect('login')
