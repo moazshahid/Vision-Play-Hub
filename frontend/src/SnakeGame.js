@@ -186,15 +186,15 @@ const SnakeGame = () => {
       ctx.font = 'bold 100px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('GAME OVER', 640, 320);
+      ctx.fillText('GAME OVER', 640, 300);
       // Display the final score in white
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 60px Arial';
-      ctx.fillText(`Final Score: ${score}`, 640, 360);
+      ctx.fillText(`Final Score: ${score}`, 640, 400);
       // Add restart instruction in green
       ctx.fillStyle = '#4CAF50';
       ctx.font = '40px Arial';
-      ctx.fillText('Press "R" to Restart', 640, 460);
+      ctx.fillText('Press "R" to Restart', 640, 500);
       // Update the DOM game over overlay
       finalScore.textContent = score;
       over.style.display = 'block';

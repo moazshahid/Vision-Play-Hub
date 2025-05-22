@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import SnakeGame from './SnakeGame';
+import WhackAMole from './WhackAMole';
 import ImageStack from './ImageStack';
 
 // Main App component for the CV Games website
@@ -11,6 +12,7 @@ const App = () => {
   // Array of available games, each with an id, name, and component type
   const games = [
     { id: 'snake', name: 'Snake Game', component: SnakeGame },
+    { name: 'Whack-a-Mole', component: <WhackAMole /> },
     // More games will be added here, e.g., { id: 'pong', name: 'Pong Game', component: PongGame }
   ];
 
@@ -25,8 +27,7 @@ const App = () => {
     .sort(() => Math.random() - 0.5);
   const ballRotations = Array.from({ length: 10 }, () => Math.floor(Math.random() * 360));
   return (
-    <div>
-      {/* Header for the CV Games website */}
+    <div className="App">
       <header>
       </header>
       <div style={{position: "relative", minHeight: "50vw", maxHeight: "100vw", width:"100%", display: "flex", justifyContent: "center" }}>
@@ -48,6 +49,7 @@ const App = () => {
       </div>
       {/* Show the game selection menu if no game is selected */}
       {!selectedGame && (
+      {!selectedGame ? (
         <div className="game-selection">
           <h2>Games</h2>
           <div style={{width: "95vw", backgroundColor: "#f9fafc", padding: "clamp(10px, 2vw, 15px)", borderRadius: "clamp(8px, 2vw, 14px)"}}>
@@ -74,10 +76,25 @@ const App = () => {
               ))}
             </ul>
           </div>
+          <h2>Game Selection</h2>
+          <ul>
+            {games.map((game, index) => (
+              <li key={index}>
+                <button onClick={() => setSelectedGame(game)}>
+                  {game.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div>
+          {selectedGame.component}
+          <button onClick={() => setSelectedGame(null)}>Back to Game Selection</button>
         </div>
       )}
       {/* Render the selected game's component */}
-      {selectedGameData && <selectedGameData.component />}
+      {selectedGame && games.find((game) => game.id === selectedGame).component}
       {/* Footer for the website */}
       <footer>
         <p>CV Games © 2025</p>

@@ -141,26 +141,34 @@ canvas {
   }
 }
 
-/* Styles for the game selection menu container */
+/* Game selection styles */
 .game-selection {
-  padding: 20px; /* Add padding around the menu for spacing */
-  text-align: center; /* Center-align the content */
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-/* Style the list of games to remove default list styling */
+.game-selection h2 {
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
 .game-selection ul {
-  list-style-type: none; /* Remove bullet points */
-  padding: 0; /* Remove default padding */
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
 }
 
-/* Style each game item in the list */
 .game-selection li {
-  margin: 10px 0; /* Add vertical margin between game items */
+  margin: 0;
 }
 
-/* Style the game selection buttons */
 .game-selection button {
-  padding: 10px 20px; /* Add padding for better click area */
-  font-size: 16px; /* Set font size for readability */
-  cursor: pointer; /* Indicate the button is clickable */
+  font-size: 18px;
+  padding: 12px 24px;
+  display: inline-block;
 }
