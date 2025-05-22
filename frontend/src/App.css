@@ -1,4 +1,36 @@
 /* Added: Container styles for centering content */
+
+
+.inter {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-variation-settings: "wght" var(--inter-weight);
+  font-style: normal;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #6254FF, #48FF7C, #44C3A8); /* adjust colors as needed */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+p {
+  z-index: 2;
+  --inter-weight: 600;
+}
+h2 {
+  z-index: 1;
+}
+h1 {
+  z-index: 1;
+}
+img {
+  z-index: 0;
+}
+button {
+  z-index: 2;
+}
+
 .container {
   max-width: 1280px;
   margin: 0 auto;
@@ -13,7 +45,7 @@
 }
 
 /* Added: Button styles with hover effect */
-button {
+#game-btn {
   padding: 10px 20px;
   background-color: #4CAF50;
   color: white;
@@ -22,7 +54,7 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+#game-btn:hover {
   background-color: #45a049;
 }
 
