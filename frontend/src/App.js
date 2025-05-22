@@ -37,11 +37,20 @@ const App = () => {
                 Welcome to the
               </p>
               <h1 className="inter gradient-text" style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>
-                Vision Play Hub
+                Vision Play Hub!
               </h1>
             </div>
             <p className="inter" style={{margin: 0}}>Select a game to play using computer vision.</p>
           </div>
+        </div>
+      )}
+      {showHero && (
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px", padding: "20px"}}>
+          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
+            <button style={{padding: "8px 16px", fontSize: "16px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
+              Sign Up
+            </button>
+          </a>
         </div>
       )}
       {!selectedGame ? (
