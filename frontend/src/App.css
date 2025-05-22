@@ -1,9 +1,25 @@
 /* Added: Container styles for centering content */
+
+
 .inter {
   font-family: "Inter", sans-serif;
   font-optical-sizing: auto;
   font-variation-settings: "wght" var(--inter-weight);
   font-style: normal;
+}
+
+p {
+  z-index: 2;
+  --inter-weight: 600;
+}
+h2 {
+  z-index: 1;
+}
+h1 {
+  z-index: 1;
+}
+img {
+  z-index: 0;
 }
 
 .container {
