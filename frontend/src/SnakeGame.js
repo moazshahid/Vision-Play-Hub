@@ -1,3 +1,4 @@
+import './App.css';
 import React, { useEffect, useRef } from 'react';
 
 // Define the SnakeGame component for the Hand Tracker Snake game
@@ -421,14 +422,28 @@ const SnakeGame = () => {
 
   // Render the game UI
   return (
-    <div>
-      <div className="controls">
-        <button id="start-btn">Start Game</button>
-        <button id="restart-btn">Restart Game</button>
-        <button id="test-camera-btn">Test Camera</button>
+    <div className='inter'>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+        <div className="instructions inter">
+          <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>How to Play</h2>
+          <ul>
+            <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
+            <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
+            <li><strong>Collect apples:</strong> Guide the snake to eat apples and grow longer.</li>
+            <li><strong>Don't hit yourself:</strong> Avoid collisions with your own snake body!</li>
+            <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
+          </ul>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+        <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+          <button id="start-btn">Start Game</button>
+          <button id="restart-btn">Restart Game</button>
+          <button id="test-camera-btn">Test Camera</button>
+        </div>
       </div>
       <div ref={debugRef} className="debug-box"></div>
-      <div className="game-container">
+      <div className="game-container inter">
         <canvas ref={canvasRef} width="1280" height="720"></canvas>
         <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
         <div ref={gameStatsRef} className="game-stats">Score: 0</div>
@@ -437,16 +452,6 @@ const SnakeGame = () => {
           <p>Your Score: <span ref={finalScoreRef}>0</span></p>
           <button id="play-again-btn">Play Again</button>
         </div>
-      </div>
-      <div className="instructions">
-        <h2>How to Play</h2>
-        <ul>
-          <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
-          <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
-          <li><strong>Collect apples:</strong> Guide the snake to eat apples and grow longer.</li>
-          <li><strong>Don't hit yourself:</strong> Avoid collisions with your own snake body!</li>
-          <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
-        </ul>
       </div>
     </div>
   );

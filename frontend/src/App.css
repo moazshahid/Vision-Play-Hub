@@ -27,6 +27,9 @@ h1 {
 img {
   z-index: 0;
 }
+button {
+  z-index: 2;
+}
 
 .container {
   max-width: 1280px;

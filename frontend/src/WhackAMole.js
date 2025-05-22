@@ -1,3 +1,4 @@
+import './App.css';
 import React, { useEffect, useRef } from 'react';
 
 const WhackAMole = () => {
@@ -364,13 +365,27 @@ const WhackAMole = () => {
 
   return (
     <div>
-      <div className="controls">
-        <button id="start-btn">Start Game</button>
-        <button id="restart-btn">Restart Game</button>
-        <button id="test-camera-btn">Test Camera</button>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+        <div className="instructions inter">
+          <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Whack A Mole</h2>
+          <ul>
+            <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
+            <li><strong>Whack moles:</strong> Move the hammer (your index finger) over moles in the holes to hit them.</li>
+            <li><strong>Score points:</strong> Each hit adds 1 point.</li>
+            <li><strong>Lives:</strong> You have 3 lives (shown as hearts at the top); miss a mole, lose a life.</li>
+            <li><strong>Keyboard controls:</strong> Press 'R' to restart, 'Q' to quit.</li>
+          </ul>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+        <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+          <button id="start-btn">Start Game</button>
+          <button id="restart-btn">Restart Game</button>
+          <button id="test-camera-btn">Test Camera</button>
+        </div>
       </div>
       <div ref={debugRef} className="debug-box"></div>
-      <div className="game-container">
+      <div className="game-container inter">
         <canvas ref={canvasRef} width="1280" height="720"></canvas>
         <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
         <div ref={gameStatsRef} className="game-stats">Score: 0</div>
@@ -379,16 +394,6 @@ const WhackAMole = () => {
           <p>Your Score: <span ref={finalScoreRef}>0</span></p>
           <button id="play-again-btn">Play Again</button>
         </div>
-      </div>
-      <div className="instructions">
-        <h2>How to Play</h2>
-        <ul>
-          <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
-          <li><strong>Whack moles:</strong> Move the hammer (your index finger) over moles in the holes to hit them.</li>
-          <li><strong>Score points:</strong> Each hit adds 1 point.</li>
-          <li><strong>Lives:</strong> You have 3 lives (shown as hearts at the top); miss a mole, lose a life.</li>
-          <li><strong>Keyboard controls:</strong> Press 'R' to restart, 'Q' to quit.</li>
-        </ul>
       </div>
     </div>
   );
