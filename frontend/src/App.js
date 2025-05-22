@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import SnakeGame from './SnakeGame';
+import ImageStack from './ImageStack';
 
 // Main App component for the CV Games website
 const App = () => {
