@@ -18,7 +18,7 @@ const App = () => {
     setSelectedGame(gameId === selectedGame ? null : gameId);
   };
 
-  
+  // Find the selected game
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
   const ballNumbers = Array.from({ length: 16 }, (_, i) => i + 1)
     .sort(() => Math.random() - 0.5);
@@ -29,7 +29,7 @@ const App = () => {
       <header>
       </header>
       <div style={{position: "relative", minHeight: "50vw", maxHeight: "100vw", width:"100%", display: "flex", justifyContent: "center" }}>
-        
+        <ImageStack src="/images/blob-3.gif" count={2} style={{minWidth: "35vw", maxWidth: "55vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
         <img key={0} src={`/images/ball-${ballNumbers[0]}.webp`} alt={`ball-${ballNumbers[0]}`} style={{minWidth: "30vw", maxWidth: "50vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
         <img key={1} src={`/images/ball-${ballNumbers[1]}.webp`} alt={`ball-${ballNumbers[1]}`} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
         <img key={2} src={`/images/ball-${ballNumbers[2]}.webp`} alt={`ball-${ballNumbers[2]}`} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
@@ -46,7 +46,6 @@ const App = () => {
         </div>
       </div>
       {/* Show the game selection menu if no game is selected */}
-      {/* game section*/}
       {!selectedGame && (
         <div className="game-selection">
           <h2>Games</h2>
