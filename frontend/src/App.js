@@ -44,15 +44,18 @@ const App = () => {
           </div>
         </div>
       )}
-      {showHero && (
-        <div style={{ display: "flex", justifyContent: "center", gap: "10px", padding: "20px"}}>
-          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
-            <button style={{padding: "8px 16px", fontSize: "16px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
-              Sign Up
-            </button>
-          </a>
-        </div>
-      )}
+      <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
+        <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
+          <button className="inter back-button">
+            Log In
+          </button>
+        </a>
+        <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
+          <button className="inter back-button">
+            Sign Up
+          </button>
+        </a>
+      </div>
       {!selectedGame ? (
         <div className="game-selection">
           <h2 className="inter">Selection</h2>
@@ -84,11 +87,15 @@ const App = () => {
       ) : (
         <div>
           {selectedGame.component}
-          <button onClick={() => {setSelectedGame(null); setShowHero(true);}}>Back to Game Selection</button>
+          <button className="inter back-button" onClick={() => {setSelectedGame(null); setShowHero(true);}}>
+            Back to Game Selection
+          </button>
         </div>
       )}
       <footer>
-        <p>CV Games © 2025</p>
+        <p className="inter">
+          CV Games © 2025
+        </p>
       </footer>
     </div>
   );

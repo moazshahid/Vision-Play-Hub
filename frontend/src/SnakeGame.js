@@ -437,9 +437,9 @@ const SnakeGame = () => {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
         <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-          <button id="start-btn">Start Game</button>
-          <button id="restart-btn">Restart Game</button>
-          <button id="test-camera-btn">Test Camera</button>
+          <button className="inter back-button" id="start-btn">Start Game</button>
+          <button className="inter back-button" id="restart-btn">Restart Game</button>
+          <button className="inter back-button" id="test-camera-btn">Test Camera</button>
         </div>
       </div>
       <div ref={debugRef} className="debug-box"></div>
