@@ -10,7 +10,7 @@ const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
 
-  // Array of available games, each with an id, name, and component to render
+  // Array of available games, each with an id, name, and component type
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame /> , icon: 'static/images/pages/snake-colour.svg' },
     { name: 'Whack-a-Mole', component: <WhackAMole /> , icon: 'static/images/pages/mole-colour.svg' },
@@ -39,11 +39,25 @@ const App = () => {
                 Welcome to the
               </p>
               <h1 className="inter gradient-text" style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>
-                Vision Play Hub
+                Vision Play Hub!
               </h1>
             </div>
             <p className="inter" style={{margin: 0}}>Select a game to play using computer vision.</p>
           </div>
+        </div>
+      )}
+      {! selectedGame && (
+        <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
+          <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
+            <button className="inter back-button">
+              Log In
+            </button>
+          </a>
+          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
+            <button className="inter back-button">
+              Sign Up
+            </button>
+          </a>
         </div>
       )}
       {!selectedGame ? (
@@ -89,11 +103,15 @@ const App = () => {
       ) : (
         <div>
           {selectedGame.component}
-          <button onClick={() => {setSelectedGame(null); setShowHero(true);}}>Back to Game Selection</button>
+          <button className="inter back-button" onClick={() => {setSelectedGame(null); setShowHero(true);}}>
+            Back to Game Selection
+          </button>
         </div>
       )}
       <footer>
-        <p>CV Games © 2025</p>
+        <p className="inter">
+          CV Games © 2025
+        </p>
       </footer>
     </div>
   );
