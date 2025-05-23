@@ -15,7 +15,6 @@
   flex: 0 0 90vw; /* or any fixed width like 300px */
   flex-direction: column;
   height: 90vh; /* or any height */
-  width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
