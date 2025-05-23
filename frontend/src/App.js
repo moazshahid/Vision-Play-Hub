@@ -44,18 +44,20 @@ const App = () => {
           </div>
         </div>
       )}
-      <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
-        <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
-          <button className="inter back-button">
-            Log In
-          </button>
-        </a>
-        <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
-          <button className="inter back-button">
-            Sign Up
-          </button>
-        </a>
-      </div>
+      {! selectedGame && (
+        <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
+          <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
+            <button className="inter back-button">
+              Log In
+            </button>
+          </a>
+          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
+            <button className="inter back-button">
+              Sign Up
+            </button>
+          </a>
+        </div>
+      )}
       {!selectedGame ? (
         <div className="game-selection">
           <h2 className="inter">Selection</h2>
