@@ -1,0 +1,22 @@
+.slider-container {
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.slider {
+  display: flex;
+  width: max-content;
+}
+
+.slide {
+  scroll-snap-align: start;
+  flex: 0 0 90vw; /* or any fixed width like 300px */
+  flex-direction: column;
+  height: 90vh; /* or any height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+}
