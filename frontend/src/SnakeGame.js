@@ -426,7 +426,7 @@ const SnakeGame = () => {
       <div className='slider-container'>
         <div className='slider'>
           <div className='slide'>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{maxWidth: "40%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
               <div className="instructions inter">
                 <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>How to Play</h2>
                 <ul>
@@ -437,6 +437,9 @@ const SnakeGame = () => {
                   <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
                 </ul>
               </div>
+            </div>
+            <div style={{maxWidth:"40%"}}>
+              <img src="static/images/pages/snake-lineart.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
             </div>
           </div>
           <div className='slide'>

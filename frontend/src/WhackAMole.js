@@ -368,7 +368,7 @@ const WhackAMole = () => {
       <div className='slider-container'>
         <div className="slider">
           <div className="slide" style={{flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{ maxWidth: "60%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
               <div className="instructions inter">
                 <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Whack A Mole</h2>
                 <ul>
@@ -379,6 +379,9 @@ const WhackAMole = () => {
                   <li><strong>Keyboard controls:</strong> Press 'R' to restart, 'Q' to quit.</li>
                 </ul>
               </div>
+            </div>
+            <div style={{maxWidth:"40%"}}>
+              <img src="static/images/pages/mole-lineart.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
             </div>
           </div>
           <div className="slide" style={{flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
