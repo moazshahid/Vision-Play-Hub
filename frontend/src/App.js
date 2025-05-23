@@ -16,6 +16,8 @@ const App = () => {
     { name: 'Whack-a-Mole', component: <WhackAMole /> , icon: 'static/images/pages/mole-colour.svg' },
     // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
   ];
+  //the comment below is to remove an unnecessary warning
+  // eslint-disable-next-line no-unused-vars
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
   const ballNumbers = Array.from({ length: 16 }, (_, i) => i + 1)
     .sort(() => Math.random() - 0.5);
