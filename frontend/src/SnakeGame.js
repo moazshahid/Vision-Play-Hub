@@ -425,7 +425,7 @@ const SnakeGame = () => {
     <div className='inter'>
       <div className='slider-container'>
         <div className='slider'>
-          <div className='slide'>
+          <div className='slide' style={{flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
             <div style={{maxWidth: "40%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
               <div className="instructions inter">
                 <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>How to Play</h2>

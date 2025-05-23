@@ -12,8 +12,8 @@ const App = () => {
 
   // Array of available games, each with an id, name, and component to render
   const games = [
-    { id: 'snake', name: 'Snake Game', component: <SnakeGame /> },
-    { name: 'Whack-a-Mole', component: <WhackAMole /> },
+    { id: 'snake', name: 'Snake Game', component: <SnakeGame /> , icon: 'static/images/pages/snake-colour.svg' },
+    { name: 'Whack-a-Mole', component: <WhackAMole /> , icon: 'static/images/pages/mole-colour.svg' },
     // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
   ];
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
@@ -28,6 +28,8 @@ const App = () => {
       {showHero && ( 
         <div id='hero' style={{position: "relative", minHeight: "50vw", maxHeight: "100vw", width:"100%", display: "flex", justifyContent: "center" }}>
           <ImageStack src="static/images/pages/blob-3.gif" count={2} style={{minWidth: "35vw", maxWidth: "55vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
+          <ImageStack src="static/images/pages/blob-2.gif" count={2} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
+          <ImageStack src="static/images/pages/blob-1.gif" count={2} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
           <img key={0} src={`static/images/pages/ball-${ballNumbers[0]}.webp`} alt={`ball-${ballNumbers[0]}`} style={{minWidth: "30vw", maxWidth: "50vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
           <img key={1} src={`static/images/pages/ball-${ballNumbers[1]}.webp`} alt={`ball-${ballNumbers[1]}`} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
           <img key={2} src={`static/images/pages/ball-${ballNumbers[2]}.webp`} alt={`ball-${ballNumbers[2]}`} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
@@ -45,7 +47,7 @@ const App = () => {
         </div>
       )}
       {!selectedGame ? (
-        <div className="game-selection">
+        <div className="game-selection" style={{zIndex: 4}}>
           <h2 className="inter">Selection</h2>
           <div style={{width: "95vw", backgroundColor: "#f9fafc", padding: "clamp(10px, 2vw, 15px)", borderRadius: "clamp(8px, 2vw, 14px)", zIndex: 1}}>
             <ul style={{ display: 'flex', flexDirection: 'row', margin: 0 }}>
@@ -61,11 +63,23 @@ const App = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        margin: 0
+                        margin: 0,
+                        flexDirection: "column",
                       }}
                       onClick={() => {setSelectedGame(game);  setShowHero(false);}}
                     >
-                    <p className='inter'>{game.name}</p>
+                    <img
+                      src={game.icon}
+                      alt={game.name}
+                      style={{
+                        width: "auto",
+                        height: "50%",
+                        marginBottom: "clamp(5px, 2vw, 10px)",
+                        margin: "15%",
+                      }}/>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#eff2f7', width: '100%', height: '20%' , borderRadius: '0 0 8px 8px', padding: '0px' }}>
+                      <p className='inter' style={{"--inter-weight": 900, fontSize: "2em"}}>{game.name}</p>
+                    </div>
                   </div>
                 </li>
               ))}
