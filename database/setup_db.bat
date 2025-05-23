@@ -72,7 +72,7 @@ psql -U cv_games_user -d cv_games_db -h localhost -c "CREATE TABLE test_table (i
 )
 
 REM Import schema
-psql -U cv_games_user -d cv_games_db -h localhost < database\schema.sql
+psql -U cv_games_user -d cv_games_db -h localhost < schema.sql
 if %ERRORLEVEL% equ 0 (
     echo Schema imported successfully.
 ) else (
