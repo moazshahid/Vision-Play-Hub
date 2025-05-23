@@ -10,7 +10,7 @@ const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
 
-  // Array of available games, each with an id, name, and component to render
+  // Array of available games, each with an id, name, and component type
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame /> },
     { name: 'Whack-a-Mole', component: <WhackAMole /> },
