@@ -1,0 +1,184 @@
+/* Added: Container styles for centering content */
+
+
+.inter {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-variation-settings: "wght" var(--inter-weight);
+  font-style: normal;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #6254FF, #48FF7C, #44C3A8); /* adjust colors as needed */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* New class for Back to Game Selection button */
+.back-button {
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+}
+
+p {
+  z-index: 2;
+  --inter-weight: 600;
+}
+h2 {
+  z-index: 1;
+}
+h1 {
+  z-index: 1;
+}
+img {
+  z-index: 0;
+}
+button {
+  z-index: 2;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Added: Flexbox for control buttons */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Added: Button styles with hover effect */
+#game-btn {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#game-btn:hover {
+  background-color: #45a049;
+}
+
+/* Added: Game container for relative positioning */
+.game-container {
+  position: relative;
+}
+
+/* Added: Canvas display */
+canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Added: Game stats overlay */
+.game-stats {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+}
+
+/* Added: Game over overlay */
+.game-over {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(76, 175, 80, 0.9);
+  padding: 30px 50px;
+  border-radius: 10px;
+  text-align: center;
+  display: none;
+}
+
+.game-over h2 {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.game-over p {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Added: Instructions section */
+.instructions {
+  margin-top: 20px;
+}
+
+.instructions ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.instructions li {
+  margin-bottom: 10px;
+}
+
+/* Added: Debug box for error messages */
+.debug-box {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #333;
+  color: #ddd;
+}
+
+/* Added: Warning text style */
+.warning {
+  color: #ff6b6b !important;
+  font-weight: bold;
+}
+
+/* Added: Responsive design for mobile */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+  button {
+    width: 100%;
+  }
+}
+
+/* Styles for the game selection menu container */
+.game-selection {
+  padding: 20px; /* Add padding around the menu for spacing */
+  text-align: center; /* Center-align the content */
+}
+
+/* Style the list of games to remove default list styling */
+.game-selection ul {
+  list-style-type: none; /* Remove bullet points */
+  padding: 0; /* Remove default padding */
+}
+
+/* Style each game item in the list */
+.game-selection li {
+  margin: 10px 0; /* Add vertical margin between game items */
+}
+
+/* Style the game selection buttons */
+.game-selection button {
+  padding: 10px 20px; /* Add padding for better click area */
+  font-size: 16px; /* Set font size for readability */
+  cursor: pointer; /* Indicate the button is clickable */
+}
