@@ -45,7 +45,23 @@ const DessertSlash = () => {
     // Initialize visibility of UI elements
     gameOver.style.display = 'none'; // Hide the game over screen initially
     gameStats.style.display = 'block'; // Show the score and time display initially
+
+    // Utility function to load an image asynchronously
+    // Takes a source URL and a fallback color to use if the image fails to load
+    const loadImage = (src, fallbackColor) => {
+      return new Promise((resolve) => {
+        const img = new Image(); // Create a new image object
+        img.src = src; // Set the image source
+        img.onload = () => resolve(img); // Resolve the promise with the image on successful load
+        img.onerror = () => {
+          console.warn(`Failed to load image: ${src}, using fallback`);
+          resolve({ complete: true, fallbackColor }); // Resolve with a fallback object if the image fails to load
+        };
+      });
+    };
   }, []);
+
+
 
   // Render the game UI
   return (
