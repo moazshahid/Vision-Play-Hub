@@ -28,7 +28,23 @@ const DessertSlash = () => {
 
   // useEffect hook to set up the game, initialize hand detection, load assets, and handle cleanup
   useEffect(() => {
-    // setup will go here
+    // Get references to the canvas context and DOM elements
+    const canvas = canvasRef.current?.getContext('2d'); // 2D rendering context for the canvas
+    const video = videoRef.current; // Video element for webcam feed
+    const gameStats = gameStatsRef.current; // Div for displaying score and time
+    const gameOver = gameOverRef.current; // Div for displaying game over screen
+    const finalScore = finalScoreRef.current; // Span for displaying final score
+    const debug = debugRef.current; // Div for debug messages
+
+    // Check if the canvas context is available; if not, log an error and exit
+    if (!canvas) {
+      console.error('Canvas context not initialized');
+      return;
+    }
+
+    // Initialize visibility of UI elements
+    gameOver.style.display = 'none'; // Hide the game over screen initially
+    gameStats.style.display = 'block'; // Show the score and time display initially
   }, []);
 
   // Render the game UI
