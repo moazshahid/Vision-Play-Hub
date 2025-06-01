@@ -59,6 +59,22 @@ const DessertSlash = () => {
         };
       });
     };
+
+    // Utility function to load an audio file asynchronously
+    // Takes a source URL, volume (default 0.5), and loop setting (default false)
+    const loadAudio = (src, volume = 0.5, loop = false) => {
+      return new Promise((resolve) => {
+        const audio = new Audio(src); // Create a new audio object
+        audio.volume = volume; // Set the volume
+        audio.loop = loop; // Set whether the audio should loop
+        audio.preload = 'auto'; // Preload the audio
+        audio.oncanplaythrough = () => resolve(audio); // Resolve the promise when the audio is ready
+        audio.onerror = () => {
+          console.warn(`Failed to load audio: ${src}`);
+          resolve(null); // Resolve with null if the audio fails to load
+        };
+      });
+    };
   }, []);
 
 
