@@ -139,6 +139,36 @@ const DessertSlash = () => {
         console.error('Hand detection error:', error);
       }
     };
+
+    // Function to start the webcam feed using MediaPipe Camera
+    const startCamera = async () => {
+      try {
+        // Define constraints for the webcam feed
+        const constraints = {
+          video: { width: 1280, height: 720, facingMode: 'user', frameRate: 60 },
+        };
+        // Request access to the webcam
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream; // Attach the stream to the video element
+        await new Promise((resolve) => (video.onloadedmetadata = resolve)); // Wait for video metadata to load
+        video.play(); // Start playing the video
+        // Initialize the MediaPipe Camera to process video frames
+        cameraRef.current = new window.Camera(video, {
+          onFrame: async () => {
+            if (handsRef.current) await handsRef.current.send({ image: video }); // Send each frame to MediaPipe Hands for processing
+          },
+          width: 1280,
+          height: 720,
+        });
+        await cameraRef.current.start(); // Start the camera
+        console.log('Camera started successfully');
+      } catch (error) {
+        console.error('Camera error:', error.message);
+        // Display a warning if camera access fails
+        debug.innerHTML += `<p class="warning">Camera error: ${error.message}. Please ensure camera access is granted.</p>`;
+        throw error;
+      }
+    };
     
     loadAssets();
     initHandDetection();
