@@ -271,6 +271,86 @@ const DessertSlash = () => {
       finalScore.textContent = score; // Update the final score in the DOM
       over.style.display = 'block'; // Show the game over screen in the DOM
     };
+
+    // GameLogic class to manage the game state and logic
+    class GameLogic {
+      constructor(ctx, stats, DessertImages, bombImage, powerUpImages, swordImage) {
+        this.initializeGame(ctx, stats, DessertImages, bombImage, powerUpImages, swordImage);
+      }
+
+      // Initialize the game state
+      initializeGame(ctx, stats, DessertImages, bombImage, powerUpImages, swordImage) {
+        this.objects = []; // Array to store game objects (desserts, bombs, power-ups)
+        this.score = 0; // Player's score
+        this.lives = 3; // Number of lives (lose one per bomb sliced)
+        this.gameOver = false; // Tracks if the game is over
+        this.ctx = ctx; // Canvas context for rendering
+        this.stats = stats; // DOM element for displaying score and time
+        this.DessertImages = DessertImages; // Loaded dessert images
+        this.bombImage = bombImage; // Loaded bomb image
+        this.powerUpImages = powerUpImages; // Loaded power-up images
+        this.swordImage = swordImage; // Loaded sword image for the cursor
+        this.objectSize = 60; // Size of game objects (pixels)
+        this.gameDuration = 60000; // Game duration in milliseconds (60 seconds)
+        this.startTime = performance.now(); // Time when the game starts
+        this.lastSpawnTime = 0; // Time of the last object spawn
+        this.spawnInterval = 1500; // Initial interval between spawns (ms)
+        this.cursorPosition = [640, 360]; // Initial cursor position (center of canvas)
+        this.cursorTrail = []; // Array to store cursor trail positions for drawing
+        this.maxTrailLength = 5; // Maximum length of the cursor trail
+        this.fingerPositions = []; // Array to store recent finger positions for smoothing
+        this.maxFingerPositions = 3; // Maximum number of finger positions to average
+        this.maxObjects = 2; // Maximum number of objects on screen at once
+        this.comboCount = 0; // Number of consecutive slices for combo multiplier
+        this.lastSliceTime = 0; // Time of the last slice
+        this.comboMultiplier = 1; // Multiplier for combo scoring
+        this.freezeActive = false; // Tracks if the freeze power-up is active
+        this.freezeStartTime = 0; // Time when the freeze power-up was activated
+        this.freezeDuration = 5000; // Duration of the freeze power-up (ms)
+        this.doubleScoreActive = false; // Tracks if the double score power-up is active
+        this.doubleScoreStartTime = 0; // Time when the double score power-up was activated
+        this.doubleScoreDuration = 5000; // Duration of the double score power-up (ms)
+        this.slashBurstActive = false; // Tracks if the Slash Burst power-up is active
+        this.slashBurstStartTime = 0; // Time when the Slash Burst was activated
+        this.slashBurstDuration = 3000; // Duration of the Slash Burst effect (ms)
+        this.slashBurstCooldown = 10000; // Cooldown for the Slash Burst (ms)
+        this.lastSlashBurstTime = -this.slashBurstCooldown; // Time of the last Slash Burst
+        this.lastFingerX = 640; // Last known X position of the finger
+        this.lastFingerY = 360; // Last known Y position of the finger
+        this.lastStatsUpdate = 0; // Time of the last stats update
+        this.statsUpdateInterval = 1000; // Interval for updating stats display (ms)
+      }
+
+      // Function to spawn a new game object (dessert, bomb, or power-up)
+      spawnObject() {
+        const currentTime = performance.now();
+        if (this.objects.length >= this.maxObjects) return; // Don't spawn if max objects reached
+        if (currentTime - this.lastSpawnTime < this.spawnInterval) return; // Wait for spawn interval
+        if (Math.random() < 0.3) return; // 30% chance to skip spawning for randomness
+        const progress = Math.min((currentTime - this.startTime) / this.gameDuration, 1); // Game progress (0 to 1)
+        this.spawnInterval = 1500 * (1 - 0.3 * progress); // Decrease spawn interval over time
+        this.lastSpawnTime = currentTime; // Update last spawn time
+
+        // Define object types and their spawn weights
+        const types = ['icecream', 'donut', 'cupcake', 'bomb', 'freeze', 'double'];
+        const weights = [0.3, 0.3, 0.2, 0.1 + 0.1 * progress, 0.05, 0.05]; // Weights adjust over time
+        const type = this.weightedRandom(types, weights); // Select a type based on weights
+        // Spawn the object within the canvas bounds
+        const x = Math.random() * (1080 - 200) + 100;
+        const y = Math.random() * (520 - 200) + 100;
+        const angle = Math.random() * 2 * Math.PI; // Random direction
+        const speed = 80 * (1 + progress); // Increase speed over time
+        // Add the new object to the game
+        this.objects.push({
+          type,
+          x,
+          y,
+          vx: Math.cos(angle) * speed, // X velocity
+          vy: Math.sin(angle) * speed, // Y velocity
+          sliced: false, // Tracks if the object has been sliced
+          sliceTime: 0, // Time when the object was sliced
+        });
+      }
     
     loadAssets();
     initHandDetection();
