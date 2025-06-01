@@ -252,6 +252,25 @@ const DessertSlash = () => {
       }
       ctx.restore(); // Restore the canvas context state
     };
+
+    // Function to draw the game over screen on the canvas
+    const drawGameOverOnCanvas = (ctx, score, over, finalScore) => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent black background
+      ctx.fillRect(0, 0, 1280, 720); // Cover the entire canvas
+      ctx.fillStyle = '#FF0000'; // Red text for "GAME OVER"
+      ctx.font = 'bold 100px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('GAME OVER', 640, 300); // Display "GAME OVER" in the center
+      ctx.fillStyle = '#FFFFFF'; // White text for the final score
+      ctx.font = 'bold 60px Arial';
+      ctx.fillText(`Final Score: ${score}`, 640, 400); // Display the final score
+      ctx.fillStyle = '#4CAF50'; // Green text for restart instructions
+      ctx.font = '40px Arial';
+      ctx.fillText('Press "R" to Restart', 640, 500); // Display restart instructions
+      finalScore.textContent = score; // Update the final score in the DOM
+      over.style.display = 'block'; // Show the game over screen in the DOM
+    };
     
     loadAssets();
     initHandDetection();
