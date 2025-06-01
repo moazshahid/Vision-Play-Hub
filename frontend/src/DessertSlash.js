@@ -111,6 +111,37 @@ const DessertSlash = () => {
         console.error('Asset loading error:', error);
       }
     };
+
+    // Function to initialize MediaPipe Hands for hand tracking
+    const initHandDetection = () => {
+      try {
+        if (!window.Hands) {
+          console.error('MediaPipe Hands not available');
+          return;
+        }
+        // Create a new Hands instance with the MediaPipe library
+        handsRef.current = new window.Hands({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`, // Load MediaPipe files from CDN
+        });
+        // Configure hand detection settings
+        handsRef.current.setOptions({
+          maxNumHands: 1, // Detect only one hand
+          modelComplexity: 1, // Use full model complexity for better accuracy
+          minDetectionConfidence: 0.7, // Minimum confidence for detecting a hand
+          minTrackingConfidence: 0.7, // Minimum confidence for tracking a hand
+        });
+        // Set up the callback for hand detection results
+        handsRef.current.onResults((results) =>
+          onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current, gameOver, finalScore)
+        );
+        console.log('MediaPipe Hands initialized');
+      } catch (error) {
+        console.error('Hand detection error:', error);
+      }
+    };
+    
+    loadAssets();
+    initHandDetection();
   }, []);
 
 
