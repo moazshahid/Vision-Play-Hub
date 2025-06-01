@@ -169,6 +169,39 @@ const DessertSlash = () => {
         throw error;
       }
     };
+
+    // Function to start the game
+    const startGame = async () => {
+      if (!gameStartedRef.current) { // Only start if the game hasn't already started
+        if (!assetsLoadedRef.current) { // Check if assets are loaded
+          console.log('Assets not loaded yet');
+          return;
+        }
+        await startCamera(); // Start the webcam
+        if (animationFrameIdRef.current) {
+          cancelAnimationFrame(animationFrameIdRef.current); // Cancel any existing animation frame
+        }
+        // Create a new GameLogic instance to manage the game state
+        gameObjectRef.current = new GameLogic(
+          canvas,
+          gameStats,
+          DessertImagesRef.current,
+          bombImageRef.current,
+          powerUpImagesRef.current,
+          swordImageRef.current
+        );
+        // Play background music if available
+        if (bgMusicRef.current) {
+          bgMusicRef.current.currentTime = 0;
+          bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
+        }
+        gameStartedRef.current = true; // Mark the game as started
+        lastRenderTimeRef.current = performance.now(); // Set the initial render time
+        gameOver.style.display = 'none'; // Hide the game over screen
+        gameStats.style.display = 'block'; // Ensure score and time are visible
+        requestAnimationFrame(gameLoop); // Start the game loop
+      }
+    };
     
     loadAssets();
     initHandDetection();
