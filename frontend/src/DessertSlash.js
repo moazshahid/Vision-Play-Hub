@@ -31,9 +31,61 @@ const DessertSlash = () => {
     // setup will go here
   }, []);
 
+  // Render the game UI
   return (
     <div>
-      <p>Dessert Slash Game (coming soon)</p>
+      <div className="slider-container">
+        <div className="slider">
+          {/* Instructions slide */}
+          <div className="slide" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ maxWidth: "60%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', overflowY: 'auto' }}>
+              <div className="instructions inter">
+                <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Dessert Slash</h2>
+                <ul>
+                  <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
+                  <li><strong>Slice desserts:</strong> Move your index finger to control the sword and slice desserts (icecreams, donuts, cupcakes) for points. A white trail appears when you move.</li>
+                  <li><strong>Avoid bombs:</strong> Don’t slice bombs, or you’ll lose a life (3 lives total, shown as bombs in the top-right).</li>
+                  <li><strong>Combos:</strong> Slice multiple desserts quickly to earn 2x or 3x score multipliers.</li>
+                  <li><strong>Power-Ups:</strong> Slice special desserts for Freeze (slows desserts dramatically) or Double Score (doubles points).</li>
+                  <li><strong>Slash Burst:</strong> Swipe upward or press 'S' to slice all desserts on screen (10-second cooldown), with an orange-red trail.</li>
+                  <li><strong>Time Limit:</strong> Survive 60 seconds; desserts and bombs spawn faster over time.</li>
+                  <li><strong>Keyboard controls:</strong> Press 'R' to restart, 'Q' to quit, 'S' for Slash Burst.</li>
+                </ul>
+              </div>
+            </div>
+            <div style={{ maxWidth: "40%" }}>
+              <img src="static/images/pages/dessert-lineart.svg" alt="Dessert Slash" style={{ width: '100%', height: 'auto' }} />
+            </div>
+          </div>
+          {/* Game slide */}
+          <div className="slide" style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+              <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+                <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+                </button>
+                <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+                </button>
+                <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+                </button>
+              </div>
+            </div>
+            <div ref={debugRef} className="debug-box" style={{ backgroundColor: "#fff" }}></div>
+            <div className="game-container inter">
+              <canvas ref={canvasRef} width="1280" height="720" tabIndex="0" style={{ zIndex: 10 }}></canvas>
+              <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+              <div ref={gameStatsRef} className="game-stats">Score: 0 | Time: 60</div>
+              <div ref={gameOverRef} className="game-over">
+                <h2>Game Over!</h2>
+                <p>Your Score: <span ref={finalScoreRef}>0</span></p>
+                <button id="play-again-btn">Play Again</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
