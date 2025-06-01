@@ -75,6 +75,42 @@ const DessertSlash = () => {
         };
       });
     };
+
+    // Function to load all game assets (images and audio)
+    const loadAssets = async () => {
+      try {
+        // Load dessert images (ice cream, donut, cupcake) with fallback colors
+        const DessertPromises = ['icecream', 'donut', 'cupcake'].map(async (type) => {
+          DessertImagesRef.current[type] = await loadImage(`/static/images/${type}.png`, {
+            icecream: '#FF0000', // Red fallback for ice cream
+            donut: '#FFFF00', // Yellow fallback for donut
+            cupcake: '#00FF00', // Green fallback for cupcake
+          }[type]);
+        });
+        // Load the bomb image with a black fallback
+        bombImageRef.current = await loadImage('/static/images/bomb.png', '#000000');
+        // Load power-up images (freeze, double) with fallback colors
+        const powerUpPromises = ['freeze', 'double'].map(async (type) => {
+          powerUpImagesRef.current[type] = await loadImage(`/static/images/${type}.png`, {
+            freeze: '#00B7EB', // Light blue for freeze power-up
+            double: '#FFD700', // Gold for double score power-up
+          }[type]);
+        });
+        // Load the sword image with a white fallback
+        swordImageRef.current = await loadImage('/static/images/sword.png', '#FFFFFF');
+        // Load audio files for game sounds
+        sliceSoundRef.current = await loadAudio('/static/sounds/slice.mp3'); // Sound for slicing desserts
+        bombSoundRef.current = await loadAudio('/static/sounds/explosion.mp3'); // Sound for bomb explosions
+        burstSoundRef.current = await loadAudio('/static/sounds/slashburst.mp3'); // Sound for Slash Burst
+        bgMusicRef.current = await loadAudio('/static/sounds/dessertslash_bg.mp3', 0.3, true); // Background music, loops with 0.3 volume
+        // Wait for all assets to load
+        await Promise.all([...DessertPromises, ...powerUpPromises]);
+        assetsLoadedRef.current = true; // Mark assets as loaded
+        console.log('All assets loaded');
+      } catch (error) {
+        console.error('Asset loading error:', error);
+      }
+    };
   }, []);
 
 
