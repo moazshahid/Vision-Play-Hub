@@ -202,6 +202,56 @@ const DessertSlash = () => {
         requestAnimationFrame(gameLoop); // Start the game loop
       }
     };
+
+    // Main game loop to update and render the game
+    const gameLoop = (timestamp) => {
+      if (gameStartedRef.current && gameObjectRef.current && !gameObjectRef.current.gameOver) {
+        try {
+          const deltaTime = timestamp - lastRenderTimeRef.current; // Calculate time since last frame
+          lastRenderTimeRef.current = timestamp; // Update last render time
+          gameObjectRef.current.updateWithoutRender(deltaTime); // Update game state without rendering
+          animationFrameIdRef.current = requestAnimationFrame(gameLoop); // Schedule the next frame
+        } catch (error) {
+          console.error('Game loop error:', error);
+        }
+      }
+    };
+
+    // Callback function for handling hand detection results from MediaPipe
+    const onHandResults = (results, ctx, video, gameObj, started, over, finalScore) => {
+      ctx.save(); // Save the canvas context state
+      ctx.clearRect(0, 0, 1280, 720); // Clear the canvas
+      // Draw the mirrored webcam feed as the background
+      ctx.save();
+      ctx.translate(1280, 0); // Mirror the video horizontally
+      ctx.scale(-1, 1);
+      ctx.drawImage(results.image, 0, 0, 1280, 720); // Draw the video frame
+      ctx.restore();
+
+      // If the game is started and a game object exists, process hand tracking
+      if (started && gameObj) {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && !gameObj.gameOver) {
+          // Get the index finger tip (landmark 8) and base (landmark 5) coordinates
+          const indexFinger = results.multiHandLandmarks[0][8];
+          const fingerX = Math.floor(1280 - indexFinger.x * 1280); // Adjust for mirrored video
+          const fingerY = Math.floor(indexFinger.y * 720);
+          const fingerBase = results.multiHandLandmarks[0][5];
+          const baseX = Math.floor(1280 - fingerBase.x * 1280);
+          const baseY = Math.floor(fingerBase.y * 720);
+          // Update the game cursor position based on finger coordinates
+          gameObj.updateFingerPosition(fingerX, fingerY, baseX, baseY);
+        }
+        gameObj.render(ctx); // Render the game objects (desserts, bombs, etc.)
+        if (gameStartedRef.current && !gameObj.gameOver) {
+          requestAnimationFrame(gameLoop); // Continue the game loop
+        }
+      }
+      // If the game is over, display the game over screen on the canvas
+      if (gameObj && gameObj.gameOver) {
+        drawGameOverOnCanvas(ctx, gameObj.score, over, finalScore);
+      }
+      ctx.restore(); // Restore the canvas context state
+    };
     
     loadAssets();
     initHandDetection();
