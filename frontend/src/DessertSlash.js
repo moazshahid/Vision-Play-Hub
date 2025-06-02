@@ -351,6 +351,84 @@ const DessertSlash = () => {
           sliceTime: 0, // Time when the object was sliced
         });
       }
+
+      // Utility function to select a random item based on weights
+      weightedRandom(items, weights) {
+        const total = weights.reduce((sum, w) => sum + w, 0); // Sum of all weights
+        let r = Math.random() * total; // Random value between 0 and total weight
+        for (let i = 0; i < items.length; i++) {
+          r -= weights[i];
+          if (r <= 0) return items[i]; // Return the selected item
+        }
+        return items[items.length - 1]; // Fallback to the last item
+      }
+
+      // Function to update the cursor position based on finger movement
+      updateFingerPosition(fingerX, fingerY, baseX, baseY) {
+        if (this.gameOver) return; // Don't update if the game is over
+
+        const dirX = fingerX - baseX; // Direction from finger base to tip (X)
+        const dirY = fingerY - baseY; // Direction from finger base to tip (Y)
+        const length = Math.sqrt(dirX * dirX + dirY * dirY); // Distance between base and tip
+        if (length > 0) {
+          // Smooth the cursor position by averaging recent finger positions
+          this.fingerPositions.push({ x: fingerX, y: fingerY });
+          if (this.fingerPositions.length > this.maxFingerPositions) {
+            this.fingerPositions.shift(); // Remove oldest position
+          }
+          const avgX = this.fingerPositions.reduce((sum, pos) => sum + pos.x, 0) / this.fingerPositions.length;
+          const avgY = this.fingerPositions.reduce((sum, pos) => sum + pos.y, 0) / this.fingerPositions.length;
+          this.cursorPosition = [avgX, avgY]; // Update cursor position
+
+          // Update the cursor trail for visual effect
+          this.cursorTrail.push([avgX, avgY, performance.now()]);
+          if (this.cursorTrail.length > this.maxTrailLength) {
+            this.cursorTrail.shift(); // Remove oldest trail point
+          }
+
+          // Check for a fast upward swipe to trigger Slash Burst
+          const yDiff = this.lastFingerY - fingerY; // Vertical movement
+          const xDiff = fingerX - this.lastFingerX; // Horizontal movement
+          const speed = Math.hypot(xDiff, yDiff) / (performance.now() - lastRenderTimeRef.current || 1); // Swipe speed
+          if (
+            yDiff > 50 && // Upward swipe of at least 50 pixels
+            speed > 0.5 && // Sufficient speed
+            performance.now() - this.lastSlashBurstTime > this.slashBurstCooldown && // Cooldown elapsed
+            !this.slashBurstActive // Slash Burst not already active
+          ) {
+            console.log('Slash Burst triggered by swipe');
+            this.slashBurstActive = true;
+            this.slashBurstStartTime = performance.now();
+            this.lastSlashBurstTime = performance.now();
+            // Slice all non-bomb objects on the screen
+            this.objects.forEach((obj) => {
+              if (obj.type !== 'bomb' && !obj.sliced) {
+                this.sliceObject(obj, true);
+              }
+            });
+            // Play the Slash Burst sound
+            if (burstSoundRef.current) {
+              burstSoundRef.current.currentTime = 0;
+              burstSoundRef.current.play().catch((e) => console.log('Error playing sound:', e));
+            }
+          }
+          this.lastFingerX = fingerX; // Update last finger position
+          this.lastFingerY = fingerY;
+
+          // Check for collisions between the cursor and game objects
+          this.objects.forEach((obj) => {
+            if (obj.sliced) return; // Skip already sliced objects
+            const distX = Math.abs(avgX - obj.x); // Distance on X axis
+            const distY = Math.abs(avgY - obj.y); // Distance on Y axis
+            if (distX > this.objectSize && distY > this.objectSize) return; // Skip if too far
+            const dist = Math.hypot(distX, distY); // Euclidean distance
+            if (dist < this.objectSize / 2) { // Collision detected
+              this.sliceObject(obj, false); // Slice the object
+            }
+          });
+        }
+      }
+
     
     loadAssets();
     initHandDetection();
