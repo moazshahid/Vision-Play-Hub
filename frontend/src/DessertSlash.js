@@ -670,13 +670,87 @@ const DessertSlash = () => {
       requestAnimationFrame(gameLoop); // Start the game loop
     };
 
+    // Function to quit the game and clean up resources
+    const quitGame = () => {
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current); // Cancel any animation frame
+      }
+      if (cameraRef.current) {
+        cameraRef.current.stop(); // Stop the camera
+        cameraRef.current = null;
+      }
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop()); // Stop all video tracks
+        video.srcObject = null;
+      }
+      if (gameObjectRef.current) {
+        gameObjectRef.current = null; // Clear the game object
+      }
+      if (bgMusicRef.current) {
+        bgMusicRef.current.pause(); // Pause the background music
+        bgMusicRef.current.currentTime = 0;
+      }
+      gameStartedRef.current = false; // Mark the game as stopped
+      canvas.clearRect(0, 0, 1280, 720); // Clear the canvas
+      canvas.fillStyle = 'black'; // Fill with black
+      canvas.fillRect(0, 0, 1280, 720);
+      gameOver.style.display = 'none'; // Hide the game over screen
+    };
 
-    
-    loadAssets();
-    initHandDetection();
+    // Function to handle keyboard input
+    const keydownHandler = (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        restartGame(); // Restart the game on 'R' key
+      }
+      if (e.key === 'q' || e.key === 'Q') {
+        quitGame(); // Quit the game on 'Q' key
+      }
+      if (e.key === 's' || e.key === 'S' && gameObjectRef.current && !gameObjectRef.current.gameOver && !gameObjectRef.current.slashBurstActive) {
+        // Trigger Slash Burst on 'S' key if cooldown has elapsed
+        if (performance.now() - gameObjectRef.current.lastSlashBurstTime > gameObjectRef.current.slashBurstCooldown) {
+          console.log('Slash Burst triggered by keypress');
+          gameObjectRef.current.slashBurstActive = true;
+          gameObjectRef.current.slashBurstStartTime = performance.now();
+          gameObjectRef.current.lastSlashBurstTime = performance.now();
+          gameObjectRef.current.objects.forEach((obj) => {
+            if (obj.type !== 'bomb' && !obj.sliced) {
+              gameObjectRef.current.sliceObject(obj, true);
+            }
+          });
+          if (burstSoundRef.current) {
+            burstSoundRef.current.currentTime = 0;
+            burstSoundRef.current.play().catch((e) => console.log('Error playing sound:', e));
+          }
+        }
+      }
+    };
+
+    // Set up event listeners for buttons and keyboard
+    const startButton = document.getElementById('start-btn');
+    const restartButton = document.getElementById('restart-btn');
+    const testCameraButton = document.getElementById('test-camera-btn');
+    const playAgainButton = document.getElementById('play-again-btn');
+
+    startButton?.addEventListener('click', startGame); // Start the game on button click
+    restartButton?.addEventListener('click', restartGame); // Restart the game on button click
+    testCameraButton?.addEventListener('click', startCamera); // Test the camera on button click
+    playAgainButton?.addEventListener('click', restartGame); // Restart the game from the game over screen
+    document.addEventListener('keydown', keydownHandler); // Handle keyboard input
+
+    loadAssets(); // Load all game assets
+    initHandDetection(); // Initialize hand detection
+
+  // Cleanup function to run when the component unmounts
+    return () => {
+      quitGame(); // Clean up game resources
+      // Remove event listeners
+      startButton?.removeEventListener('click', startGame);
+      restartButton?.removeEventListener('click', restartGame);
+      testCameraButton?.removeEventListener('click', startCamera);
+      playAgainButton?.removeEventListener('click', restartGame);
+      document.removeEventListener('keydown', keydownHandler);
+    };
   }, []);
-
-
 
   // Render the game UI
   return (
