@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import SnakeGame from './SnakeGame';
 import WhackAMole from './WhackAMole';
+import DessertSlash from './DessertSlash';
 import ImageStack from './ImageStack';
 
 // Main App component for the CV Games website
@@ -13,7 +14,8 @@ const App = () => {
   // Array of available games, each with an id, name, and component type
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame /> , icon: 'static/images/pages/snake-colour.svg' },
-    { name: 'Whack-a-Mole', component: <WhackAMole /> , icon: 'static/images/pages/mole-colour.svg' },
+    { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole /> , icon: 'static/images/pages/mole-colour.svg' },
+    { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash /> , icon: 'static/images/pages/dessert-colour.svg' },
     // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
   ];
   //the comment below is to remove an unnecessary warning
