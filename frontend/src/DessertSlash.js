@@ -539,6 +539,137 @@ const DessertSlash = () => {
         }
       }
 
+      // Function to render the game state to the canvas
+      render(ctx) {
+        ctx.save(); // Save the canvas context state
+        // Draw all game objects
+        this.objects.forEach((obj) => {
+          let img;
+          if (obj.type === 'bomb') img = this.bombImage;
+          else if (['freeze', 'double'].includes(obj.type)) img = this.powerUpImages[obj.type];
+          else img = this.DessertImages[obj.type];
+          // Draw the object image if available and not sliced
+          if (img && img.complete && !obj.sliced) {
+            ctx.drawImage(img, obj.x - this.objectSize / 2, obj.y - this.objectSize / 2, this.objectSize, this.objectSize);
+          } else if (!obj.sliced) {
+            // Draw a fallback circle if the image isn't available
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, this.objectSize / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = img?.fallbackColor || (obj.type === 'icecream' ? '#FF0000' : obj.type === 'donut' ? '#FFFF00' : obj.type === 'cupcake' ? '#00FF00' : obj.type === 'bomb' ? '#000000' : obj.type === 'freeze' ? '#00B7EB' : obj.type === 'double' ? '#FFD700' : '#FF69B4');
+            ctx.fill();
+          }
+          // Draw a semi-transparent circle for sliced non-bomb objects
+          if (obj.sliced && obj.type !== 'bomb') {
+            ctx.fillStyle = `rgba(${obj.type === 'icecream' ? '255,0,0' : obj.type === 'donut' ? '255,255,0' : '0,255,0'},0.5)`;
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, this.objectSize, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        });
+
+        // Draw lives (bombs) in the top-right corner
+        for (let i = 0; i < 3; i++) {
+          const x = 1280 - 20 - i * 40; // Position from right side
+          const y = 50;
+          if (i < this.lives && this.bombImage && this.bombImage.complete) {
+            ctx.drawImage(this.bombImage, x - 15, y - 15, 30, 30); // Draw bomb image for remaining lives
+          } else {
+            // Draw an empty circle for lost lives
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+
+        // Draw the cursor trail
+        if (this.cursorTrail.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(this.cursorTrail[0][0], this.cursorTrail[0][1]);
+          for (let i = 1; i < this.cursorTrail.length; i++) {
+            ctx.lineTo(this.cursorTrail[i][0], this.cursorTrail[i][1]);
+          }
+          ctx.strokeStyle = this.slashBurstActive ? '#FF4500' : '#FFFFFF'; // Orange-red during Slash Burst, white otherwise
+          ctx.lineWidth = 5;
+          ctx.stroke();
+        }
+
+        // Draw the cursor (sword)
+        if (this.swordImage && this.swordImage.complete) {
+          ctx.drawImage(this.swordImage, this.cursorPosition[0] - 25, this.cursorPosition[1] - 25, 50, 50);
+        } else {
+          // Draw a fallback circle if the sword image isn't available
+          ctx.beginPath();
+          ctx.arc(this.cursorPosition[0], this.cursorPosition[1], 10, 0, 2 * Math.PI);
+          ctx.fillStyle = this.swordImage?.fallbackColor || '#FFFFFF';
+          ctx.fill();
+        }
+
+        // Display combo multiplier if active
+        if (this.comboMultiplier > 1) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 40px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Combo x${this.comboMultiplier}`, 640, 100);
+        }
+
+        // Display freeze power-up status
+        if (this.freezeActive) {
+          ctx.fillStyle = '#00B7EB';
+          ctx.font = 'bold 30px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText('Freeze Active!', 300, 50);
+        }
+        // Display double score power-up status
+        if (this.doubleScoreActive) {
+          ctx.fillStyle = '#FFD700';
+          ctx.font = 'bold 40px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText('Double Score!', 300, 80);
+        }
+        // Display Slash Burst status
+        if (this.slashBurstActive) {
+          ctx.fillStyle = '#FF4500';
+          ctx.font = 'bold 30px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText('Slash Burst!', 300, 110);
+        }
+        ctx.restore(); // Restore the canvas context state
+      }
+    }
+
+    // Function to restart the game
+    const restartGame = async () => {
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current); // Cancel any existing animation frame
+      }
+      if (!cameraRef.current || !video.srcObject) {
+        await startCamera(); // Restart the camera if it's not running
+      }
+      // Create a new GameLogic instance to reset the game state
+      gameObjectRef.current = new GameLogic(
+        canvas,
+        gameStats,
+        DessertImagesRef.current,
+        bombImageRef.current,
+        powerUpImagesRef.current,
+        swordImageRef.current
+      );
+      // Restart the background music
+      if (bgMusicRef.current) {
+        bgMusicRef.current.currentTime = 0;
+        bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
+      }
+      gameStartedRef.current = true; // Mark the game as started
+      lastRenderTimeRef.current = performance.now(); // Reset the render time
+      gameOver.style.display = 'none'; // Hide the game over screen
+      gameStats.style.display = 'block'; // Ensure score and time are visible
+      requestAnimationFrame(gameLoop); // Start the game loop
+    };
+
 
     
     loadAssets();
