@@ -429,6 +429,117 @@ const DessertSlash = () => {
         }
       }
 
+      // Function to handle slicing an object (dessert, bomb, or power-up)
+      sliceObject(obj, isBurst) {
+        if (obj.sliced) return; // Don't slice an already sliced object
+        obj.sliced = true; // Mark the object as sliced
+        obj.sliceTime = performance.now(); // Record the slice time
+        const currentTime = performance.now();
+
+        // Check for combos (multiple slices within 1 second)
+        if (currentTime - this.lastSliceTime < 1000 && !isBurst) {
+          this.comboCount += 1; // Increment combo count
+          this.comboMultiplier = this.comboCount >= 4 ? 3 : this.comboCount >= 3 ? 2 : 1; // Set multiplier based on combo count
+        } else {
+          this.comboCount = 1; // Reset combo count
+          this.comboMultiplier = 1; // Reset multiplier
+        }
+        this.lastSliceTime = currentTime; // Update last slice time
+
+        // Handle different object types
+        if (obj.type === 'bomb') {
+          this.lives -= 1; // Lose a life
+          if (bombSoundRef.current) {
+            bombSoundRef.current.currentTime = 0;
+            bombSoundRef.current.play().catch((e) => console.log('Error playing sound:', e));
+          }
+          if (this.lives <= 0) {
+            this.gameOver = true; // End the game if no lives remain
+          }
+        } else if (obj.type === 'freeze') {
+          console.log('Freeze power-up activated');
+          this.freezeActive = true;
+          this.freezeStartTime = currentTime;
+          // Slow down all non-sliced objects
+          this.objects.forEach((otherObj) => {
+            if (!otherObj.sliced) {
+              otherObj.vx *= 0.1; // Reduce X velocity by 90%
+              otherObj.vy *= 0.1; // Reduce Y velocity by 90%
+            }
+          });
+          if (sliceSoundRef.current) {
+            sliceSoundRef.current.currentTime = 0;
+            sliceSoundRef.current.play().catch((e) => console.log('Error playing sound:', e));
+          }
+        } else if (obj.type === 'double') {
+          console.log(`Double Score power-up activated, base points: ${obj.type === 'icecream' ? 10 : obj.type === 'donut' ? 15 : 20}, multiplier: ${this.comboMultiplier}`);
+          this.doubleScoreActive = true;
+          this.doubleScoreStartTime = currentTime;
+          // Double the points for the sliced object
+          const points = (obj.type === 'icecream' ? 10 : obj.type === 'donut' ? 15 : 20) * 2 * this.comboMultiplier;
+          this.score += points; // Add points to the score
+          console.log(`Points awarded: ${points}, Total score: ${this.score}`);
+          if (sliceSoundRef.current) {
+            sliceSoundRef.current.currentTime = 0;
+            sliceSoundRef.current.play().catch((e) => console.log('Error playing sound:', e));
+          }
+        } else {
+          // Handle dessert slicing (ice cream, donut, cupcake)
+          const basePoints = obj.type === 'icecream' ? 10 : obj.type === 'donut' ? 15 : 20; // Base points for each dessert
+          const points = basePoints * (this.doubleScoreActive ? 2 : 1) * this.comboMultiplier; // Apply double score and combo multiplier
+          this.score += points; // Add points to the score
+          console.log(`Sliced ${obj.type}, Base points: ${basePoints}, Double: ${this.doubleScoreActive ? 2 : 1}, Combo: ${this.comboMultiplier}, Points awarded: ${points}, Total score: ${this.score}`);
+          if (sliceSoundRef.current) {
+            sliceSoundRef.current.currentTime = 0;
+            sliceSoundRef.current.play().catch((e) => console.log('Error playing sound:', e));
+          }
+        }
+      }
+
+      // Function to update the game state without rendering
+      updateWithoutRender(deltaTime) {
+        if (this.gameOver) return; // Don't update if the game is over
+        const deltaSeconds = deltaTime / 1000; // Convert delta time to seconds
+        const currentTime = performance.now();
+        if (currentTime - this.startTime > this.gameDuration) { // Check if the game time is up
+          this.gameOver = true;
+          return;
+        }
+
+        // Check if power-ups have expired
+        if (this.freezeActive && currentTime - this.freezeStartTime > this.freezeDuration) {
+          console.log('Freeze power-up deactivated');
+          this.freezeActive = false;
+        }
+        if (this.doubleScoreActive && currentTime - this.doubleScoreStartTime > this.doubleScoreDuration) {
+          console.log('Double Score power-up deactivated');
+          this.doubleScoreActive = false;
+        }
+        if (this.slashBurstActive && currentTime - this.slashBurstStartTime > this.slashBurstDuration) {
+          console.log('Slash Burst deactivated');
+          this.slashBurstActive = false;
+        }
+
+        this.spawnObject(); // Spawn new objects as needed
+        // Update object positions and remove off-screen or sliced objects
+        this.objects = this.objects.filter((obj) => {
+          obj.x += obj.vx * deltaSeconds; // Update X position
+          obj.vy += 200 * deltaSeconds; // Apply gravity to Y velocity
+          obj.y += obj.vy * deltaSeconds; // Update Y position
+          if (obj.sliced && currentTime - obj.sliceTime > 500) return false; // Remove sliced objects after 500ms
+          // Remove objects that are off-screen
+          if (obj.x < -this.objectSize || obj.x > 1280 + this.objectSize || obj.y > 720 + this.objectSize || obj.y < -this.objectSize) return false;
+          return true; // Keep the object
+        });
+
+        // Update the score and time display every second
+        if (currentTime - this.lastStatsUpdate >= this.statsUpdateInterval) {
+          this.stats.textContent = `Score: ${this.score} | Time: ${Math.max(0, Math.floor((this.gameDuration - (currentTime - this.startTime)) / 1000))}`;
+          this.lastStatsUpdate = currentTime;
+        }
+      }
+
+
     
     loadAssets();
     initHandDetection();
