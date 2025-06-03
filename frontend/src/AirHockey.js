@@ -5,21 +5,47 @@ const AirHockey = () => {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const [gameMode, setGameMode] = useState(null);
+  const [difficulty, setDifficulty] = useState(null);
+  const [modeSelected, setModeSelected] = useState(false);
   const [showModeOverlay, setShowModeOverlay] = useState(true);
+  const [showDifficultyOverlay, setShowDifficultyOverlay] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
 
   const selectGameMode = (selectedMode) => {
     setGameMode(selectedMode);
     setShowModeOverlay(false);
-    setConfirmationMessage(`Mode selected: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Player`);
+    if (selectedMode === 'single') {
+      setShowDifficultyOverlay(true);
+      setConfirmationMessage('Mode selected: Single Player');
+    } else {
+      setConfirmationMessage('Mode selected: Two Player');
+      setModeSelected(true);
+    }
     setTimeout(() => {
       setConfirmationMessage('');
     }, 2000);
     console.log(`Mode selected: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Player`);
   };
 
+  const selectDifficulty = (selectedDifficulty) => {
+    if (gameMode === 'single') {
+      setDifficulty(selectedDifficulty);
+      setShowDifficultyOverlay(false);
+      setConfirmationMessage(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
+      setModeSelected(true);
+      setTimeout(() => {
+        setConfirmationMessage('');
+      }, 2000);
+      console.log(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
+    }
+  };
+
   const handleModeSelect = (selectedMode) => {
     selectGameMode(selectedMode);
+  };
+
+  const handleDifficultySelect = (selectedDifficulty) => {
+    selectDifficulty(selectedDifficulty);
   };
 
   return (
@@ -97,6 +123,70 @@ const AirHockey = () => {
                 </div>
                 <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
                   Press 1 or 2 to select a game mode
+                </p>
+              </div>
+            )}
+            {showDifficultyOverlay && gameMode === 'single' && (
+              <div className="difficulty-overlay" style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '960px',
+                height: '540px',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10
+              }}>
+                <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Difficulty</h2>
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                  <button
+                    onClick={() => handleDifficultySelect('easy')}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '1.5em',
+                      backgroundColor: '#4CAF50',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Easy
+                  </button>
+                  <button
+                    onClick={() => handleDifficultySelect('medium')}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '1.5em',
+                      backgroundColor: '#FFC107',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Medium
+                  </button>
+                  <button
+                    onClick={() => handleDifficultySelect('hard')}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '1.5em',
+                      backgroundColor: '#F44336',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Hard
+                  </button>
+                </div>
+                <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
+                  Press 1, 2, or 3 to select a difficulty
                 </p>
               </div>
             )}
