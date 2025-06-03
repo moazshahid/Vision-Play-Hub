@@ -1,9 +1,26 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import './Game.css';
 
 const AirHockey = () => {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
+  const [gameMode, setGameMode] = useState(null);
+  const [showModeOverlay, setShowModeOverlay] = useState(true);
+  const [confirmationMessage, setConfirmationMessage] = useState('');
+
+  const selectGameMode = (selectedMode) => {
+    setGameMode(selectedMode);
+    setShowModeOverlay(false);
+    setConfirmationMessage(`Mode selected: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Player`);
+    setTimeout(() => {
+      setConfirmationMessage('');
+    }, 2000);
+    console.log(`Mode selected: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Player`);
+  };
+
+  const handleModeSelect = (selectedMode) => {
+    selectGameMode(selectedMode);
+  };
 
   return (
     <div className='inter'>
@@ -33,6 +50,72 @@ const AirHockey = () => {
           <div className="game-container inter">
             <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
             <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+            {showModeOverlay && (
+              <div className="mode-overlay" style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '960px',
+                height: '540px',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10
+              }}>
+                <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Game Mode</h2>
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                  <button
+                    onClick={() => handleModeSelect('single')}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '1.5em',
+                      backgroundColor: '#4CAF50',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Single Player
+                  </button>
+                  <button
+                    onClick={() => handleModeSelect('two')}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '1.5em',
+                      backgroundColor: '#2196F3',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Two Player
+                  </button>
+                </div>
+                <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
+                  Press 1 or 2 to select a game mode
+                </p>
+              </div>
+            )}
+            {confirmationMessage && (
+              <div className="confirmation-message" style={{
+                position: 'absolute',
+                top: '50px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: '#FFFFFF',
+                padding: '10px 20px',
+                borderRadius: '5px',
+                fontSize: '1.2em',
+                zIndex: 11
+              }}>
+                {confirmationMessage}
+              </div>
+            )}
           </div>
         </div>
       </div>
