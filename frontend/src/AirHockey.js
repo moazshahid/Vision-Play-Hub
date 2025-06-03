@@ -1,15 +1,29 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './Game.css';
 
 const AirHockey = () => {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
+  const handsRef = useRef(null);
+  const fingerPositionRef = useRef({ player: { x: 0, y: 0 }, opponent: { x: 0, y: 0 } });
   const [gameMode, setGameMode] = useState(null);
   const [difficulty, setDifficulty] = useState(null);
   const [modeSelected, setModeSelected] = useState(false);
   const [showModeOverlay, setShowModeOverlay] = useState(true);
   const [showDifficultyOverlay, setShowDifficultyOverlay] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
+    script.async = true;
+    script.onload = () => console.log('MediaPipe Hands script preloaded');
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   const selectGameMode = (selectedMode) => {
     setGameMode(selectedMode);
