@@ -109,6 +109,8 @@ const AirHockey = () => {
         debug.innerHTML = `<p>Loading game, please wait...</p>`;
         await Promise.all([initHandDetection(), startCamera()])
           .then(() => {
+            gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
+            gameStartedRef.current = true;
             debug.innerHTML = `<p>Game started! Mode: ${gameMode === 'two' ? 'Two Player' : 'Single Player'}${gameMode === 'single' ? `, Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` : ''}</p>`;
             console.log('Game started');
           })
@@ -150,7 +152,9 @@ const AirHockey = () => {
     });
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
+      gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
       gameOver.style.display = 'none';
+      gameStartedRef.current = true;
       debug.innerHTML = `<p>Game restarted via play again button</p>`;
       console.log('Game restarted via play again button');
     });
@@ -218,6 +222,149 @@ const AirHockey = () => {
       debug.innerHTML = `<p class="warning">❌ Hand detection error: ${error.message}</p>`;
     }
   };
+
+  class GameLogic {
+    constructor(ctx, stats, video, difficulty, gameMode) {
+      this.canvasWidth = 960;
+      this.canvasHeight = 540;
+      this.ctx = ctx;
+      this.statsstown
+      this.video = video;
+      this.difficulty = difficulty;
+      this.gameMode = gameMode;
+      this.playerScore = 0;
+      this.opponentScore = 0;
+      this.gameOver = false;
+      this.winningScore = 5;
+      this.puck = {
+        x: this.canvasWidth / 2,
+        y: this.canvasHeight / 2,
+        radius: 12,
+        speedX: 0,
+        speedY: 0,
+        maxSpeed: 500,
+      };
+      this.playerPaddle = {
+        x: this.canvasWidth - 80,
+        y: this.canvasHeight / 2,
+        radius: 30,
+        speed: 400,
+      };
+      this.opponentPaddle = {
+        x: 80,
+        y: this.canvasHeight / 2,
+        radius: 30,
+        speed: gameMode === 'two' ? 400 : (difficulty === 'easy' ? 250 : difficulty === 'medium' ? 350 : 450),
+      };
+      this.goalWidth = 150;
+      this.goalHeight = gameMode === 'two' ? 200 : (difficulty === 'easy' ? 240 : difficulty === 'medium' ? 200 : 160);
+      this.playerGoal = { x: this.canvasWidth - this.goalWidth, y: (this.canvasHeight - this.goalHeight) / 2 };
+      this.opponentGoal = { x: 0, y: (this.canvasHeight - this.goalHeight) / 2 };
+      this.borderWidth = 8;
+      this.borderGlowColor = 'rgba(0, 255, 255, 0.8)';
+      this.resetPuck();
+    }
+
+    resetPuck() {
+      this.puck.x = this.canvasWidth / 2;
+      this.puck.y = this.canvasHeight / 2;
+      this.puck.speedX = 0;
+      this.puck.speedY = 0;
+      console.log('Puck reset:', this.puck);
+    }
+
+    updatePaddlePosition(fingerPosition) {
+      this.playerPaddle.x = Math.max(this.canvasWidth / 2, Math.min(this.canvasWidth - this.playerPaddle.radius, fingerPosition.player.x));
+      this.playerPaddle.y = Math.max(this.playerPaddle.radius, Math.min(this.canvasHeight - this.playerPaddle.radius, fingerPosition.player.y));
+      if (this.gameMode === 'two') {
+        this.opponentPaddle.x = Math.max(this.borderWidth + this.opponentPaddle.radius, Math.min(this.canvasWidth / 2 - this.opponentPaddle.radius, fingerPosition.opponent.x));
+        this.opponentPaddle.y = Math.max(this.opponentPaddle.radius, Math.min(this.canvasHeight - this.opponentPaddle.radius, fingerPosition.opponent.y));
+      }
+    }
+
+    render() {
+      this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      this.ctx.save();
+      this.ctx.translate(this.canvasWidth, 0);
+      this.ctx.scale(-1, 1);
+      this.ctx.drawImage(this.video, 0, 0, this.canvasWidth, this.canvasHeight);
+      this.ctx.restore();
+
+      const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvasHeight);
+      gradient.addColorStop(0, 'rgba(0, 128, 255, 0.1)');
+      gradient.addColorStop(1, 'rgba(0, 255, 128, 0.1)');
+      this.ctx.fillStyle = gradient;
+      this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+      this.ctx.lineWidth = this.borderWidth;
+      this.ctx.strokeStyle = this.borderGlowColor;
+      this.ctx.shadowBlur = 20;
+      this.ctx.shadowColor = this.borderGlowColor;
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, this.borderWidth / 2);
+      this.ctx.lineTo(this.canvasWidth, this.borderWidth / 2);
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, this.canvasHeight - this.borderWidth / 2);
+      this.ctx.lineTo(this.canvasWidth, this.canvasHeight - this.borderWidth / 2);
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.borderWidth / 2, 0);
+      this.ctx.lineTo(this.borderWidth / 2, this.opponentGoal.y);
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.borderWidth / 2, this.opponentGoal.y + this.goalHeight);
+      this.ctx.lineTo(this.borderWidth / 2, this.canvasHeight);
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.canvasWidth - this.borderWidth / 2, 0);
+      this.ctx.lineTo(this.canvasWidth - this.borderWidth / 2, this.playerGoal.y);
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.canvasWidth - this.borderWidth / 2, this.playerGoal.y + this.goalHeight);
+      this.ctx.lineTo(this.canvasWidth - this.borderWidth / 2, this.canvasHeight);
+      this.ctx.stroke();
+
+      this.ctx.shadowBlur = 0;
+      this.ctx.strokeStyle = '#FFFFFF';
+      this.ctx.lineWidth = 5;
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.canvasWidth / 2, 0);
+      this.ctx.lineTo(this.canvasWidth / 2, this.canvasHeight);
+      this.ctx.stroke();
+
+      this.ctx.beginPath();
+      this.ctx.arc(this.puck.x, this.puck.y, this.puck.radius, 0, 2 * Math.PI);
+      this.ctx.fillStyle = '#000000';
+      this.ctx.fill();
+      this.ctx.strokeStyle = '#FFFFFF';
+      this.ctx.lineWidth = 2;
+      this.ctx.stroke();
+
+      this.ctx.beginPath();
+      this.ctx.arc(this.playerPaddle.x, this.playerPaddle.y, this.playerPaddle.radius, 0, 2 * Math.PI);
+      this.ctx.fillStyle = '#0000FF';
+      this.ctx.fill();
+      this.ctx.strokeStyle = '#FFFFFF';
+      this.ctx.lineWidth = 3;
+      this.ctx.stroke();
+
+      this.ctx.beginPath();
+      this.ctx.arc(this.opponentPaddle.x, this.opponentPaddle.y, this.opponentPaddle.radius, 0, 2 * Math.PI);
+      this.ctx.fillStyle = '#FF0000';
+      this.ctx.fill();
+      this.ctx.strokeStyle = '#FFFFFF';
+      this.ctx.lineWidth = 3;
+      this.ctx.stroke();
+
+      if (this.gameMode === 'two') {
+        this.stats.textContent = `Player 1: ${this.opponentScore}  Player 2: ${this.playerScore}`;
+      } else {
+        this.stats.textContent = `Player: ${this.playerScore}  Opponent: ${this.opponentScore}`;
+      }
+    }
+  }
 
   const selectGameMode = (selectedMode) => {
     setGameMode(selectedMode);
