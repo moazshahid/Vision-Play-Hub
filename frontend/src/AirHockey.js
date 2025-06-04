@@ -32,6 +32,7 @@ const AirHockey = () => {
     const video = videoRef.current;
     const gameStats = gameStatsRef.current;
     const gameOver = gameOverRef.current;
+    const finalScore = finalScoreRef.current;
     const debug = debugRef.current;
 
     canvasRef.current.width = 960;
@@ -110,9 +111,10 @@ const AirHockey = () => {
         debug.innerHTML = `<p>Loading game, please wait...</p>`;
         await Promise.all([initHandDetection(), startCamera()])
           .then(() => {
-            gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
+            gameObjectRef.current = new GameLogic(canvas, gameStats, gameOver, finalScore, video, difficulty, gameMode);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
+            gameOver.style.display = 'none';
             requestAnimationFrame(gameLoop);
             debug.innerHTML = `<p>Game started! Mode: ${gameMode === 'two' ? 'Two Player' : 'Single Player'}${gameMode === 'single' ? `, Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` : ''}</p>`;
             console.log('Game started');
@@ -128,7 +130,7 @@ const AirHockey = () => {
     };
 
     const gameLoop = (timestamp) => {
-      if (!gameStartedRef.current || !gameObjectRef.current) {
+      if (!gameStartedRef.current || !gameObjectRef.current || gameObjectRef.current.gameOver) {
         return;
       }
       const deltaTime = timestamp - lastRenderTimeRef.current;
@@ -172,7 +174,7 @@ const AirHockey = () => {
     });
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
-      gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
+      gameObjectRef.current = new GameLogic(canvas, gameStats, gameOver, finalScore, video, difficulty, gameMode);
       gameOver.style.display = 'none';
       gameStartedRef.current = true;
       lastRenderTimeRef.current = performance.now();
@@ -202,15 +204,21 @@ const AirHockey = () => {
 
   const onHandResults = (results, gameObj, started) => {
     try {
-      if (started && gameObj) {
+      if (started && gameObj && !gameObj.gameOver) {
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
           if (gameMode === 'single') {
             const playerFinger = results.multiHandLandmarks[0][8];
             const playerFingerX = (1 - playerFinger.x) * 960;
             const playerFingerY = playerFinger.y * 540;
-            fingerPositionRef.current.player.x = playerFingerX;
-            fingerPositionRef.current.player.y = playerFingerY;
-            console.log('Player hand detected (Single Player):', { fingerX: playerFingerX, fingerY: playerFingerY });
+            const playerDx = playerFingerX - fingerPositionRef.current.player.x;
+            const playerDy = playerFingerY - fingerPositionRef.current.player.y;
+            const deadZone = 10;
+            if (Math.abs(playerDx) > deadZone || Math.abs(playerDy) > deadZone) {
+              const smoothing = 0.7;
+              fingerPositionRef.current.player.x = fingerPositionRef.current.player.x * (1 - smoothing) + playerFingerX * smoothing;
+              fingerPositionRef.current.player.y = fingerPositionRef.current.player.y * (1 - smoothing) + playerFingerY * smoothing;
+            }
+            console.log('Player hand detected (Single Player):', { fingerX: fingerPositionRef.current.player.x, fingerY: fingerPositionRef.current.player.y });
           } else if (gameMode === 'two') {
             let leftHandAssigned = false;
             let rightHandAssigned = false;
@@ -219,14 +227,26 @@ const AirHockey = () => {
               const fingerX = (1 - finger.x) * 960;
               const fingerY = finger.y * 540;
               if (fingerX < 480) {
-                fingerPositionRef.current.opponent.x = fingerX;
-                fingerPositionRef.current.opponent.y = fingerY;
-                console.log('Opponent hand (red paddle) detected on left side:', { fingerX, fingerY });
+                const opponentDx = fingerX - fingerPositionRef.current.opponent.x;
+                const opponentDy = fingerY - fingerPositionRef.current.opponent.y;
+                const deadZone = 10;
+                if (Math.abs(opponentDx) > deadZone || Math.abs(opponentDy) > deadZone) {
+                  const smoothing = 0.5;
+                  fingerPositionRef.current.opponent.x = fingerPositionRef.current.opponent.x * (1 - smoothing) + fingerX * smoothing;
+                  fingerPositionRef.current.opponent.y = fingerPositionRef.current.opponent.y * (1 - smoothing) + fingerY * smoothing;
+                }
+                console.log('Opponent hand (red paddle) detected on left side:', { fingerX: fingerPositionRef.current.opponent.x, fingerY: fingerPositionRef.current.opponent.y });
                 leftHandAssigned = true;
               } else {
-                fingerPositionRef.current.player.x = fingerX;
-                fingerPositionRef.current.player.y = fingerY;
-                console.log('Player hand (blue paddle) detected on right side:', { fingerX, fingerY });
+                const playerDx = fingerX - fingerPositionRef.current.player.x;
+                const playerDy = fingerY - fingerPositionRef.current.player.y;
+                const deadZone = 10;
+                if (Math.abs(playerDx) > deadZone || Math.abs(playerDy) > deadZone) {
+                  const smoothing = 0.5;
+                  fingerPositionRef.current.player.x = fingerPositionRef.current.player.x * (1 - smoothing) + fingerX * smoothing;
+                  fingerPositionRef.current.player.y = fingerPositionRef.current.player.y * (1 - smoothing) + fingerY * smoothing;
+                }
+                console.log('Player hand (blue paddle) detected on right side:', { fingerX: fingerPositionRef.current.player.x, fingerY: fingerPositionRef.current.player.y });
                 rightHandAssigned = true;
               }
             }
@@ -248,11 +268,13 @@ const AirHockey = () => {
   };
 
   class GameLogic {
-    constructor(ctx, stats, video, difficulty, gameMode) {
+    constructor(ctx, stats, gameOver, finalScore, video, difficulty, gameMode) {
       this.canvasWidth = 960;
       this.canvasHeight = 540;
       this.ctx = ctx;
       this.stats = stats;
+      this.gameOverElement = gameOver;
+      this.finalScoreElement = finalScore;
       this.video = video;
       this.difficulty = difficulty;
       this.gameMode = gameMode;
@@ -292,22 +314,147 @@ const AirHockey = () => {
     resetPuck() {
       this.puck.x = this.canvasWidth / 2;
       this.puck.y = this.canvasHeight / 2;
-      this.puck.speedX = 0;
-      this.puck.speedY = 0;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = this.gameMode === 'two' ? 300 : (this.difficulty === 'easy' ? 250 : this.difficulty === 'medium' ? 300 : 350);
+      this.puck.speedX = Math.cos(angle) * speed;
+      this.puck.speedY = Math.sin(angle) * speed;
       console.log('Puck reset:', this.puck);
     }
 
     updatePaddlePosition(fingerPosition) {
-      this.playerPaddle.x = Math.max(this.canvasWidth / 2, Math.min(this.canvasWidth - this.playerPaddle.radius, fingerPosition.player.x));
-      this.playerPaddle.y = Math.max(this.playerPaddle.radius, Math.min(this.canvasHeight - this.playerPaddle.radius, fingerPosition.player.y));
-      if (this.gameMode === 'two') {
-        this.opponentPaddle.x = Math.max(this.borderWidth + this.opponentPaddle.radius, Math.min(this.canvasWidth / 2 - this.opponentPaddle.radius, fingerPosition.opponent.x));
-        this.opponentPaddle.y = Math.max(this.opponentPaddle.radius, Math.min(this.canvasHeight - this.opponentPaddle.radius, fingerPosition.opponent.y));
+      if (!this.gameOver) {
+        this.playerPaddle.x = Math.max(this.canvasWidth / 2, Math.min(this.canvasWidth - this.playerPaddle.radius, fingerPosition.player.x));
+        this.playerPaddle.y = Math.max(this.playerPaddle.radius, Math.min(this.canvasHeight - this.playerPaddle.radius, fingerPosition.player.y));
+        if (this.gameMode === 'two') {
+          this.opponentPaddle.x = Math.max(this.borderWidth + this.opponentPaddle.radius, Math.min(this.canvasWidth / 2 - this.opponentPaddle.radius, fingerPosition.opponent.x));
+          this.opponentPaddle.y = Math.max(this.opponentPaddle.radius, Math.min(this.canvasHeight - this.opponentPaddle.radius, fingerPosition.opponent.y));
+        }
+      }
+    }
+
+    updateOpponentPaddle(deltaSeconds) {
+      if (this.gameOver || this.gameMode === 'two') return;
+      let targetX = this.opponentPaddle.x;
+      let targetY = this.opponentPaddle.y;
+      const trackingAccuracy = this.difficulty === 'easy' ? 0.4 : this.difficulty === 'medium' ? 0.7 : 0.9;
+      const reactionSpeed = this.difficulty === 'easy' ? 0.3 : this.difficulty === 'medium' ? 0.6 : 0.8;
+      const maxX = this.canvasWidth / 2 - this.opponentPaddle.radius - 20;
+      const minX = this.borderWidth + this.opponentPaddle.radius + 20;
+
+      if (this.puck.speedX < 0 || this.puck.x < this.canvasWidth / 2) {
+        const timeToReachOpponent = Math.abs((minX - this.puck.x) / this.puck.speedX);
+        let predictedY = this.puck.y + this.puck.speedY * timeToReachOpponent;
+        predictedY = Math.max(this.opponentPaddle.radius + 20, Math.min(this.canvasHeight - this.opponentPaddle.radius - 20, predictedY));
+        const randomOffset = (Math.random() - 0.5) * (1 - trackingAccuracy) * 100;
+        targetY = predictedY * trackingAccuracy + (this.canvasHeight / 2) * (1 - trackingAccuracy) + randomOffset;
+        targetX = Math.min(maxX, Math.max(minX, this.puck.x * 0.8 + minX * 0.2));
+      } else {
+        targetX = minX + 50;
+        targetY = this.canvasHeight / 2;
+      }
+
+      const dx = targetX - this.opponentPaddle.x;
+      const dy = targetY - this.opponentPaddle.y;
+      const moveSpeed = this.opponentPaddle.speed * deltaSeconds * reactionSpeed;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance > 5) {
+        const moveX = (dx / distance) * Math.min(moveSpeed, distance);
+        const moveY = (dy / distance) * Math.min(moveSpeed, distance);
+        this.opponentPaddle.x += moveX;
+        this.opponentPaddle.y += moveY;
+      }
+
+      this.opponentPaddle.x = Math.max(minX, Math.min(maxX, this.opponentPaddle.x));
+      this.opponentPaddle.y = Math.max(this.opponentPaddle.radius, Math.min(this.canvasHeight - this.opponentPaddle.radius, this.opponentPaddle.y));
+    }
+
+    handlePaddleCollision(paddle) {
+      const dx = this.puck.x - paddle.x;
+      const dy = this.puck.y - paddle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const minDistance = this.puck.radius + paddle.radius;
+      if (distance < minDistance) {
+        const angle = Math.atan2(dy, dx);
+        const speed = Math.sqrt(this.puck.speedX * this.puck.speedX + this.puck.speedY * this.puck.speedY);
+        const newSpeed = Math.min(this.puck.maxSpeed, speed * 1.1);
+        this.puck.speedX = Math.cos(angle) * newSpeed;
+        this.puck.speedY = Math.sin(angle) * newSpeed;
+        const overlap = minDistance - distance;
+        this.puck.x += Math.cos(angle) * overlap;
+        this.puck.y += Math.sin(angle) * overlap;
+        console.log('Paddle collision detected:', { paddleX: paddle.x, paddleY: paddle.y });
+      }
+    }
+
+    checkGameOver() {
+      if (this.playerScore >= this.winningScore || this.opponentScore >= this.winningScore) {
+        this.gameOver = true;
+        this.gameOverElement.style.display = 'flex';
+        if (this.gameMode === 'two') {
+          this.finalScoreElement.textContent = `Player 1: ${this.opponentScore}  Player 2: ${this.playerScore}`;
+        } else {
+          this.finalScoreElement.textContent = `Player: ${this.playerScore}  Opponent: ${this.opponentScore}`;
+        }
+        console.log('Game Over:', { playerScore: this.playerScore, opponentScore: this.opponentScore });
       }
     }
 
     updateWithoutRender(deltaTime, fingerPosition) {
+      if (this.gameOver) return;
+      const deltaSeconds = deltaTime / 1000;
+      this.puck.x += this.puck.speedX * deltaSeconds;
+      this.puck.y += this.puck.speedY * deltaSeconds;
+
+      if (this.puck.y - this.puck.radius < this.borderWidth) {
+        this.puck.speedY = -this.puck.speedY;
+        this.puck.y = this.borderWidth + this.puck.radius;
+      }
+      if (this.puck.y + this.puck.radius > this.canvasHeight - this.borderWidth) {
+        this.puck.speedY = -this.puck.speedY;
+        this.puck.y = this.canvasHeight - this.borderWidth - this.puck.radius;
+      }
+
+      if (
+        this.puck.x - this.puck.radius < this.borderWidth &&
+        this.puck.y > this.opponentGoal.y &&
+        this.puck.y < this.opponentGoal.y + this.goalHeight
+      ) {
+        this.playerScore += 1;
+        this.resetPuck();
+        this.checkGameOver();
+        console.log('Player scored on opponent:', { playerScore: this.playerScore, opponentScore: this.opponentScore });
+      } else if (
+        this.puck.x + this.puck.radius > this.canvasWidth - this.borderWidth &&
+        this.puck.y > this.playerGoal.y &&
+        this.puck.y < this.playerGoal.y + this.goalHeight
+      ) {
+        this.opponentScore += 1;
+        this.resetPuck();
+        this.checkGameOver();
+        console.log('Opponent scored on player:', { playerScore: this.playerScore, opponentScore: this.opponentScore });
+      }
+
+      if (
+        this.puck.x - this.puck.radius < this.borderWidth &&
+        (this.puck.y < this.opponentGoal.y || this.puck.y > this.opponentGoal.y + this.goalHeight)
+      ) {
+        this.puck.speedX = -this.puck.speedX;
+        this.puck.x = this.borderWidth + this.puck.radius;
+      }
+      if (
+        this.puck.x + this.puck.radius > this.canvasWidth - this.borderWidth &&
+        (this.puck.y < this.playerGoal.y || this.puck.y > this.playerGoal.y + this.goalHeight)
+      ) {
+        this.puck.speedX = -this.puck.speedX;
+        this.puck.x = this.canvasWidth - this.borderWidth - this.puck.radius;
+      }
+
       this.updatePaddlePosition(fingerPosition);
+      if (this.gameMode === 'single') {
+        this.updateOpponentPaddle(deltaSeconds);
+      }
+      this.handlePaddleCollision(this.playerPaddle);
+      this.handlePaddleCollision(this.opponentPaddle);
       if (this.gameMode === 'two') {
         this.stats.textContent = `Player 1: ${this.opponentScore}  Player 2: ${this.playerScore}`;
       } else {
@@ -390,12 +537,6 @@ const AirHockey = () => {
       this.ctx.strokeStyle = '#FFFFFF';
       this.ctx.lineWidth = 3;
       this.ctx.stroke();
-
-      if (this.gameMode === 'two') {
-        this.stats.textContent = `Player 1: ${this.opponentScore}  Player 2: ${this.playerScore}`;
-      } else {
-        this.stats.textContent = `Player: ${this.playerScore}  Opponent: ${this.opponentScore}`;
-      }
     }
   }
 
