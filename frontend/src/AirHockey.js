@@ -12,6 +12,7 @@ const AirHockey = () => {
   const cameraRef = useRef(null);
   const gameObjectRef = useRef(null);
   const gameStartedRef = useRef(false);
+  const lastRenderTimeRef = useRef(0);
   const fingerPositionRef = useRef({ player: { x: 0, y: 0 }, opponent: { x: 0, y: 0 } });
   const [gameMode, setGameMode] = useState(null);
   const [difficulty, setDifficulty] = useState(null);
@@ -111,6 +112,8 @@ const AirHockey = () => {
           .then(() => {
             gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
             gameStartedRef.current = true;
+            lastRenderTimeRef.current = performance.now();
+            requestAnimationFrame(gameLoop);
             debug.innerHTML = `<p>Game started! Mode: ${gameMode === 'two' ? 'Two Player' : 'Single Player'}${gameMode === 'single' ? `, Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` : ''}</p>`;
             console.log('Game started');
           })
@@ -121,6 +124,23 @@ const AirHockey = () => {
       } else if (!modeSelected) {
         setShowModeOverlay(true);
         debug.innerHTML = `<p>Please select a game mode (1 or 2).</p>`;
+      }
+    };
+
+    const gameLoop = (timestamp) => {
+      if (!gameStartedRef.current || !gameObjectRef.current) {
+        return;
+      }
+      const deltaTime = timestamp - lastRenderTimeRef.current;
+      lastRenderTimeRef.current = timestamp;
+      try {
+        gameObjectRef.current.updateWithoutRender(deltaTime, fingerPositionRef.current);
+        gameObjectRef.current.render();
+        requestAnimationFrame(gameLoop);
+      } catch (error) {
+        console.error('Error in game loop:', error);
+        debug.innerHTML = `<p class="warning">❌ Game loop error: ${error.message}</p>`;
+        gameStartedRef.current = false;
       }
     };
 
@@ -155,6 +175,8 @@ const AirHockey = () => {
       gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
       gameOver.style.display = 'none';
       gameStartedRef.current = true;
+      lastRenderTimeRef.current = performance.now();
+      requestAnimationFrame(gameLoop);
       debug.innerHTML = `<p>Game restarted via play again button</p>`;
       console.log('Game restarted via play again button');
     });
@@ -172,6 +194,8 @@ const AirHockey = () => {
         tracks.forEach(track => track.stop());
         video.srcObject = null;
       }
+      gameStartedRef.current = false;
+      gameObjectRef.current = null;
       console.log('Component unmounted, all resources cleaned up');
     };
   }, [gameMode, difficulty, modeSelected]);
@@ -228,7 +252,7 @@ const AirHockey = () => {
       this.canvasWidth = 960;
       this.canvasHeight = 540;
       this.ctx = ctx;
-      this.statsstown
+      this.stats = stats;
       this.video = video;
       this.difficulty = difficulty;
       this.gameMode = gameMode;
@@ -279,6 +303,15 @@ const AirHockey = () => {
       if (this.gameMode === 'two') {
         this.opponentPaddle.x = Math.max(this.borderWidth + this.opponentPaddle.radius, Math.min(this.canvasWidth / 2 - this.opponentPaddle.radius, fingerPosition.opponent.x));
         this.opponentPaddle.y = Math.max(this.opponentPaddle.radius, Math.min(this.canvasHeight - this.opponentPaddle.radius, fingerPosition.opponent.y));
+      }
+    }
+
+    updateWithoutRender(deltaTime, fingerPosition) {
+      this.updatePaddlePosition(fingerPosition);
+      if (this.gameMode === 'two') {
+        this.stats.textContent = `Player 1: ${this.opponentScore}  Player 2: ${this.playerScore}`;
+      } else {
+        this.stats.textContent = `Player: ${this.playerScore}  Opponent: ${this.opponentScore}`;
       }
     }
 
