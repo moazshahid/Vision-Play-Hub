@@ -102,52 +102,58 @@ const AirHockey = () => {
       }
     };
 
-    const onHandResults = (results, gameObj, started) => {
-      try {
-        if (started && gameObj) {
-          if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            if (gameMode === 'single') {
-              const playerFinger = results.multiHandLandmarks[0][8];
-              const playerFingerX = (1 - playerFinger.x) * 960;
-              const playerFingerY = playerFinger.y * 540;
-              fingerPositionRef.current.player.x = playerFingerX;
-              fingerPositionRef.current.player.y = playerFingerY;
-              console.log('Player hand detected (Single Player):', { fingerX: playerFingerX, fingerY: playerFingerY });
-            } else if (gameMode === 'two') {
-              let leftHandAssigned = false;
-              let rightHandAssigned = false;
-              for (const landmarks of results.multiHandLandmarks) {
-                const finger = landmarks[8];
-                const fingerX = (1 - finger.x) * 960;
-                const fingerY = finger.y * 540;
-                if (fingerX < 480) {
-                  fingerPositionRef.current.opponent.x = fingerX;
-                  fingerPositionRef.current.opponent.y = fingerY;
-                  console.log('Opponent hand (red paddle) detected on left side:', { fingerX, fingerY });
-                  leftHandAssigned = true;
-                } else {
-                  fingerPositionRef.current.player.x = fingerX;
-                  fingerPositionRef.current.player.y = fingerY;
-                  console.log('Player hand (blue paddle) detected on right side:', { fingerX, fingerY });
-                  rightHandAssigned = true;
-                }
-              }
-              if (!leftHandAssigned || !rightHandAssigned) {
-                debug.innerHTML = `<p class="warning">Please ensure one hand is visible on each side of the screen.</p>`;
-              } else {
-                debug.innerHTML = `<p>Both hands detected!</p>`;
-              }
-            }
-          } else {
-            console.log('No hands detected in this frame');
-            debug.innerHTML = `<p class="warning">No hands detected - please ensure at least one hand is visible to the webcam.</p>`;
-          }
-        }
-      } catch (error) {
-        console.error('Error in onHandResults:', error);
-        debug.innerHTML = `<p class="warning">❌ Hand detection error: ${error.message}</p>`;
+    const startGame = async () => {
+      if (!gameStartedRef.current && (modeSelected || (gameMode && (gameMode === 'two' || difficulty)))) {
+        setShowModeOverlay(false);
+        setShowDifficultyOverlay(false);
+        debug.innerHTML = `<p>Loading game, please wait...</p>`;
+        await Promise.all([initHandDetection(), startCamera()])
+          .then(() => {
+            debug.innerHTML = `<p>Game started! Mode: ${gameMode === 'two' ? 'Two Player' : 'Single Player'}${gameMode === 'single' ? `, Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` : ''}</p>`;
+            console.log('Game started');
+          })
+          .catch((error) => {
+            alert('Camera access error: ' + error.message);
+            console.error('Start game failed:', error);
+          });
+      } else if (!modeSelected) {
+        setShowModeOverlay(true);
+        debug.innerHTML = `<p>Please select a game mode (1 or 2).</p>`;
       }
     };
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', async () => {
+      gameStartedRef.current = false;
+      if (cameraRef.current) {
+        await cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+      if (handsRef.current) {
+        handsRef.current.close();
+        handsRef.current = null;
+      }
+      if (video.srcObject) {
+        const tracks = video.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      setGameMode(null);
+      setDifficulty(null);
+      setModeSelected(false);
+      setShowModeOverlay(true);
+      setShowDifficultyOverlay(false);
+      setConfirmationMessage('');
+      gameOver.style.display = 'none';
+      debug.innerHTML = '';
+      console.log('Game reset to mode selection via restart button');
+    });
+    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      gameOver.style.display = 'none';
+      debug.innerHTML = `<p>Game restarted via play again button</p>`;
+      console.log('Game restarted via play again button');
+    });
 
     return () => {
       if (cameraRef.current) {
@@ -164,7 +170,54 @@ const AirHockey = () => {
       }
       console.log('Component unmounted, all resources cleaned up');
     };
-  }, [gameMode]);
+  }, [gameMode, difficulty, modeSelected]);
+
+  const onHandResults = (results, gameObj, started) => {
+    try {
+      if (started && gameObj) {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+          if (gameMode === 'single') {
+            const playerFinger = results.multiHandLandmarks[0][8];
+            const playerFingerX = (1 - playerFinger.x) * 960;
+            const playerFingerY = playerFinger.y * 540;
+            fingerPositionRef.current.player.x = playerFingerX;
+            fingerPositionRef.current.player.y = playerFingerY;
+            console.log('Player hand detected (Single Player):', { fingerX: playerFingerX, fingerY: playerFingerY });
+          } else if (gameMode === 'two') {
+            let leftHandAssigned = false;
+            let rightHandAssigned = false;
+            for (const landmarks of results.multiHandLandmarks) {
+              const finger = landmarks[8];
+              const fingerX = (1 - finger.x) * 960;
+              const fingerY = finger.y * 540;
+              if (fingerX < 480) {
+                fingerPositionRef.current.opponent.x = fingerX;
+                fingerPositionRef.current.opponent.y = fingerY;
+                console.log('Opponent hand (red paddle) detected on left side:', { fingerX, fingerY });
+                leftHandAssigned = true;
+              } else {
+                fingerPositionRef.current.player.x = fingerX;
+                fingerPositionRef.current.player.y = fingerY;
+                console.log('Player hand (blue paddle) detected on right side:', { fingerX, fingerY });
+                rightHandAssigned = true;
+              }
+            }
+            if (!leftHandAssigned || !rightHandAssigned) {
+              debug.innerHTML = `<p class="warning">Please ensure one hand is visible on each side of the screen.</p>`;
+            } else {
+              debug.innerHTML = `<p>Both hands detected!</p>`;
+            }
+          }
+        } else {
+          console.log('No hands detected in this frame');
+          debug.innerHTML = `<p class="warning">No hands detected - please ensure at least one hand is visible to the webcam.</p>`;
+        }
+      }
+    } catch (error) {
+      console.error('Error in onHandResults:', error);
+      debug.innerHTML = `<p class="warning">❌ Hand detection error: ${error.message}</p>`;
+    }
+  };
 
   const selectGameMode = (selectedMode) => {
     setGameMode(selectedMode);
@@ -229,6 +282,17 @@ const AirHockey = () => {
         </div>
         <div className='slide'>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+              <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+              </button>
+              <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+              </button>
+              <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+              </button>
+            </div>
             <div ref={debugRef} className="debug-box" style={{backgroundColor:"#fff"}}></div>
             <div className="game-container inter">
               <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
@@ -237,6 +301,7 @@ const AirHockey = () => {
               <div ref={gameOverRef} className="game-over">
                 <h2>Game Over!</h2>
                 <p>Final Score: <span ref={finalScoreRef}>Player: 0  Opponent: 0</span></p>
+                <button id="play-again-btn">Play Again</button>
               </div>
               {showModeOverlay && (
                 <div className="mode-overlay" style={{
