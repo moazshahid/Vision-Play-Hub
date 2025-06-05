@@ -146,6 +146,58 @@ const AirHockey = () => {
       }
     };
 
+    const handleKeyDown = (event) => {
+      if (event.key.toLowerCase() === 'r') {
+        gameStartedRef.current = false;
+        if (cameraRef.current) {
+          cameraRef.current.stop();
+          cameraRef.current = null;
+        }
+        if (handsRef.current) {
+          handsRef.current.close();
+          handsRef.current = null;
+        }
+        if (video.srcObject) {
+          const tracks = video.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+          video.srcObject = null;
+        }
+        gameObjectRef.current = new GameLogic(canvas, gameStats, gameOver, finalScore, video, difficulty, gameMode);
+        gameStartedRef.current = true;
+        lastRenderTimeRef.current = performance.now();
+        gameOver.style.display = 'none';
+        requestAnimationFrame(gameLoop);
+        debug.innerHTML = `<p>Game restarted via 'R' key</p>`;
+        console.log('Game restarted via keyboard');
+      } else if (event.key.toLowerCase() === 'q') {
+        gameStartedRef.current = false;
+        if (cameraRef.current) {
+          cameraRef.current.stop();
+          cameraRef.current = null;
+        }
+        if (handsRef.current) {
+          handsRef.current.close();
+          handsRef.current = null;
+        }
+        if (video.srcObject) {
+          const tracks = video.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+          video.srcObject = null;
+        }
+        setGameMode(null);
+        setDifficulty(null);
+        setModeSelected(false);
+        setShowModeOverlay(true);
+        setShowDifficultyOverlay(false);
+        setConfirmationMessage('');
+        gameOver.style.display = 'none';
+        debug.innerHTML = '';
+        console.log("Game quit to mode selection via 'Q' key");
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', async () => {
       gameStartedRef.current = false;
@@ -184,6 +236,7 @@ const AirHockey = () => {
     });
 
     return () => {
+      document.removeEventListener('keydown', handleKeyDown);
       if (cameraRef.current) {
         cameraRef.current.stop();
         cameraRef.current = null;
@@ -244,9 +297,9 @@ const AirHockey = () => {
                 if (Math.abs(playerDx) > deadZone || Math.abs(playerDy) > deadZone) {
                   const smoothing = 0.5;
                   fingerPositionRef.current.player.x = fingerPositionRef.current.player.x * (1 - smoothing) + fingerX * smoothing;
-                  fingerPositionRef.current.player.y = fingerPositionRef.current.player.y * (1 - smoothing) + fingerY * smoothing;
+                  fingerPositionRef.current.player.y = fingerPositionRef.current.player.y * (1 - smoothing) + fingerY * fingerY;
                 }
-                console.log('Player hand (blue paddle) detected on right side:', { fingerX: fingerPositionRef.current.player.x, fingerY: fingerPositionRef.current.player.y });
+                console.log('Player hand (blue paddle) detected on right side:', { fingerX: fingerPositionRef.current.player.x, fingerY: fingerPositionRef.current.y });
                 rightHandAssigned = true;
               }
             }
@@ -268,17 +321,17 @@ const AirHockey = () => {
   };
 
   class GameLogic {
-    constructor(ctx, stats, gameOver, finalScore, video, difficulty, gameMode) {
+    constructor(ctx, stats, gameOverElement, finalScoreElement, video, difficulty, gameMode) {
       this.canvasWidth = 960;
       this.canvasHeight = 540;
       this.ctx = ctx;
       this.stats = stats;
-      this.gameOverElement = gameOver;
-      this.finalScoreElement = finalScore;
+      this.gameOverElement = gameOverElementRef;
+      this.finalScoreElement = finalScoreElementRef;
       this.video = video;
       this.difficulty = difficulty;
       this.gameMode = gameMode;
-      this.playerScore = 0;
+      this.playerScore = score;
       this.opponentScore = 0;
       this.gameOver = false;
       this.winningScore = 5;
@@ -308,6 +361,8 @@ const AirHockey = () => {
       this.opponentGoal = { x: 0, y: (this.canvasHeight - this.goalHeight) / 2 };
       this.borderWidth = 8;
       this.borderGlowColor = 'rgba(0, 255, 255, 0.8)';
+      this.hitSound = new Audio('static/audio/airhockey/hit.mp3');
+      this.goalSound = new Audio('static/audio/airhockey/goal.mp3');
       this.resetPuck();
     }
 
@@ -382,6 +437,7 @@ const AirHockey = () => {
         const overlap = minDistance - distance;
         this.puck.x += Math.cos(angle) * overlap;
         this.puck.y += Math.sin(angle) * overlap;
+        this.hitSound.play().catch(error => console.error('Hit sound playback failed:', error));
         console.log('Paddle collision detected:', { paddleX: paddle.x, paddleY: paddle.y });
       }
     }
@@ -390,12 +446,16 @@ const AirHockey = () => {
       if (this.playerScore >= this.winningScore || this.opponentScore >= this.winningScore) {
         this.gameOver = true;
         this.gameOverElement.style.display = 'flex';
+        let winnerText = '';
         if (this.gameMode === 'two') {
+          winnerText = this.opponentScore >= this.winningScore ? 'Player 1 Wins!' : 'Player 2 Wins!';
           this.finalScoreElement.textContent = `Player 1: ${this.opponentScore}  Player 2: ${this.playerScore}`;
         } else {
+          winnerText = this.playerScore >= this.winningScore ? 'Player Wins!' : 'Opponent Wins!';
           this.finalScoreElement.textContent = `Player: ${this.playerScore}  Opponent: ${this.opponentScore}`;
         }
-        console.log('Game Over:', { playerScore: this.playerScore, opponentScore: this.opponentScore });
+        this.gameOverElement.querySelector('h2').textContent = winnerText;
+        console.log('Game Over:', { playerScore: this.playerScore, opponentScore: this.opponentScore, winner: winnerText });
       }
     }
 
@@ -420,6 +480,7 @@ const AirHockey = () => {
         this.puck.y < this.opponentGoal.y + this.goalHeight
       ) {
         this.playerScore += 1;
+        this.goalSound.play().catch(error => console.error('Goal sound playback failed:', error));
         this.resetPuck();
         this.checkGameOver();
         console.log('Player scored on opponent:', { playerScore: this.playerScore, opponentScore: this.opponentScore });
@@ -429,6 +490,7 @@ const AirHockey = () => {
         this.puck.y < this.playerGoal.y + this.goalHeight
       ) {
         this.opponentScore += 1;
+        this.goalSound.play().catch(error => console.error('Goal sound playback failed:', error));
         this.resetPuck();
         this.checkGameOver();
         console.log('Opponent scored on player:', { playerScore: this.playerScore, opponentScore: this.opponentScore });
@@ -580,10 +642,10 @@ const AirHockey = () => {
   return (
     <div className='inter'>
       <div className='slider-container'>
-        <div className='slide' style={{flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
-          <div style={{maxWidth: "40%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-            <div className="instructions inter">
-              <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Air Hockey</h2>
+        <div className='slide' style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ maxWidth: '40%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <div className='instructions inter'>
+              <h2 style={{ '--inter-weight': 900, fontSize: '6em', margin: 0 }}>Air Hockey</h2>
               <ul>
                 <li><strong>Select Mode:</strong> Click Single Player or Two Player.</li>
                 <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, or Hard) and play against AI.</li>
@@ -597,35 +659,35 @@ const AirHockey = () => {
               </ul>
             </div>
           </div>
-          <div style={{maxWidth:"40%"}}>
-            <img src="static/images/pages/airhockey-lineart.svg" alt="Air Hockey" style={{ width: '100%', height: 'auto' }} />
+          <div style={{ maxWidth: '40%' }}>
+            <img src='static/images/pages/airhockey-lineart.svg' alt='Air Hockey' style={{ width: '100%', height: 'auto' }} />
           </div>
         </div>
         <div className='slide'>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-            <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-              <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+            <div className='controls' style={{ maxWidth: '70vw', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <button id='start-btn' style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <img src='static/images/pages/play.svg' alt='Play' style={{ width: '40px', height: '40px' }} />
               </button>
-              <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+              <button id='restart-btn' style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <img src='static/images/pages/replay.svg' alt='Restart' style={{ width: '35px', height: '35px' }} />
               </button>
-              <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+              <button id='test-camera-btn' style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <img src='static/images/pages/testing.svg' alt='Test Camera' style={{ width: '35px', height: '35px' }} />
               </button>
             </div>
-            <div ref={debugRef} className="debug-box" style={{backgroundColor:"#fff"}}></div>
-            <div className="game-container inter">
+            <div ref={debugRef} className='debug-box' style={{ backgroundColor: '#fff' }}></div>
+            <div className='game-container inter'>
               <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
               <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-              <div ref={gameStatsRef} className="game-stats">Player: 0  Opponent: 0</div>
-              <div ref={gameOverRef} className="game-over">
+              <div ref={gameStatsRef} className='game-stats'>Player: 0  Opponent: 0</div>
+              <div ref={gameOverRef} className='game-over'>
                 <h2>Game Over!</h2>
                 <p>Final Score: <span ref={finalScoreRef}>Player: 0  Opponent: 0</span></p>
-                <button id="play-again-btn">Play Again</button>
+                <button id='play-again-btn'>Play Again</button>
               </div>
               {showModeOverlay && (
-                <div className="mode-overlay" style={{
+                <div className='mode-overlay' style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -675,7 +737,7 @@ const AirHockey = () => {
                 </div>
               )}
               {showDifficultyOverlay && gameMode === 'single' && (
-                <div className="difficulty-overlay" style={{
+                <div className='difficulty-overlay' style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -739,7 +801,7 @@ const AirHockey = () => {
                 </div>
               )}
               {confirmationMessage && (
-                <div className="confirmation-message" style={{
+                <div className='confirmation-message' style={{
                   position: 'absolute',
                   top: '50px',
                   left: '50%',
