@@ -3,6 +3,7 @@ import './App.css';
 import SnakeGame from './SnakeGame';
 import WhackAMole from './WhackAMole';
 import DessertSlash from './DessertSlash';
+import AirHockey from './AirHockey';
 import ImageStack from './ImageStack';
 
 // Main App component for the CV Games website
@@ -13,11 +14,13 @@ const App = () => {
 
   // Array of available games, each with an id, name, and component type
   const games = [
-    { id: 'snake', name: 'Snake Game', component: <SnakeGame /> , icon: 'static/images/pages/snake-colour.svg' },
-    { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole /> , icon: 'static/images/pages/mole-colour.svg' },
-    { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash /> , icon: 'static/images/pages/dessert-colour.svg' },
+    { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.svg' },
+    { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.svg' },
+    { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.svg' },
+    { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.svg' },
     // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
   ];
+
   //the comment below is to remove an unnecessary warning
   // eslint-disable-next-line no-unused-vars
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
@@ -50,7 +53,7 @@ const App = () => {
           </div>
         </div>
       )}
-      {! selectedGame && (
+      {!selectedGame && (
         <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
           <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
             <button className="inter back-button">
