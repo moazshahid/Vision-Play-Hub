@@ -18,9 +18,10 @@ from django.contrib import admin
 from django.urls import path,include
 from django.views.generic import TemplateView
 
-# Added: URL patterns for admin and root to serve index.html
+# Added: URL patterns 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='index.html'), name='home'),  # Added name='home' for redirect
+    path('', TemplateView.as_view(template_name='index.html'), name='home'),  
     path('auth/', include('cv_games_app.urls')),  
+    path('accounts/', include('accounts.urls')),
 ]

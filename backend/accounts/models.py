@@ -12,4 +12,5 @@ class Users(models.Model):
         return self.username
     class Meta:
         db_table = 'users'  
+        managed = False
         verbose_name_plural = 'Users'
