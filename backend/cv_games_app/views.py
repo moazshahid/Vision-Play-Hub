@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Users
+from accounts.models import Users
 
 def signup(request):
     if request.method == 'POST':
