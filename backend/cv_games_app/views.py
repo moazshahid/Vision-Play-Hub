@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from accounts.models import Users
-
+from .models import Games, Leaderboards
 def signup(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -43,3 +43,11 @@ def signin(request):
 def signout(request):
     request.session.flush()
     return redirect('login')
+
+def leaderboard(request):
+    games = Games.objects.all()
+    leaderboard_data = []
+    for game in games:
+        entries = Leaderboards.objects.filter(game=game).order_by('ranking')
+        leaderboard_data.append({'game': game, 'entries': entries})
+    return render(request, 'cv_games_app/leaderboard.html', {'leaderboard_data': leaderboard_data})
