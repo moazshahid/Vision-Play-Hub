@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+</head>
+<body>
+    <h1>Leaderboard</h1>
+    {% for data in leaderboard_data %}
+        <h2>{{ data.game.title }}</h2>
+        <table>
+            <tr>
+                <th>Rank</th>
+                <th>Username</th>
+                <th>Score</th>
+            </tr>
+            {% for entry in data.entries %}
+                <tr>
+                    <td>{{ entry.ranking }}</td>
+                    <td>{{ entry.user.username }}</td>
+                    <td>{{ entry.score }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No entries yet.</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
+</body>
+</html>
