@@ -27,7 +27,21 @@ const App = () => {
   const ballNumbers = Array.from({ length: 16 }, (_, i) => i + 1)
     .sort(() => Math.random() - 0.5);
   const ballRotations = Array.from({ length: 10 }, () => Math.floor(Math.random() * 360));
-
+  /*<svg width="100%" height="100%" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" overflow="auto" shape-rendering="auto" fill="#ffffff">
+  <defs>
+   <path id="wavepath" d="M 0 2000 0 500 Q 150 494 300 500 t 300 0 300 0 300 0 300 0 300 0  v1000 z" />
+   <path id="motionpath" d="M -600 0 0 0" /> 
+  </defs>
+  <g >
+   <use xlink:href="#wavepath" y="482" fill="#29B6F6">
+   <animateMotion
+    dur="5s"
+    repeatCount="indefinite">
+    <mpath xlink:href="#motionpath" />
+   </animateMotion>
+   </use>
+  </g>
+</svg> */
   return (
     <div className="App">
       <header>
