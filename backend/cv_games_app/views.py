@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from accounts.models import Users
 from .models import Games, Leaderboards
 import json
@@ -11,7 +12,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
 def submit_score(request):
+    if request.method == "OPTIONS":
+        response = JsonResponse({"message": "CORS preflight success"})
+        response["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response["Access-Control-Allow-Headers"] = "Content-Type"
+        response["Access-Control-Allow-Credentials"] = "true"
+        return response
     logger.debug("submit_score called with method: %s", request.method)
     if request.method == 'POST':
         if 'user_id' not in request.session:
@@ -39,7 +48,10 @@ def submit_score(request):
                 }
             )
             logger.info("Score saved for user=%s, game=%s, score=%d", user.username, game_title, score)
-            return JsonResponse({'status': 'success'}, status=201)
+            response = JsonResponse({'status': 'success'}, status=201)
+            response["Access-Control-Allow-Origin"] = "http://localhost:3000"
+            response["Access-Control-Allow-Credentials"] = "true"
+            return response
         except (Users.DoesNotExist, Games.DoesNotExist) as e:
             logger.error("Not found: %s", str(e))
             return JsonResponse({'error': 'User or game not found'}, status=404)
