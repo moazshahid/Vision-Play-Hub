@@ -8,7 +8,6 @@ import json
 from datetime import datetime
 import logging
 
-# Setup logging for debugging
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -35,7 +34,7 @@ def submit_score(request):
                 game=game,
                 defaults={
                     'score': score,
-                    'ranking': 1,  # Placeholder; update ranking logic later
+                    'ranking': 1,
                     'last_updated': datetime.now()
                 }
             )
@@ -58,43 +57,75 @@ def submit_score(request):
 
 def signup(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        if not all([username, email, password]):
+            logger.warning("Missing signup fields")
+            messages.error(request, 'All fields are required')
+            return render(request, 'cv_games_app/signup.html')
         if Users.objects.filter(username=username).exists():
+            logger.warning("Username %s already exists", username)
             messages.error(request, 'Username already exists')
             return render(request, 'cv_games_app/signup.html')
         if Users.objects.filter(email=email).exists():
+            logger.warning("Email %s already exists", email)
             messages.error(request, 'Email already exists')
             return render(request, 'cv_games_app/signup.html')
-        user = Users.objects.create(
-            username=username,
-            email=email,
-            password_hash=password
-        )
-        user.save()
-        messages.success(request, 'Account created successfully')
-        return redirect('login')
+        try:
+            user = Users.objects.create(
+                username=username,
+                email=email,
+                password_hash=password
+            )
+            user.save()
+            request.session['user_id'] = user.user_id
+            request.session.save()
+            logger.info("User %s signed up, sessionid=%s", username, request.session.session_key)
+            messages.success(request, 'Account created successfully')
+            return redirect('home')
+        except Exception as e:
+            logger.error("Signup error: %s", str(e))
+            messages.error(request, 'Error creating account')
+            return render(request, 'cv_games_app/signup.html')
+    logger.debug("Rendering signup page")
     return render(request, 'cv_games_app/signup.html')
 
 def signin(request):
+    logger.debug("signin called with method: %s, sessionid=%s", request.method, request.session.session_key)
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        logger.debug("Attempting login for user: %s", username)
+        if not username or not password:
+            logger.warning("Missing username or password")
+            messages.error(request, 'Username and password are required')
+            return render(request, 'cv_games_app/signin.html')
         try:
             user = Users.objects.get(username=username)
             if user.password_hash == password:
                 request.session['user_id'] = user.user_id
+                request.session.create()  # Create new session
+                request.session.save()
+                logger.info("User %s logged in, sessionid=%s", username, request.session.session_key)
                 return redirect('home')
             else:
+                logger.warning("Invalid password for user %s", username)
                 messages.error(request, 'Invalid password')
                 return render(request, 'cv_games_app/signin.html')
         except Users.DoesNotExist:
+            logger.warning("Username %s does not exist", username)
             messages.error(request, 'Username does not exist')
             return render(request, 'cv_games_app/signin.html')
+        except Exception as e:
+            logger.error("Login error: %s", str(e))
+            messages.error(request, 'An error occurred during login')
+            return render(request, 'cv_games_app/signin.html')
+    logger.debug("Rendering signin page")
     return render(request, 'cv_games_app/signin.html')
 
 def signout(request):
+    logger.info("User id=%s signing out", request.session.get('user_id'))
     request.session.flush()
     return redirect('login')
 
