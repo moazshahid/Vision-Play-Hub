@@ -424,7 +424,7 @@ const SnakeGame = () => {
   // Render the game UI
   return (
     <div className='inter'>
-      <div style={{maxWidth: "100vw", display: 'flex', flexDirection: 'row', display: !showGame ? 'block' : 'none'}}>
+      <div style={{maxWidth: "100vw", flexDirection: 'row', display: !showGame ? 'flex' : 'none'}}>
         <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="instructions inter">
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Snake</h2>
@@ -442,14 +442,14 @@ const SnakeGame = () => {
             <img src="static/images/pages/snake-lineart.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center',}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)}>
-              <span style={{ fontSize: '2em', fontWeight: 900 , color: "#fff"}}>Start Game</span>
-              <img src="static/images/pages/arrow.svg" alt="Start Game" style={{ width: '1vw', height: 'auto' }} />
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '2em 4em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
+              <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
         </div>
       </div>
-      <div style={{maxWidth: "100%", display: showGame ? 'block' : 'none' }}>
+      <div style={{maxWidth: "100%", display: showGame ? 'flex' : 'none' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
             <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
