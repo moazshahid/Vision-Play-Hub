@@ -4,7 +4,6 @@ import SnakeGame from './SnakeGame';
 import WhackAMole from './WhackAMole';
 import DessertSlash from './DessertSlash';
 import AirHockey from './AirHockey';
-import ImageStack from './ImageStack';
 
 // Main App component for the CV Games website
 const App = () => {
@@ -24,52 +23,44 @@ const App = () => {
   //the comment below is to remove an unnecessary warning
   // eslint-disable-next-line no-unused-vars
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
-  const ballNumbers = Array.from({ length: 16 }, (_, i) => i + 1)
-    .sort(() => Math.random() - 0.5);
-  const ballRotations = Array.from({ length: 10 }, () => Math.floor(Math.random() * 360));
 
   return (
     <div className="App">
-      <header>
-      </header>
+      <header></header>
+
+      {/* Navigation bar */}
+      <nav style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '0.8vw',
+        padding: '2vh 2vw',
+        backgroundColor: '#333',
+      }}>
+        <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
+          <button className="hanken-grotesk-bold back-button">Log In</button>
+        </a>
+        <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
+          <button className="hanken-grotesk-bold back-button">Sign Up</button>
+        </a>
+      </nav>
+      
       {showHero && ( 
-        <div id='hero' style={{position: "relative", minHeight: "50vw", maxHeight: "100vw", width:"100%", display: "flex", justifyContent: "center"}}>
-          <ImageStack src="static/images/pages/blob-3.gif" count={2} style={{minWidth: "35vw", maxWidth: "55vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
-          <ImageStack src="static/images/pages/blob-2.gif" count={2} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
-          <ImageStack src="static/images/pages/blob-1.gif" count={2} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
-          <img key={0} src={`static/images/pages/ball-${ballNumbers[0]}.webp`} alt={`ball-${ballNumbers[0]}`} style={{minWidth: "30vw", maxWidth: "50vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
-          <img key={1} src={`static/images/pages/ball-${ballNumbers[1]}.webp`} alt={`ball-${ballNumbers[1]}`} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
-          <img key={2} src={`static/images/pages/ball-${ballNumbers[2]}.webp`} alt={`ball-${ballNumbers[2]}`} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
+        <div id='hero' style={{position: "relative", minHeight: "50vh", maxHeight: "90vh", width:"100%", display: "flex", justifyContent: 'center'}}>
           <div style={{display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)"}}>
             <div style={{ position: "relative" }}>
-              <p className="inter" style={{ "--inter-weight": 800, fontSize: "1.2em", color: "#A7A7A7", position: "absolute", top: 0, left: 0, margin: 0 }}>
-                Welcome to the
-              </p>
-              <h1 className="inter gradient-text" style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>
-                Vision Play Hub!
+              <h1 className="hanken-grotesk-bold" style={{ fontSize: "6em", textAlign: "center" }}>
+                Vision Play Hub
               </h1>
             </div>
-            <p className="inter" style={{margin: 0}}>Select a game to play using computer vision.</p>
+            <p className="bricolage-grotesque-regular" style={{margin: 0, textAlign: "center"}}>
+              A home for your entertainment. Enjoy our selection of mini games for you to play!
+            </p>
           </div>
-        </div>
-      )}
-      {!selectedGame && (
-        <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
-          <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
-            <button className="inter back-button">
-              Log In
-            </button>
-          </a>
-          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
-            <button className="inter back-button">
-              Sign Up
-            </button>
-          </a>
         </div>
       )}
       {!selectedGame ? (
         <div className="game-selection" style={{zIndex: 4}}>
-          <h2 className="inter">Selection</h2>
+          <h2 className="hanken-grotesk-bold">Selection</h2>
           <div style={{width: "95vw", backgroundColor: "#f9fafc", padding: "clamp(10px, 2vw, 15px)", borderRadius: "clamp(8px, 2vw, 14px)", zIndex: 1}}>
             <ul style={{ display: 'flex', flexDirection: 'row', margin: 0 }}>
               {games.map((game) => (
@@ -80,7 +71,7 @@ const App = () => {
                         height: "clamp(120px, 17vw, 500px)",
                         backgroundColor: "#EDF1FA",
                         borderRadius: "8px",
-                        cursor: "pointer",
+                        cursor: "pohanken-grotesk-bold",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -99,7 +90,7 @@ const App = () => {
                         margin: "15%",
                       }}/>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#eff2f7', width: '100%', height: '20%' , borderRadius: '0 0 8px 8px', padding: '0px' }}>
-                      <p className='inter' style={{"--inter-weight": 900, fontSize: "2em"}}>{game.name}</p>
+                      <p className='hanken-grotesk-bold' style={{"--hanken-grotesk-bold-weight": 900, fontSize: "2em"}}>{game.name}</p>
                     </div>
                   </div>
                 </li>
@@ -110,14 +101,14 @@ const App = () => {
       ) : (
         <div>
           {selectedGame.component}
-          <button className="inter back-button" onClick={() => {setSelectedGame(null); setShowHero(true);}}>
+          <button className="hanken-grotesk-bold back-button" onClick={() => {setSelectedGame(null); setShowHero(true);}}>
             Back to Game Selection
           </button>
         </div>
       )}
       <footer>
-        <p className="inter">
-          CV Games © 2025
+        <p className="dm-sans-bold" style={{ textAlign: "center"}}>
+          The Woks © 2025
         </p>
       </footer>
     </div>
