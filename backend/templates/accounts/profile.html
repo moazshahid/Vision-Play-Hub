@@ -10,7 +10,7 @@
     {% if user %}
         <p>Username: {{ user.username }}</p>
         <p>Email: {{ user.email }}</p>
-        <p>Created: {{ user.create_date }}</p>
+        <p>Created: {{ user.date_joined }}</p>
         <p>Last Login: {{ user.last_login|default:"Never" }}</p>
     {% else %}
         <p>{{ error }}</p>
