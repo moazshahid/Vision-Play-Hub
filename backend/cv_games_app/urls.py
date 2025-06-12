@@ -6,5 +6,5 @@ urlpatterns = [
     path('login/', views.signin, name='login'),
     path('logout/', views.signout, name='logout'),
     path('leaderboard/', views.leaderboard, name='leaderboard'),
-    path('submit_score/', views.submit_score, name='submit_score'),
+    path('api/submit-score/', views.SubmitScoreAPIView.as_view(), name='api_submit_score'),
 ]

@@ -1,6 +1,6 @@
 from django.db import models
 
-class Users(models.Model):
+'''class Users(models.Model):
     user_id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(max_length=255, unique=True)
@@ -14,3 +14,4 @@ class Users(models.Model):
         db_table = 'users'  
         managed = False
         verbose_name_plural = 'Users'
+        '''

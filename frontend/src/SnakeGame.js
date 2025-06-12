@@ -1,5 +1,6 @@
 import './Game.css';
 import React, { useEffect, useRef } from 'react';
+import { submitScore } from './utils/api';
 
 // Define the SnakeGame component for the Hand Tracker Snake game
 const SnakeGame = () => {
@@ -199,6 +200,17 @@ const SnakeGame = () => {
       // Update the DOM game over overlay
       finalScore.textContent = score;
       over.style.display = 'block';
+      if (!gameObjectRef.current.scoreSubmitted) {
+        submitScore('Snake Game', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+           gameObjectRef.current.scoreSubmitted = true; // Mark as submitted
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+        
+      });
+  }
     };
 
     // Define the GameLogic class to manage game logic (renamed to avoid conflict with component name)
@@ -224,6 +236,7 @@ const SnakeGame = () => {
         this.gameOver = false;
         this.ctx = ctx; // Canvas context for rendering
         this.stats = stats; // DOM element for score display
+        this.scoreSubmitted = false;
       }
 
       // Initialize the snake with starting points
