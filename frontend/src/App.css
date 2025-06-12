@@ -48,16 +48,18 @@
 /* New class for Back to Game Selection button */
 .back-button {
   padding: 8px 16px;
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #000000;
-  border-radius: 5px;
+  background: none;      
+  border: none;         
+  color: #ffffff;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
 }
 
 .back-button:hover {
-  background-color: #f0f0f0;
+  text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+  color: #ffffff;  /* keep text white */
+  background: none; /* no background on hover either */
+  border: none;    /* no border on hover */
 }
 
 p {
@@ -212,4 +214,18 @@ canvas {
   padding: 10px 20px; /* Add padding for better click area */
   font-size: 16px; /* Set font size for readability */
   cursor: pointer; /* Indicate the button is clickable */
+}
+
+.arrow-block {
+  background-color: rgba(0, 0, 0,);
+  border: none;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.arrow-block:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.6);
 }
