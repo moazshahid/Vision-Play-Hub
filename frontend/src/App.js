@@ -99,29 +99,55 @@ const GameCarousel = ({ games, onSelectGame }) => {
         ))}
       </div>
 
+      {/* Left arrow */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           prevSlide();
         }}
         aria-label="Previous Slide"
-        className="arrow-block"
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "0",
+          transform: "translateY(-50%)",
+          backgroundColor: "rgba(255,255,255,0.1)",
+          border: "none",
+          width: "40px",
+          height: "100%",
+          cursor: "pointer",
+          fontSize: "2rem",
+          color: "#333",
+          userSelect: "none",
+        }}
       >
-        {/* No content */}
       </button>
 
+      {/* Right arrow */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           nextSlide();
         }}
         aria-label="Next Slide"
-        className="arrow-block"
+        style={{
+          position: "absolute",
+          top: "50%",
+          right: "0",
+          transform: "translateY(-50%)",
+          backgroundColor: "rgba(255,255,255,0.1)",
+          border: "none",
+          width: "40px",
+          height: "100%",
+          cursor: "pointer",
+          fontSize: "2rem",
+          color: "#333",
+          userSelect: "none",
+        }}
       >
-        {/* No content */}
       </button>
 
-            
+      
       {/* Dot indicators */}
       <div
         style={{
