@@ -111,14 +111,15 @@ const GameCarousel = ({ games, onSelectGame }) => {
           top: "50%",
           left: "0",
           transform: "translateY(-50%)",
-          backgroundColor: "rgba(255,255,255,0.1)",
+          backgroundColor: "rgba(255,255,255,0.4)",
           border: "none",
-          width: "40px",
-          height: "100%",
+          width: "12px",
+          height: "48px",
           cursor: "pointer",
           fontSize: "2rem",
           color: "#333",
           userSelect: "none",
+          borderRadius: "12px"
         }}
       >
       </button>
@@ -135,14 +136,15 @@ const GameCarousel = ({ games, onSelectGame }) => {
           top: "50%",
           right: "0",
           transform: "translateY(-50%)",
-          backgroundColor: "rgba(255,255,255,0.1)",
+          backgroundColor: "rgba(255,255,255,0.4)",
           border: "none",
-          width: "40px",
-          height: "100%",
+          width: "12px",
+          height: "48px",
           cursor: "pointer",
           fontSize: "2rem",
           color: "#333",
           userSelect: "none",
+          borderRadius: "12px"
         }}
       >
       </button>
@@ -239,11 +241,13 @@ const App = () => {
       }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
-          <img
-            src="/static/images/pages/logo-colour.svg"
-            alt="Vision Play Hub Logo"
-            style={{ height: '6vh', width: 'auto' }}
-          />
+          <a href="http://localhost:8000/">
+            <img
+              src="/static/images/pages/logo-colour.svg"
+              alt="Vision Play Hub Logo"
+              style={{ height: '6vh', width: 'auto' }}
+            />
+          </a>
         </div>
         <div style={{ display: 'flex', gap: '0.8vw' }}>
           <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
@@ -270,7 +274,6 @@ const App = () => {
         </div>
       )}
 
-      {/* --- CHANGED: Replace game selection list with the carousel --- */}
       {!selectedGame ? (
         <div style={{ zIndex: 4 }}>
           <GameCarousel
@@ -289,7 +292,6 @@ const App = () => {
           </button>
         </div>
       )}
-      {/* --- END CHANGED --- */}
 
       <footer>
         <p className="dm-sans-bold" style={{ textAlign: "center", color: "#ffffff" }}>
