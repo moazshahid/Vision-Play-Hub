@@ -92,6 +92,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
                 objectFit: "contain",
                 marginBottom: "1rem",
                 pointerEvents: "none",
+                borderRadius: "1em",
               }}
               draggable={false}
             />
@@ -192,10 +193,10 @@ const App = () => {
 
   // Array of available games, each with an id, name, and component type
   const games = [
-    { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.svg' },
-    { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.svg' },
-    { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.svg' },
-    { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.svg' },
+    { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.jpg' },
+    { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.jpg' },
+    { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.jpg' },
+    { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.jpg' },
     // More games will be added here in the future
   ];
 
