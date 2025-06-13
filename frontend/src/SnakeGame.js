@@ -423,11 +423,11 @@ const SnakeGame = () => {
 
   // Render the game UI
   return (
-    <div className='inter'>
-      <div style={{maxWidth: "100vw", flexDirection: 'row', display: !showGame ? 'flex' : 'none'}}>
+    <div className='inter'> 
+      <div style={{Width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/snake-bg.svg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
         <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div className="instructions inter">
-            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Snake</h2>
+          <div className="instructions inter" style={{ color: "#fff" }}>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Snake</h2>
             <ul>
               <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
               <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
@@ -441,15 +441,15 @@ const SnakeGame = () => {
           <div style={{maxWidth:"40%"}}>
             <img src="static/images/pages/snake-lineart.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
-          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center',}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '2em 4em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
         </div>
       </div>
-      <div style={{maxWidth: "100%", display: showGame ? 'flex' : 'none' }}>
+      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
             <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
@@ -463,7 +463,7 @@ const SnakeGame = () => {
             </button>
           </div>
         </div>
-        <div ref={debugRef} className="debug-box" style={{backgroundColor:"#fff"}}></div>
+        <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
         <div className="game-container inter">
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
