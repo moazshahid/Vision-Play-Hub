@@ -31,15 +31,24 @@ class SubmitScoreAPIView(APIView):
                 return Response({'error': 'Score cannot be negative'}, status=status.HTTP_400_BAD_REQUEST)
             user = request.user  # JWT provides authenticated user
             game = Games.objects.get(title=game_title)
-            Leaderboards.objects.update_or_create(
-                user=user,
-                game=game,
-                defaults={
+            # Save or update the user’s score
+            entry, created = Leaderboards.objects.update_or_create(
+                    user=user,
+                    game=game,
+                    defaults={
                     'score': score,
-                    'ranking': 1,  # Update ranking logic as needed
+                    'ranking': 0, 
                     'last_updated': timezone.now()
-                }
-            )
+                    }
+                    )
+
+            # Recalculate rankings for this game
+            all_entries = Leaderboards.objects.filter(game=game).order_by('-score', 'last_updated')
+
+            for idx, entry in enumerate(all_entries, start=1):
+                entry.ranking = idx
+                entry.save()
+
             logger.info("Score saved for user=%s, game=%s, score=%d", user.username, game_title, score)
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
         except Games.DoesNotExist:
