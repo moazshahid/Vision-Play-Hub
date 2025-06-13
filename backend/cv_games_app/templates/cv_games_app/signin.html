@@ -2,43 +2,55 @@
 <html>
 <head>
     <title>Log In - Vision Play Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     {% load static %}
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: "Hanken Grotesk", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            font-style: normal;
             margin: 0;
             height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #ffffff;
             overflow: hidden;
+            position: relative;
+            color: white;
         }
 
         .form-container {
             text-align: center;
-            background-color: #f5f5f5;
+            background-color: transparent;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 400px;
+            color: black;
+            position: relative;
+            z-index: 20;
         }
 
         .button-design {
-            padding: 8px 16px;
-            background-color: #ffffff;
-            color: #000000;
-            border: 1px solid #000000;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            margin-top: 18px;
+        padding: 8px 16px;
+        background: none;      
+        border: none;         
+        color: #ffffff;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
         }
 
         .button-design:hover {
-            background-color: #f0f0f0;
+        text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+        color: #ffffff;  /* keep text white */
+        background: none; /* no background on hover either */
+        border: none;    /* no border on hover */
         }
 
         form {
@@ -59,8 +71,10 @@
             font-size: 4rem;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 30px; 
-            color: #000; 
+            margin-bottom: 30px;
+            color: white;
+            position: relative;
+            z-index: 20;
         }
 
         .page-aligner {
@@ -70,36 +84,87 @@
             justify-content: center;
             height: 100vh;
             width: 100%;
-            z-index: 1;
+            z-index: 20;
+            position: relative;
         }
 
-        .gradient-text {
-            background: linear-gradient(90deg, #6254FF, #48FF7C, #44C3A8); /* adjust colors as needed */
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2vh 2vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: transparent;
+            z-index: 30;
+            color: white;
         }
 
-        .bg-images img {
-            position: absolute;
-            margin: 0;
-            z-index: 0;
+        nav a {
+            text-decoration: none;
+        }
+
+        form, form *, .form-container {
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        input {
+            margin: 5px 0;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-family: "Bricolage Grotesque", sans-serif; /* for typed text */
+        }
+
+        input::placeholder {
+            font-family: "Bricolage Grotesque", sans-serif; /* for placeholder text */
+            color: #999; 
+            font-size: 0.95rem;
         }
 
     </style>
 </head>
 <body>
-    <div class="bg-images">
-        <img src="{% static 'images/pages/ball-1.webp' %}" alt="ball-1"
-             style="min-width: 30vw; max-width: 50vw; top: 0; left: 0; transform: translate(-50%, -50%);" />
+    <!-- Background video -->
+    <video
+        autoplay
+        loop
+        muted
+        playsinline
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;"
+    >
+        <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
 
-        <img src="{% static 'images/pages/ball-2.webp' %}" alt="ball-2"
-             style="min-width: 50vw; max-width: 70vw; top: 50%; right: 0; transform: translate(30%, -60%);" />
+    <!-- Overlay to darken the video -->
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
 
-        <img src="{% static 'images/pages/ball-3.webp' %}" alt="ball-3"
-             style="min-width: 10vw; max-width: 20vw; top: 100%; left: 0; transform: translate(-50%, -50%);" />
-    </div>
+    <!-- Nav bar -->
+    <nav>
+        <div style="display: flex; align-items: center; gap: 0.8vw;">
+            <a href="/">
+                <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
+            </a>
+        </div>
+        <div style="display: flex; gap: 0.8vw;">
+            <a href="{% url 'login' %}">
+                <button class="button-design">Log In</button>
+            </a>
+            <a href="{% url 'signup' %}">
+                <button class="button-design">Sign Up</button>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Content -->
     <div class="page-aligner">
-        <div class="VPH-header gradient-text">Vision Play Hub</div>
+        <div class="VPH-header">Vision Play Hub</div>
+
         <div class="form-container">
             {% if messages %}
                 {% for message in messages %}
@@ -110,10 +175,12 @@
                 {% csrf_token %}
                 <input type="text" name="username" placeholder="Username" required><br>
                 <input type="password" name="password" placeholder="Password" required><br>
-                <button class= "button-design" type="submit">Log In</button>
+                <button class="button-design" type="submit">Log In</button>
             </form>
-            <p>Need an account? <a href="{% url 'signup' %}">Sign Up</a></p>
+            <p style="color: white;">Need an account?</p>
+            <a href="{% url 'login' %}"><button class="button-design" style="font-size: 0.9rem;">Sign up</button></a>
         </div>
     </div>
+
 </body>
 </html>
