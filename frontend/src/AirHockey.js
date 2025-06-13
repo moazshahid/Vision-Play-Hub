@@ -805,7 +805,7 @@ const AirHockey = () => {
 
   return (
     <div className='inter'> 
-      <div style={{Width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/hockey-bg.jpg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
+      <div style={{Width: "100vw", minHeight: "95vh", padding: "5vw", backgroundImage: "url(static/images/pages/hockey-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
         <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="instructions inter" style={{ color: "#fff" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Air Hockey</h2>
