@@ -10,11 +10,15 @@ const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const intervalRef = useRef(null);
 
-  // Auto advance every 4 seconds
-  useEffect(() => {
+  const resetInterval = () => {
+    clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % games.length);
     }, 6000);
+  };
+
+  useEffect(() => {
+    resetInterval(); // Start interval on mount
 
     return () => clearInterval(intervalRef.current);
   }, [games.length]);
@@ -23,12 +27,14 @@ const GameCarousel = ({ games, onSelectGame }) => {
   const prevSlide = () => {
     clearInterval(intervalRef.current);
     setCurrentIndex((prev) => (prev === 0 ? games.length - 1 : prev - 1));
+    resetInterval();
   };
 
   // Navigate to next slide
   const nextSlide = () => {
     clearInterval(intervalRef.current);
     setCurrentIndex((prev) => (prev + 1) % games.length);
+    resetInterval();
   };
 
   // Handle click on the banner
