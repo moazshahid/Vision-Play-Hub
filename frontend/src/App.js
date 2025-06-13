@@ -1,10 +1,188 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import SnakeGame from './SnakeGame';
 import WhackAMole from './WhackAMole';
 import DessertSlash from './DessertSlash';
 import AirHockey from './AirHockey';
-import ImageStack from './ImageStack';
+
+// --- NEW: GameCarousel Component ---
+const GameCarousel = ({ games, onSelectGame }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const intervalRef = useRef(null);
+
+  const resetInterval = () => {
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % games.length);
+    }, 6000);
+  };
+
+  useEffect(() => {
+    resetInterval(); // Start interval on mount
+
+    return () => clearInterval(intervalRef.current);
+  }, [games.length]);
+
+  // Navigate to previous slide
+  const prevSlide = () => {
+    clearInterval(intervalRef.current);
+    setCurrentIndex((prev) => (prev === 0 ? games.length - 1 : prev - 1));
+    resetInterval();
+  };
+
+  // Navigate to next slide
+  const nextSlide = () => {
+    clearInterval(intervalRef.current);
+    setCurrentIndex((prev) => (prev + 1) % games.length);
+    resetInterval();
+  };
+
+  // Handle click on the banner
+  const handleClick = () => {
+    onSelectGame(games[currentIndex]);
+  };
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "90vw",
+        maxWidth: "600px",
+        height: "400px",
+        margin: "2rem auto",
+        borderRadius: "12px",
+        overflow: "hidden",
+        cursor: "pointer",
+        userSelect: "none",
+      }}
+      onClick={handleClick}
+    >
+      {/* Slide container with horizontal translate */}
+      <div
+        style={{
+          display: "flex",
+          height: "100%",
+          width: `${games.length * 100}%`,
+          transform: `translateX(-${currentIndex * (100 / games.length)}%)`,
+          transition: "transform 0.5s ease-in-out",
+        }}
+      >
+        {games.map((game) => (
+          <div
+            key={game.id}
+            style={{
+              flex: `0 0 ${100 / games.length}%`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+              userSelect: "none",
+            }}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent parent click if needed
+              onSelectGame(game);
+            }}
+          >
+            <img
+              src={game.icon}
+              alt={game.name}
+              style={{
+                maxHeight: "250px",
+                objectFit: "contain",
+                marginBottom: "1rem",
+                pointerEvents: "none",
+              }}
+              draggable={false}
+            />
+            <h3
+              className="hanken-grotesk-bold"
+              style={{ fontSize: "1.8rem", margin: 0, color: "#333", color: "white"}}
+            >
+              {game.name}
+            </h3>
+          </div>
+        ))}
+      </div>
+
+      {/* Left arrow */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          prevSlide();
+        }}
+        aria-label="Previous Slide"
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "0",
+          transform: "translateY(-50%)",
+          backgroundColor: "rgba(255,255,255,0.4)",
+          border: "none",
+          width: "12px",
+          height: "48px",
+          cursor: "pointer",
+          fontSize: "2rem",
+          color: "#333",
+          userSelect: "none",
+          borderRadius: "12px"
+        }}
+      >
+      </button>
+
+      {/* Right arrow */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          nextSlide();
+        }}
+        aria-label="Next Slide"
+        style={{
+          position: "absolute",
+          top: "50%",
+          right: "0",
+          transform: "translateY(-50%)",
+          backgroundColor: "rgba(255,255,255,0.4)",
+          border: "none",
+          width: "12px",
+          height: "48px",
+          cursor: "pointer",
+          fontSize: "2rem",
+          color: "#333",
+          userSelect: "none",
+          borderRadius: "12px"
+        }}
+      >
+      </button>
+
+      
+      {/* Dot indicators */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "15px",
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          gap: "4px",
+        }}
+      >
+        {games.map((_, index) => (
+          <span
+            key={index}
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: index === currentIndex ? "#fff" : "rgba(255, 255, 255, 0.5)",
+              transition: "background-color 0.3s",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // Main App component for the CV Games website
 const App = () => {
@@ -18,120 +196,111 @@ const App = () => {
     { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.svg' },
     { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.svg' },
     { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.svg' },
-    // More games will be added here in the future, e.g., { id: 'pong', name: 'Pong Game', component: <PongGame /> }
+    // More games will be added here in the future
   ];
 
-  //the comment below is to remove an unnecessary warning
   // eslint-disable-next-line no-unused-vars
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
-  const ballNumbers = Array.from({ length: 16 }, (_, i) => i + 1)
-    .sort(() => Math.random() - 0.5);
-  const ballRotations = Array.from({ length: 10 }, () => Math.floor(Math.random() * 360));
-  /*<svg width="100%" height="100%" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" overflow="auto" shape-rendering="auto" fill="#ffffff">
-  <defs>
-   <path id="wavepath" d="M 0 2000 0 500 Q 150 494 300 500 t 300 0 300 0 300 0 300 0 300 0  v1000 z" />
-   <path id="motionpath" d="M -600 0 0 0" /> 
-  </defs>
-  <g >
-   <use xlink:href="#wavepath" y="482" fill="#29B6F6">
-   <animateMotion
-    dur="5s"
-    repeatCount="indefinite">
-    <mpath xlink:href="#motionpath" />
-   </animateMotion>
-   </use>
-  </g>
-</svg> */
   return (
     <div className="App">
-      <header>
-      </header>
-      {showHero && ( 
-        <div id='hero' style={{position: "relative", minHeight: "50vw", maxHeight: "100vw", width:"100%", display: "flex", justifyContent: "center"}}>
-          <ImageStack src="static/images/pages/blob-3.gif" count={2} style={{minWidth: "35vw", maxWidth: "55vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
-          <ImageStack src="static/images/pages/blob-2.gif" count={2} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
-          <ImageStack src="static/images/pages/blob-1.gif" count={2} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
-          <img key={0} src={`static/images/pages/ball-${ballNumbers[0]}.webp`} alt={`ball-${ballNumbers[0]}`} style={{minWidth: "30vw", maxWidth: "50vw", position: "absolute", top: 0, left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[0]}deg)`, margin: 0 }}/>
-          <img key={1} src={`static/images/pages/ball-${ballNumbers[1]}.webp`} alt={`ball-${ballNumbers[1]}`} style={{minWidth: "50vw", maxWidth: "70vw", position: "absolute", top: "50%", right: 0, transform: `translate(+30%, -60%) rotate(${ballRotations[1]}deg)`, margin: 0 }}/>
-          <img key={2} src={`static/images/pages/ball-${ballNumbers[2]}.webp`} alt={`ball-${ballNumbers[2]}`} style={{minWidth: "10vw", maxWidth: "20vw", position: "absolute", top: "100%", left: 0, transform: `translate(-50%, -50%) rotate(${ballRotations[2]}deg)`, margin: 0 }}/>
-          <div style={{display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)"}}>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: -2,
+        }}
+      >
+        <source src="http://localhost:8000/static/videos/BGV.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Optional overlay for better text visibility */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          zIndex: -1,
+        }}
+      ></div>
+
+      <header></header>
+
+      {/* Navigation bar */}
+      <nav style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '2vh 2vw',
+      }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
+          <a href="http://localhost:8000/">
+            <img
+              src="/static/images/pages/logo-colour.svg"
+              alt="Vision Play Hub Logo"
+              style={{ height: '6vh', width: 'auto' }}
+            />
+          </a>
+        </div>
+        <div style={{ display: 'flex', gap: '0.8vw' }}>
+          <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
+            <button className="hanken-grotesk-bold back-button">Log In</button>
+          </a>
+          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
+            <button className="hanken-grotesk-bold back-button">Sign Up</button>
+          </a>
+        </div>
+      </nav>
+
+      {showHero && (
+        <div id='hero' style={{ position: "relative", minHeight: "50vh", maxHeight: "90vh", width: "100%", display: "flex", justifyContent: 'center' }}>
+          <div style={{ display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)" }}>
             <div style={{ position: "relative" }}>
-              <p className="inter" style={{ "--inter-weight": 800, fontSize: "1.2em", color: "#A7A7A7", position: "absolute", top: 0, left: 0, margin: 0 }}>
-                Welcome to the
-              </p>
-              <h1 className="inter gradient-text" style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>
-                Vision Play Hub!
+              <h1 className="hanken-grotesk-bold" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
+                Vision Play Hub
               </h1>
             </div>
-            <p className="inter" style={{margin: 0}}>Select a game to play using computer vision.</p>
+            <p className="bricolage-grotesque-regular" style={{ margin: 0, textAlign: "center", color: "#ffffff" }}>
+              A home for your entertainment. Enjoy our selection of mini games for you to play!
+            </p>
           </div>
         </div>
       )}
-      {!selectedGame && (
-        <div style={{display: "flex", justifyContent: "center", gap: "10px", padding: "20px", position: "relative", zIndex: 100}}>
-          <a href="http://localhost:8000/auth/login/" style={{textDecoration: "none"}}>
-            <button className="inter back-button">
-              Log In
-            </button>
-          </a>
-          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: "none"}}>
-            <button className="inter back-button">
-              Sign Up
-            </button>
-          </a>
-        </div>
-      )}
+
       {!selectedGame ? (
-        <div className="game-selection" style={{zIndex: 4}}>
-          <h2 className="inter">Selection</h2>
-          <div style={{width: "95vw", backgroundColor: "#f9fafc", padding: "clamp(10px, 2vw, 15px)", borderRadius: "clamp(8px, 2vw, 14px)", zIndex: 1}}>
-            <ul style={{ display: 'flex', flexDirection: 'row', margin: 0 }}>
-              {games.map((game) => (
-                <li key={game.id} style={{marginTop: 0, marginBottom: 0, marginLeft: "clamp(5px, 2vw, 10px)", marginRight: "clamp(5px, 2vw, 10px)"}}>
-                  <div
-                      style={{
-                        width: "clamp(100px, 15vw, 400px)",
-                        height: "clamp(120px, 17vw, 500px)",
-                        backgroundColor: "#EDF1FA",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        margin: 0,
-                        flexDirection: "column",
-                      }}
-                      onClick={() => {setSelectedGame(game);  setShowHero(false);}}
-                    >
-                    <img
-                      src={game.icon}
-                      alt={game.name}
-                      style={{
-                        width: "auto",
-                        height: "50%",
-                        marginBottom: "clamp(5px, 2vw, 10px)",
-                        margin: "15%",
-                      }}/>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#eff2f7', width: '100%', height: '20%' , borderRadius: '0 0 8px 8px', padding: '0px' }}>
-                      <p className='inter' style={{"--inter-weight": 900, fontSize: "2em"}}>{game.name}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div style={{ zIndex: 4 }}>
+          <GameCarousel
+            games={games}
+            onSelectGame={(game) => {
+              setSelectedGame(game);
+              setShowHero(false);
+            }}
+          />
         </div>
       ) : (
         <div>
           {selectedGame.component}
-          <button className="inter back-button" onClick={() => {setSelectedGame(null); setShowHero(true);}}>
+          <button className="hanken-grotesk-bold back-button" onClick={() => { setSelectedGame(null); setShowHero(true); }}>
             Back to Game Selection
           </button>
         </div>
       )}
+
       <footer>
-        <p className="inter">
-          CV Games © 2025
+        <p className="dm-sans-bold" style={{ textAlign: "center", color: "#ffffff" }}>
+          The Woks © 2025
         </p>
       </footer>
     </div>

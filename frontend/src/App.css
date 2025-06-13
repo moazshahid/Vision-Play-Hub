@@ -7,11 +7,43 @@ body {
   background-color: #09080e; /* Light background for better contrast */
 }
 
-.inter {
-  font-family: "Inter", sans-serif;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; 
+}
+
+.hanken-grotesk-bold {
+  font-family: "Hanken Grotesk", sans-serif;
   font-optical-sizing: auto;
-  font-variation-settings: "wght" var(--inter-weight);
+  font-weight: 700;
+  letter-spacing: -0.05em;
   font-style: normal;
+}
+
+.dm-sans-bold {
+  font-family: "DM Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.bricolage-grotesque-regular {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+}
+
+.bricolage-grotesque-bold {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
 }
 
 .gradient-text {
@@ -23,16 +55,18 @@ body {
 /* New class for Back to Game Selection button */
 .back-button {
   padding: 8px 16px;
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #000000;
-  border-radius: 5px;
+  background: none;      
+  border: none;         
+  color: #ffffff;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
 }
 
 .back-button:hover {
-  background-color: #f0f0f0;
+  text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+  color: #ffffff;  /* keep text white */
+  background: none; /* no background on hover either */
+  border: none;    /* no border on hover */
 }
 
 p {
