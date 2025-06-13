@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 // Define the AirHockey component for the hand-tracking Air Hockey game
 const AirHockey = () => {
+  const [showGame, setShowGame] = useState(false); 
   // Initialize refs for DOM elements and game state
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -803,186 +804,190 @@ const AirHockey = () => {
   };
 
   return (
-    <div className='inter'>
-      <div className='slider-container'>
-        <div className='slider'>
-          <div className='slide' style={{flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
-            <div style={{maxWidth: "40%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-              <div className="instructions inter">
-                <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Air Hockey</h2>
-                <ul>
-                <li><strong>Select Mode:</strong> Click Single Player or Two Player.</li>
-                <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, or Hard) and play against AI.</li>
-                <li><strong>Two Player:</strong> Any hand on the left side controls the red paddle; any hand on the right side controls the blue paddle.</li>
-                <li><strong>Show your hand(s):</strong> Ensure hand(s) are visible to the webcam.</li>
-                <li><strong>Move the paddle:</strong> Use index finger to control your paddle.</li>
-                <li><strong>Hit the puck:</strong> Strike the puck to score in the opponent's goal.</li>
-                <li><strong>Score points:</strong> Get the puck into the opponent's goal to score.</li>
-                <li><strong>Win the game:</strong> First to 5 points wins!</li>
-                <li><strong>Controls:</strong> Press 'R' to return to mode selection and 'Q' to quit.</li>
-                </ul>
-              </div>
-            </div>
-            <div style={{maxWidth:"40%"}}>
-              <img src="static/images/pages/airhockey-lineart.svg" alt="Air Hockey" style={{ width: '100%', height: 'auto' }} />
-            </div>
+    <div className='inter'> 
+      <div style={{Width: "100vw", minHeight: "95vh", padding: "5vw", backgroundImage: "url(static/images/pages/hockey-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
+        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="instructions inter" style={{ color: "#fff" }}>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Air Hockey</h2>
+            <ul>
+              <li><strong>Select Mode:</strong> Click Single Player or Two Player.</li>
+              <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, or Hard) and play against AI.</li>
+              <li><strong>Two Player:</strong> Any hand on the left side controls the red paddle; any hand on the right side controls the blue paddle.</li>
+              <li><strong>Show your hand(s):</strong> Ensure hand(s) are visible to the webcam.</li>
+              <li><strong>Move the paddle:</strong> Use index finger to control your paddle.</li>
+              <li><strong>Hit the puck:</strong> Strike the puck to score in the opponent's goal.</li>
+              <li><strong>Score points:</strong> Get the puck into the opponent's goal to score.</li>
+              <li><strong>Win the game:</strong> First to 5 points wins!</li>
+              <li><strong>Controls:</strong> Press 'R' to return to mode selection and 'Q' to quit.</li>
+            </ul>
           </div>
-          <div className='slide'>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-              <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-                <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
-                </button>
-                <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
-                </button>
-                <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
-                </button>
-              </div>
-            </div>
-            <div ref={debugRef} className="debug-box" style={{backgroundColor:"#fff"}}></div>
-            <div className="game-container inter">
-              <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
-              <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-              <div ref={gameStatsRef} className="game-stats">Player: 0  Opponent: 0</div>
-              <div ref={gameOverRef} className="game-over">
-                <h2>Game Over!</h2>
-                <p>Final Score: <span ref={finalScoreRef}>Player: 0  Opponent: 0</span></p>
-                <button id="play-again-btn">Play Again</button>
-              </div>
-              {showModeOverlay && (
-                <div className="mode-overlay" style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '960px',
-                  height: '540px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10
-                }}>
-                  <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Game Mode</h2>
-                  <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                    <button
-                      onClick={() => handleModeSelect('single')}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '1.5em',
-                        backgroundColor: '#4CAF50',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Single Player
-                    </button>
-                    <button
-                      onClick={() => handleModeSelect('two')}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '1.5em',
-                        backgroundColor: '#2196F3',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Two Player
-                    </button>
-                  </div>
-                  <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
-                    Press 1 or 2 to select a game mode
-                  </p>
-                </div>
-              )}
-              {showDifficultyOverlay && gameMode === 'single' && (
-                <div className="difficulty-overlay" style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '960px',
-                  height: '540px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10
-                }}>
-                  <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Difficulty</h2>
-                  <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                    <button
-                      onClick={() => handleDifficultySelect('easy')}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '1.5em',
-                        backgroundColor: '#4CAF50',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Easy
-                    </button>
-                    <button
-                      onClick={() => handleDifficultySelect('medium')}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '1.5em',
-                        backgroundColor: '#FFC107',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Medium
-                    </button>
-                    <button
-                      onClick={() => handleDifficultySelect('hard')}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '1.5em',
-                        backgroundColor: '#F44336',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Hard
-                    </button>
-                  </div>
-                  <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
-                    Press 1, 2, or 3 to select a difficulty
-                  </p>
-                </div>
-              )}
-              {confirmationMessage && (
-                <div className="confirmation-message" style={{
-                  position: 'absolute',
-                  top: '50px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  color: '#FFFFFF',
-                  padding: '10px 20px',
-                  borderRadius: '5px',
-                  fontSize: '1.2em',
-                  zIndex: 11
-                }}>
-                  {confirmationMessage}
-                </div>
-              )}
-            </div>
+        </div>
+        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{maxWidth:"40%"}}>
+            <img src="static/images/pages/airhockey-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
+          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
+              <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+            </button>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+            </button>
+          </div>
+        </div>
+        <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
+        <div className="game-container inter">
+          <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
+          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <div ref={gameStatsRef} className="game-stats">Player: 0  Opponent: 0</div>
+          <div ref={gameOverRef} className="game-over">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span ref={finalScoreRef}>Player: 0  Opponent: 0</span></p>
+            <button id="play-again-btn">Play Again</button>
+          </div>
+          {showModeOverlay && (
+            <div className="mode-overlay" style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '960px',
+              height: '540px',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}>
+              <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Game Mode</h2>
+              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                <button
+                  onClick={() => handleModeSelect('single')}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '1.5em',
+                    backgroundColor: '#4CAF50',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Single Player
+                </button>
+                <button
+                  onClick={() => handleModeSelect('two')}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '1.5em',
+                    backgroundColor: '#2196F3',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Two Player
+                </button>
+              </div>
+              <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
+                Press 1 or 2 to select a game mode
+              </p>
+            </div>
+          )}
+          {showDifficultyOverlay && gameMode === 'single' && (
+            <div className="difficulty-overlay" style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '960px',
+              height: '540px',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}>
+              <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Difficulty</h2>
+              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                <button
+                  onClick={() => handleDifficultySelect('easy')}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '1.5em',
+                    backgroundColor: '#4CAF50',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Easy
+                </button>
+                <button
+                  onClick={() => handleDifficultySelect('medium')}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '1.5em',
+                    backgroundColor: '#FFC107',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Medium
+                </button>
+                <button
+                  onClick={() => handleDifficultySelect('hard')}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '1.5em',
+                    backgroundColor: '#F44336',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Hard
+                </button>
+              </div>
+              <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
+                Press 1, 2, or 3 to select a difficulty
+              </p>
+            </div>
+          )}
+          {confirmationMessage && (
+            <div className="confirmation-message" style={{
+              position: 'absolute',
+              top: '50px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              color: '#FFFFFF',
+              padding: '10px 20px',
+              borderRadius: '5px',
+              fontSize: '1.2em',
+              zIndex: 11
+            }}>
+              {confirmationMessage}
+            </div>
+          )}
         </div>
       </div>
     </div>
