@@ -14,7 +14,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % games.length);
-    }, 8000);
+    }, 6000);
 
     return () => clearInterval(intervalRef.current);
   }, [games.length]);
