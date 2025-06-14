@@ -94,14 +94,40 @@
     </style>
 </head>
 <body>
-    <h1>Profile</h1>
-    {% if user %}
-        <p>Username: {{ user.username }}</p>
-        <p>Email: {{ user.email }}</p>
-        <p>Created: {{ user.date_joined }}</p>
-        <p>Last Login: {{ user.last_login|default:"Never" }}</p>
-    {% else %}
+  <!-- Video Background -->
+  <video autoplay loop muted playsinline>
+    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Overlay -->
+  <div class="overlay"></div>
+
+  <!-- Navbar -->
+  <nav>
+    <a href="/">
+      <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
+    </a>
+    <div style="display: flex; gap: 0.8vw;">
+      <a href="{% url 'login' %}"><button class="button-design">Log In</button></a>
+      <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
+    </div>
+  </nav>
+
+  <!-- Profile Content -->
+  <div class="profile-container">
+    <div class="profile-card">
+      <h1>Profile</h1>
+      {% if user %}
+        <p>Username: <span class="highlight">{{ user.username }}</span></p>
+        <p>Email: <span class="highlight">{{ user.email }}</span></p>
+        <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
+        <p>Last Login: <span class="highlight">{{ user.last_login|default:"Never" }}</span></p>
+      {% else %}
         <p>{{ error }}</p>
-    {% endif %}
+      {% endif %}
+      <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
+    </div>
+  </div>
 </body>
 </html>
