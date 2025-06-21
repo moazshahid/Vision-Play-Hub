@@ -1,8 +1,10 @@
 import './Game.css';
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { submitScore } from './utils/api';
 
 // Define the SnakeGame component for the Hand Tracker Snake game
 const SnakeGame = () => {
+  const [showGame, setShowGame] = useState(false); // State to control game visibility
   // Initialize refs for DOM elements and game state
   const videoRef = useRef(null); // Ref for the video element (webcam feed)
   const canvasRef = useRef(null); // Ref for the canvas element (game rendering)
@@ -199,6 +201,17 @@ const SnakeGame = () => {
       // Update the DOM game over overlay
       finalScore.textContent = score;
       over.style.display = 'block';
+      if (!gameObjectRef.current.scoreSubmitted) {
+        submitScore('Snake Game', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+           gameObjectRef.current.scoreSubmitted = true; // Mark as submitted
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+        
+      });
+  }
     };
 
     // Define the GameLogic class to manage game logic (renamed to avoid conflict with component name)
@@ -224,6 +237,7 @@ const SnakeGame = () => {
         this.gameOver = false;
         this.ctx = ctx; // Canvas context for rendering
         this.stats = stats; // DOM element for score display
+        this.scoreSubmitted = false;
       }
 
       // Initialize the snake with starting points
@@ -422,51 +436,55 @@ const SnakeGame = () => {
 
   // Render the game UI
   return (
-    <div className='inter'>
-      <div className='slider-container'>
-        <div className='slider'>
-          <div className='slide' style={{flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
-            <div style={{maxWidth: "40%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-              <div className="instructions inter">
-                <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>How to Play</h2>
-                <ul>
-                  <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
-                  <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
-                  <li><strong>Collect apples:</strong> Guide the snake to eat apples and grow longer.</li>
-                  <li><strong>Don't hit yourself:</strong> Avoid collisions with your own snake body!</li>
-                  <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
-                </ul>
-              </div>
-            </div>
-            <div style={{maxWidth:"40%"}}>
-              <img src="static/images/pages/snake-lineart.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
-            </div>
+    <div className='inter'> 
+      <div style={{Width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/snake-bg.svg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
+        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="instructions inter" style={{ color: "#fff" }}>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Snake</h2>
+            <ul>
+              <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
+              <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
+              <li><strong>Collect apples:</strong> Guide the snake to eat apples and grow longer.</li>
+              <li><strong>Don't hit yourself:</strong> Avoid collisions with your own snake body!</li>
+              <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
+            </ul>
           </div>
-          <div className='slide'>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-              <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-                <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
-                </button>
-                <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
-                </button>
-                <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
-                </button>
-              </div>
-            </div>
-            <div ref={debugRef} className="debug-box" style={{backgroundColor:"#fff"}}></div>
-            <div className="game-container inter">
-              <canvas ref={canvasRef} width="1280" height="720"></canvas>
-              <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-              <div ref={gameStatsRef} className="game-stats">Score: 0</div>
-              <div ref={gameOverRef} className="game-over">
-                <h2>Game Over!</h2>
-                <p>Your Score: <span ref={finalScoreRef}>0</span></p>
-                <button id="play-again-btn">Play Again</button>
-              </div>
-            </div>
+        </div>
+        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{maxWidth:"40%"}}>
+            <img src="static/images/pages/snake-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
+          </div>
+          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
+              <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+            </button>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+            </button>
+          </div>
+        </div>
+        <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
+        <div className="game-container inter">
+          <canvas ref={canvasRef} width="1280" height="720"></canvas>
+          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <div ref={gameStatsRef} className="game-stats">Score: 0</div>
+          <div ref={gameOverRef} className="game-over">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span ref={finalScoreRef}>0</span></p>
+            <button id="play-again-btn">Play Again</button>
           </div>
         </div>
       </div>

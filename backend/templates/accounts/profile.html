@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Hanken Grotesk", sans-serif;
+      letter-spacing: -0.05em;
+      color: #ffffff;
+      height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2vh 2vw;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: transparent;
+      z-index: 30;
+      color: white;
+    }
+
+    nav a {
+      text-decoration: none;
+    }
+
+    .button-design {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .button-design:hover {
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+      color: #ffffff;
+      background: none;
+      border: none;
+    }
+
+    .profile-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100%;
+      padding: 1rem;
+      z-index: 20;
+      position: relative;
+      text-align: center;
+    }
+
+    .profile-card {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
+      max-width: 420px;
+      width: 90%;
+    }
+
+    .profile-card h1 {
+      font-family: "Inter", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #66fcf1;
+    }
+
+    .profile-card p {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+      color: #c5c6c7;
+    }
+
+    .highlight {
+      color: #66fcf1;
+      font-weight: 600;
+    }
+
+    .back-button {
+      margin-top: 1.8rem;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: none;
+      border: 1px solid #66fcf1;
+      color: #66fcf1;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .back-button:hover {
+      background-color: #66fcf1;
+      color: #0b0c10;
+    }
+    </style>
+</head>
+<body>
+  <!-- Video Background -->
+  <video autoplay loop muted playsinline>
+    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Overlay -->
+  <div class="overlay"></div>
+
+  <!-- Navbar -->
+  <nav>
+    <a href="/">
+      <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
+    </a>
+    <div style="display: flex; gap: 0.8vw;">
+      <a href="{% url 'login' %}"><button class="button-design">Log In</button></a>
+      <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
+      <a href="{% url 'leaderboard' %}"><button class="button-design">Leaderboards</button></a>
+      <a href="http://localhost:8000/accounts/profile/"><button class="button-design">Profile</button></a>
+    </div>
+  </nav>
+
+  <!-- Profile Content -->
+  <div class="profile-container">
+    <div class="profile-card">
+      <h1>Profile</h1>
+      {% if user %}
+        <p>Username: <span class="highlight">{{ user.username }}</span></p>
+        <p>Email: <span class="highlight">{{ user.email }}</span></p>
+        <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
+        <p>Last Login: <span class="highlight">{{ user.last_login|default:"Never" }}</span></p>
+      {% else %}
+        <p>{{ error }}</p>
+      {% endif %}
+      <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
+    </div>
+  </div>
+</body>
+</html>

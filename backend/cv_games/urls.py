@@ -17,10 +17,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 from django.views.generic import TemplateView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from cv_games_app.views import SubmitScoreAPIView
 
-# Added: URL patterns for admin and root to serve index.html
+
+
+# Added: URL patterns 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='index.html'), name='home'),  # Added name='home' for redirect
+    path('', TemplateView.as_view(template_name='index.html'), name='home'),  
     path('auth/', include('cv_games_app.urls')),  
+    path('accounts/', include('accounts.urls')),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/submit-score/', SubmitScoreAPIView.as_view(), name='api_submit_score'),
 ]
