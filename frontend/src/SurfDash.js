@@ -29,6 +29,19 @@ const SurfDash = ({ setSelectedGame }) => {
   const gameOverSoundRef = useRef(null); // Reference to the game over sound audio
   const immunitySoundRef = useRef(null); // Reference to the immunity sound audio
 
+  // useState hooks for managing UI state
+  const [showCharacterSelection, setShowCharacterSelection] = useState(true); // Controls character selection screen visibility
+  const [hasSelectedCharacter, setHasSelectedCharacter] = useState(false); // Tracks if a character is selected
+  const [showSkateSelection, setShowSkateSelection] = useState(false); // Controls skate selection screen visibility
+  const [hasSelectedSkate, setHasSelectedSkate] = useState(false); // Tracks if a skate is selected
+  const [selectedCharacter, setSelectedCharacter] = useState(null); // Stores the selected character ID
+  const [selectedSkate, setSelectedSkate] = useState(null); // Stores the selected skate ID
+  const [selectionMessage, setSelectionMessage] = useState(''); // Displays selection confirmation messages
+  const [hoveredCharacter, setHoveredCharacter] = useState(null); // Tracks the currently hovered character
+  const [hoveredSkate, setHoveredSkate] = useState(null); // Tracks the currently hovered skate
+  const [immunityMessage, setImmunityMessage] = useState(false); // Controls immunity power-up message visibility
+  const [skateMessage, setSkateMessage] = useState(false); // Controls skate power-up message visibility
+
   return <div></div>;
 };
 
