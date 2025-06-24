@@ -5,6 +5,34 @@ const TetrisGame = () => {
   const [showGame, setShowGame] = useState(false);
   const canvasRef = useRef(null);
 
+  class GameLogic {
+    constructor(ctx) {
+      this.gridWidth = 10;
+      this.gridHeight = 20;
+      this.blockSize = 30;
+      this.grid = Array(this.gridHeight).fill().map(() => Array(this.gridWidth).fill(0));
+      this.shapes = [
+        [[1, 1, 1, 1]], // I
+        [[1, 1], [1, 1]], // O
+        [[1, 1, 1], [0, 1, 0]], // T
+        [[1, 1, 1], [1, 0, 0]], // L
+        [[1, 1, 1], [0, 0, 1]], // J
+        [[1, 1, 0], [0, 1, 1]], // S
+        [[0, 1, 1], [1, 1, 0]], // Z
+      ];
+      this.colors = ['cyan', 'yellow', 'purple', 'orange', 'blue', 'green', 'red'];
+      this.currentPiece = this.newPiece();
+      this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
+      this.pieceY = 0;
+      this.ctx = ctx;
+    }
+
+    newPiece() {
+      const index = Math.floor(Math.random() * this.shapes.length);
+      return this.shapes[index].map(row => [...row]);
+    }
+  }
+
   return (
     <div className='inter'>
       <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/tetris-bg.jpg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
