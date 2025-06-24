@@ -321,9 +321,98 @@ const SurfDash = ({ setSelectedGame }) => {
           }
           return true;
         });
+        // Update trains (similar to hurdles)
+        this.trains = this.trains.filter((train) => {
+          train.z += moveDistance;
+          const screenY = this.mapZToScreenY(train.z);
+          if (screenY > 720) return false;
+          if (train.lane === this.currentLane && screenY > 590 && screenY < 610) {
+            const isHighTrain = train.type === 'high';
+            const isLowTrain = train.type === 'low';
+            const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
+            const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
+            const avoided = (isHighTrain && (this.isJumping || jumpBuffer)) || (isLowTrain && (this.isSliding || slideBuffer));
+            console.log(`Train at screenY: ${screenY.toFixed(2)}, Type: ${train.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
+            if (!avoided && this.skateActive) {
+              this.skateActive = false;
+              console.log('Skate used to avoid train collision!');
+              return false;
+            } else if (!avoided && this.immunityActive) {
+              this.immunityActive = false;
+              this.playImmunitySound();
+              console.log('Immunity used to avoid train collision!');
+              return false;
+            } else if (!avoided) {
+              console.log(`Collision detected with train! Game Over. Lane: ${train.lane}, Runner Lane: ${this.currentLane}, Train Y: ${screenY.toFixed(2)}, z: ${train.z.toFixed(2)}`);
+              this.gameOver = true;
+              this.deathAnimation = true;
+              this.deathStartTime = performance.now();
+              bgMusicRef.current.pause();
+              bgMusicRef.current.currentTime = 0;
+              this.playGameOverSounds();
+              return false;
+            } else {
+              console.log(`Train avoided successfully!`);
+            }
+          }
+          return true;
+        });
+        // Increment score based on distance traveled
+        this.score += Math.floor(moveDistance / 10);
+        this.stats.textContent = `Score: ${this.score} | Coins: ${this.coinsCollected}`;
+      }
+      // Handle death animation
+      if (this.deathAnimation) {
+        const deathTime = performance.now() - this.deathStartTime;
+        if (deathTime >= this.deathDuration) {
+          this.deathAnimation = false;
+        }
       }
     }
+
+    // Converts z-depth to screen Y-coordinate for perspective
+    mapZToScreenY(z) {
+      const horizonY = 100; // Horizon line at top
+      const bottomY = 720; // Bottom of canvas
+      const runnerZ = 600; // Runner's z-position
+      return horizonY + (bottomY - horizonY) * ((z + runnerZ) / 1000);
+    }
+
+    // Scales objects based on z-depth for perspective
+    mapZToScale(z) {
+      return 0.5 + 0.5 * (1000 - z) / 1000;
+    }
+
+    // Renders the game scene to the canvas
+    render(ctx) {
+      // Draw road with gradient
+      const roadGradient = ctx.createLinearGradient(0, 100, 0, 720);
+      roadGradient.addColorStop(0, '#A9A9A9');
+      roadGradient.addColorStop(1, '#696969');
+      ctx.fillStyle = roadGradient;
+      ctx.beginPath();
+      ctx.moveTo(200, 720);
+      ctx.lineTo(480, 100);
+      ctx.lineTo(800, 100);
+      ctx.lineTo(1080, 720);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw lane lines
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([20, 20]);
+      for (let i = 0; i < 3; i++) {
+        const x = this.lanes[i];
+        ctx.beginPath();
+        ctx.moveTo(x, 720);
+        ctx.lineTo(x, 100);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
   }
+
 
   return <div></div>;
 };
