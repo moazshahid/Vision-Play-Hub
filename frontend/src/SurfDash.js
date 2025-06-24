@@ -501,6 +501,26 @@ const SurfDash = ({ setSelectedGame }) => {
     }
   }
 
+  // Handles character selection
+  const selectCharacter = (character) => {
+    console.log(`Selecting character ${character}`);
+    runnerImageRef.current = new Image();
+    runnerImageRef.current.src = `/static/images/character${character}.png`;
+    runnerImageRef.current.onload = () => {
+      console.log(`Character ${character} image loaded successfully`);
+      setSelectedCharacter(character);
+      setSelectionMessage(`Yay, you chose Character ${character}!`);
+      setHoveredCharacter(character);
+      setTimeout(() => {
+        setShowCharacterSelection(false);
+        setHasSelectedCharacter(true);
+        setShowSkateSelection(true);
+        setSelectionMessage('');
+        setHoveredCharacter(null);
+      }, 2000); // Transition to skate selection after 2 seconds
+    };
+  };
+
 
   return <div></div>;
 };
