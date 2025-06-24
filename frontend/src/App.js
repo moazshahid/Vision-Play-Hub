@@ -5,6 +5,8 @@ import WhackAMole from './WhackAMole';
 import DessertSlash from './DessertSlash';
 import AirHockey from './AirHockey';
 import { login } from './utils/api';
+import TetrisGame from './TetrisGame';
+
 // --- NEW: GameCarousel Component ---
 const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -196,6 +198,7 @@ const App = () => {
     { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.jpg' },
     { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.jpg' },
     { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.jpg' },
+    { id: 'tetris', name: 'Tetris Game', component: <TetrisGame />, icon: 'static/images/pages/tetris-colour.jpg' },
     // More games will be added here in the future
   ];
 
