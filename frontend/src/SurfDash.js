@@ -521,6 +521,25 @@ const SurfDash = ({ setSelectedGame }) => {
     };
   };
 
+  // Handles skate selection
+  const selectSkate = (skate) => {
+    console.log(`Selecting skate ${skate}`);
+    skateImageRef.current = new Image();
+    skateImageRef.current.src = `/static/images/skate${skate}.png`;
+    skateImageRef.current.onload = () => {
+      console.log(`Skate ${skate} image loaded successfully`);
+      setSelectedSkate(skate);
+      setSelectionMessage(`Yay, you chose Skate ${skate}!`);
+      setHoveredSkate(skate);
+      setTimeout(() => {
+        setShowSkateSelection(false);
+        setHasSelectedSkate(true);
+        setSelectionMessage('');
+        setHoveredSkate(null);
+      }, 2000); // Transition to game after 2 seconds
+    };
+  };
+
 
   return <div></div>;
 };
