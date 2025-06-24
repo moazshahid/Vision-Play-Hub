@@ -31,6 +31,31 @@ const TetrisGame = () => {
       const index = Math.floor(Math.random() * this.shapes.length);
       return this.shapes[index].map(row => [...row]);
     }
+
+    render(ctx) {
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(450, 100, this.gridWidth * this.blockSize + 10, this.gridHeight * this.blockSize + 10);
+      ctx.strokeStyle = '#1E90FF';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(450, 100, this.gridWidth * this.blockSize + 10, this.gridHeight * this.blockSize + 10);
+      for (let y = 0; y < this.gridHeight; y++) {
+        for (let x = 0; x < this.gridWidth; x++) {
+          if (this.grid[y][x]) {
+            ctx.fillStyle = 'gray';
+            ctx.fillRect(450 + 5 + x * this.blockSize, 100 + 5 + y * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+          }
+        }
+      }
+      const shapeIndex = this.shapes.findIndex(shape => shape.every((row, y) => row.every((cell, x) => cell === this.currentPiece[y]?.[x]))) || 0;
+      ctx.fillStyle = this.colors[shapeIndex] || 'white';
+      for (let py = 0; py < this.currentPiece.length; py++) {
+        for (let px = 0; px < this.currentPiece[0].length; px++) {
+          if (this.currentPiece[py][px]) {
+            ctx.fillRect(450 + 5 + (this.pieceX + px) * this.blockSize, 100 + 5 + (this.pieceY + py) * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+          }
+        }
+      }
+    }
   }
 
   return (
