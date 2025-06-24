@@ -410,6 +410,94 @@ const SurfDash = ({ setSelectedGame }) => {
         ctx.stroke();
       }
       ctx.setLineDash([]);
+
+      // Render coins
+      this.coins.forEach((coin) => {
+        const screenY = this.mapZToScreenY(coin.z);
+        const scale = this.mapZToScale(coin.z);
+        const size = this.objectSize * scale;
+        if (this.coinImage && this.coinImage.complete) {
+          ctx.drawImage(this.coinImage, this.lanes[coin.lane] - size / 2, screenY - size / 2, size, size);
+        } else {
+          // Fallback rendering
+          ctx.beginPath();
+          ctx.arc(this.lanes[coin.lane], screenY, size / 2, 0, 2 * Math.PI);
+          ctx.fillStyle = '#FFD700';
+          ctx.fill();
+        }
+      });
+
+      // Render hurdles
+      this.hurdles.forEach((hurdle) => {
+        const screenY = this.mapZToScreenY(hurdle.z);
+        const scale = this.mapZToScale(hurdle.z);
+        const size = this.objectSize * scale;
+        if (this.hurdleImage && this.hurdleImage.complete) {
+          ctx.drawImage(this.hurdleImage, this.lanes[hurdle.lane] - size / 2, screenY - size / 2, size, size);
+        } else {
+          ctx.fillStyle = hurdle.type === 'high' ? '#FF0000' : '#FFA500';
+          ctx.fillRect(this.lanes[hurdle.lane] - size / 2, screenY - size / 2, size, size);
+        }
+      });
+
+      // Render trains
+      this.trains.forEach((train) => {
+        const screenY = this.mapZToScreenY(train.z);
+        const scale = this.mapZToScale(train.z);
+        const size = this.objectSize * scale;
+        if (this.trainImage && this.trainImage.complete) {
+          ctx.drawImage(this.trainImage, this.lanes[train.lane] - size / 2, screenY - size / 2, size, size);
+        } else {
+          ctx.fillStyle = train.type === 'high' ? '#4682B4' : '#87CEEB';
+          ctx.fillRect(this.lanes[train.lane] - size / 2, screenY - size / 2, size, size);
+        }
+      });
+
+      // Render runner
+      const runnerX = this.lanes[this.currentLane];
+      let runnerY = this.runnerY - this.jumpHeight;
+      let runnerSize = this.objectSize * this.mapZToScale(600);
+      if (this.isSliding) {
+        runnerY += 20; // Adjust Y-position for sliding
+      }
+      if (this.deathAnimation) {
+        const deathTime = performance.now() - this.deathStartTime;
+        const t = Math.min(deathTime / this.deathDuration, 1);
+        runnerY += this.fallDistance * t; // Fall during death animation
+        runnerSize *= 1.5; // Enlarge runner
+        if (this.runnerImage && this.runnerImage.complete) {
+          ctx.drawImage(this.runnerImage, runnerX - runnerSize / 2, runnerY - runnerSize / 2, runnerSize, runnerSize);
+        } else {
+          ctx.beginPath();
+          ctx.arc(runnerX, runnerY, runnerSize / 2, 0, 2 * Math.PI);
+          ctx.fillStyle = '#00FF00';
+          ctx.fill();
+        }
+        // Render guard in death animation
+        if (this.guardImage && this.guardImage.complete) {
+          ctx.drawImage(this.guardImage, runnerX + runnerSize / 2, runnerY - runnerSize / 2, runnerSize, runnerSize);
+        } else {
+          ctx.fillStyle = '#800080';
+          ctx.fillRect(runnerX + runnerSize / 2, runnerY - runnerSize / 2, runnerSize, runnerSize);
+        }
+      } else if (!this.gameOver) {
+        // Render skate if active
+        if (this.skateActive && this.skateImage && this.skateImage.complete) {
+          ctx.drawImage(this.skateImage, runnerX - runnerSize / 2, runnerY + runnerSize / 4, runnerSize, runnerSize * 0.3);
+        } else if (this.skateActive) {
+          ctx.fillStyle = '#00CED1';
+          ctx.fillRect(runnerX - runnerSize / 2, runnerY + runnerSize / 4, runnerSize, runnerSize * 0.3);
+        }
+        // Render runner
+        if (this.runnerImage && this.runnerImage.complete) {
+          ctx.drawImage(this.runnerImage, runnerX - runnerSize / 2, runnerY - runnerSize / 2, runnerSize, this.isSliding ? runnerSize * 0.6 : runnerSize);
+        } else {
+          ctx.beginPath();
+          ctx.arc(runnerX, runnerY, runnerSize / 2, 0, 2 * Math.PI);
+          ctx.fillStyle = '#00FF00';
+          ctx.fill();
+        }
+      }  
     }
   }
 
