@@ -5,15 +5,17 @@ const TetrisGame = () => {
   const [showGame, setShowGame] = useState(false);
   const canvasRef = useRef(null);
   const gameObjectRef = useRef(null);
+  const gameStatsRef = useRef(null);
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
+    const gameStats = gameStatsRef.current;
 
     const startGame = () => {
       if (!gameStartedRef.current) {
-        gameObjectRef.current = new GameLogic(canvas);
+        gameObjectRef.current = new GameLogic(canvas, gameStats);
         gameStartedRef.current = true;
         lastRenderTimeRef.current = performance.now();
         requestAnimationFrame(gameLoop);
@@ -21,7 +23,7 @@ const TetrisGame = () => {
     };
 
     const gameLoop = (timestamp) => {
-      if (gameStartedRef.current && gameObjectRef.current) {
+      if (gameStartedRef.current && gameObjectRef.current && !gameObjectRef.current.gameOver) {
         const deltaTime = timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;
         gameObjectRef.current.updateWithoutRender(deltaTime);
@@ -38,7 +40,7 @@ const TetrisGame = () => {
   }, []);
 
   class GameLogic {
-    constructor(ctx) {
+    constructor(ctx, stats) {
       this.gridWidth = 10;
       this.gridHeight = 20;
       this.blockSize = 30;
@@ -57,8 +59,13 @@ const TetrisGame = () => {
       this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
       this.pieceY = 0;
       this.ctx = ctx;
+      this.stats = stats;
       this.lastDropTime = 0;
       this.dropSpeed = 800;
+      this.score = 0;
+      this.linesCleared = 0;
+      this.gameOver = false;
+      this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
     }
 
     newPiece() {
@@ -85,6 +92,46 @@ const TetrisGame = () => {
       return true;
     }
 
+    mergePiece() {
+      for (let py = 0; py < this.currentPiece.length; py++) {
+        for (let px = 0; px < this.currentPiece[0].length; px++) {
+          if (this.currentPiece[py][px]) {
+            const gridY = this.pieceY + py;
+            if (gridY < 0) {
+              this.gameOver = true;
+              return;
+            }
+            if (gridY < this.gridHeight) {
+              this.grid[gridY][this.pieceX + px] = 1;
+            }
+          }
+        }
+        this.clearLines();
+        this.currentPiece = this.newPiece();
+        this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
+        this.pieceY = 0;
+        if (!this.isValidMove(this.currentPiece, this.pieceX, this.pieceY)) {
+          this.gameOver = true;
+        }
+      }
+    }
+
+    clearLines() {
+      let lines = 0;
+      for (let y = this.gridHeight - 1; y >= 0; y--) {
+        if (this.grid[y].every(cell => cell)) {
+          this.grid.splice(y, 1);
+          this.grid.unshift(Array(this.gridWidth).fill(0));
+          lines++;
+        }
+      }
+      if (lines > 0) {
+        this.linesCleared += lines;
+        this.score += lines * 100 * (lines > 1 ? lines : 1);
+        this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
+      }
+    }
+
     updateWithoutRender(deltaTime) {
       this.lastDropTime += deltaTime;
       if (this.lastDropTime >= this.dropSpeed) {
@@ -94,23 +141,6 @@ const TetrisGame = () => {
           this.mergePiece();
         }
         this.lastDropTime = 0;
-      }
-    }
-
-    mergePiece() {
-      for (let py = 0; py < this.currentPiece.length; py++) {
-        for (let px = 0; px < this.currentPiece[0].length; px++) {
-          if (this.currentPiece[py][px]) {
-            const gridY = this.pieceY + py;
-            if (gridY < 0) return;
-            if (gridY < this.gridHeight) {
-              this.grid[gridY][this.pieceX + px] = 1;
-            }
-          }
-        }
-        this.currentPiece = this.newPiece();
-        this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
-        this.pieceY = 0;
       }
     }
 
@@ -164,7 +194,10 @@ const TetrisGame = () => {
         </div>
       </div>
       <div style={{ width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <canvas ref={canvasRef} width="1280" height="720"></canvas>
+        <div className="game-container inter">
+          <canvas ref={canvasRef} width="1280" height="720"></canvas>
+          <div ref={gameStatsRef} className="game-stats">Score: 0 Lines: 0</div>
+        </div>
       </div>
     </div>
   );
