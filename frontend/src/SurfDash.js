@@ -653,6 +653,70 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.restore();
   };
 
+  // Draws the game over screen on the canvas
+  const drawGameOverOnCanvas = (ctx, score, over, finalScore) => {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, 1280, 720); // Semi-transparent overlay
+    ctx.fillStyle = '#FF0000';
+    ctx.font = 'bold 100px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('GAME OVER', 640, 300);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 60px Arial';
+    ctx.fillText(`Final Score: ${score}`, 640, 400);
+    ctx.fillStyle = '#4CAF50';
+    ctx.font = '40px Arial';
+    ctx.fillText('Press "R" to Restart', 640, 500);
+    finalScore.textContent = score;
+    over.style.display = 'block';
+  };
+
+  // Restarts the game
+  const restartGame = () => {
+    console.log('Restarting game...');
+    if (cameraRef.current) cameraRef.current.stop();
+    gameStartedRef.current = false;
+    gameOverRef.current.style.display = 'none';
+    bgMusicRef.current.pause();
+    bgMusicRef.current.currentTime = 0;
+    deathSoundRef.current.pause();
+    deathSoundRef.current.currentTime = 0;
+    gameOverSoundRef.current.pause();
+    gameOverSoundRef.current.currentTime = 0;
+    immunitySoundRef.current.pause();
+    immunitySoundRef.current.currentTime = 0;
+    setImmunityMessage(false);
+    setSkateMessage(false);
+    if (runnerImageRef.current && skateImageRef.current) {
+      startGame();
+    } else {
+      console.error('Cannot restart: character or skate not selected');
+      setShowCharacterSelection(true);
+      setHasSelectedCharacter(false);
+      setShowSkateSelection(false);
+      setHasSelectedSkate(false);
+    }
+  };
+
+  // Quits the game and returns to the main menu
+  const quitGame = () => {
+    console.log('Quitting game...');
+    if (cameraRef.current) cameraRef.current.stop();
+    gameStartedRef.current = false;
+    bgMusicRef.current.pause();
+    bgMusicRef.current.currentTime = 0;
+    deathSoundRef.current.pause();
+    deathSoundRef.current.currentTime = 0;
+    gameOverSoundRef.current.pause();
+    gameOverSoundRef.current.currentTime = 0;
+    immunitySoundRef.current.pause();
+    immunitySoundRef.current.currentTime = 0;
+    setImmunityMessage(false);
+    setSkateMessage(false);
+    setSelectedGame(null); // Return to game selection
+  };
+
   return <div></div>;
 };
 
