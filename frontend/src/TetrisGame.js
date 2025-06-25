@@ -4,21 +4,69 @@ import './Game.css';
 const TetrisGame = () => {
   const [showGame, setShowGame] = useState(false);
   const canvasRef = useRef(null);
-  const gameObjectRef = useRef(null);
+  const videoRef = useRef(null);
   const gameStatsRef = useRef(null);
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(null);
+  const handsRef = useRef(null);
+  const cameraRef = useRef(null);
+  const debugRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
+    const video = videoRef.current;
     const gameStats = gameStatsRef.current;
+    const debug = debugRef.current;
+
+    const initHandDetection = () => {
+      handsRef.current = new window.Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+      handsRef.current.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.9,
+        minTrackingConfidence: 0.9,
+      });
+      handsRef.current.onResults((results) => {
+        canvas.save();
+        canvas.clearRect(0, 0, 1280, 720);
+        canvas.restore();
+      });
+    };
+
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720, facingMode: 'user', frameRate: 60 },
+        });
+        video.srcObject = stream;
+        await new Promise((resolve) => (video.onloadedmetadata = resolve));
+        video.play();
+        cameraRef.current = new window.Camera(video, {
+          onFrame: async () => await handsRef.current.send({ image: video }),
+          width: 1280,
+          height: 720,
+        });
+        await cameraRef.current.start();
+        console.log('Camera started successfully');
+      } catch (error) {
+        debug.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
+      }
+    };
 
     const startGame = () => {
       if (!gameStartedRef.current) {
-        gameObjectRef.current = new GameLogic(canvas, gameStats);
-        gameStartedRef.current = true;
-        lastRenderTimeRef.current = performance.now();
-        requestAnimationFrame(gameLoop);
+        startCamera()
+          .then(() => {
+            gameObjectRef.current = new GameLogic(canvas, gameStats);
+            gameStartedRef.current = true;
+            lastRenderTimeRef.current = performance.now();
+            requestAnimationFrame(gameLoop);
+          })
+          .catch((error) => {
+            alert('Camera access error: ' + error.message);
+          });
       }
     };
 
@@ -33,8 +81,12 @@ const TetrisGame = () => {
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
+
+    initHandDetection();
 
     return () => {
+      if (cameraRef.current) cameraRef.current.stop();
       gameStartedRef.current = false;
     };
   }, []);
@@ -177,7 +229,10 @@ const TetrisGame = () => {
           <div className="instructions inter" style={{ color: "#fff" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Tetris</h2>
             <ul>
-              <li><strong>Start:</strong> Click the start button to begin.</li>
+              <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
+              <li><strong>Move the piece:</strong> Move your index finger left or right to shift the piece.</li>
+              <li><strong>Rotate the piece:</strong> Close your hand into a fist to rotate.</li>
+              <li><strong>Fast drop:</strong> Lower your finger below your wrist to drop faster.</li>
             </ul>
           </div>
         </div>
@@ -187,16 +242,28 @@ const TetrisGame = () => {
           </div>
           <div style={{ maxWidth: "20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh' }}>
             <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
+ Banga-2              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
         </div>
       </div>
       <div style={{ width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+            </button>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+            </button>
+          </div>
+        </div>
+        <div ref={debugRef} className="debug-box" style={{ backgroundColor: "transparent" }}></div>
         <div className="game-container inter">
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
-          <div ref={gameStatsRef} className="game-stats">Score: 0 Lines: 0</div>
+          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <div ref={gameStatsRef} className="game-statsprincipals">Score: 0 Lines: 0</div>
         </div>
       </div>
     </div>
