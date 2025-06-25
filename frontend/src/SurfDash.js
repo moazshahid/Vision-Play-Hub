@@ -540,6 +540,81 @@ const SurfDash = ({ setSelectedGame }) => {
     };
   };
 
+  // Initializes MediaPipe Hands for hand-tracking
+  const initHandDetection = () => {
+    try {
+      handsRef.current = new window.Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+      handsRef.current.setOptions({
+        maxNumHands: 1, // Track one hand
+        modelComplexity: 1, // Higher complexity for better accuracy
+        minDetectionConfidence: 0.7, // Confidence thresholds
+        minTrackingConfidence: 0.7,
+      });
+      handsRef.current.onResults((results) =>
+        onHandResults(results, canvasRef.current.getContext('2d'), videoRef.current, gameObjectRef.current, gameStartedRef.current, gameOverRef.current, finalScoreRef.current)
+      );
+      console.log('MediaPipe Hands initialized');
+    } catch (error) {
+      debugRef.current.innerHTML = `<p class="warning">Hand detection error: ${error.message}</p>`;
+    }
+  };
+
+  // Starts the webcam feed
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, facingMode: 'user', frameRate: 60 },
+      });
+      videoRef.current.srcObject = stream;
+      await new Promise((resolve) => (videoRef.current.onloadedmetadata = resolve));
+      videoRef.current.play();
+      cameraRef.current = new window.Camera(videoRef.current, {
+        onFrame: async () => await handsRef.current.send({ image: videoRef.current }),
+        width: 1280,
+        height: 720,
+      });
+      await cameraRef.current.start();
+      console.log('Camera started successfully');
+    } catch (error) {
+      debugRef.current.innerHTML = `<p class="warning">Camera error: ${error.message}</p>`;
+      alert('Camera access error: ' + error.message);
+    }
+  };
+
+  // Starts the game after assets are loaded
+  const startGame = () => {
+    if (!gameStartedRef.current && runnerImageRef.current && skateImageRef.current) {
+      console.log('Starting game...');
+      startCamera()
+        .then(() => {
+          gameObjectRef.current = new GameLogic(
+            canvasRef.current.getContext('2d'),
+            gameStatsRef.current,
+            runnerImageRef.current,
+            coinImageRef.current,
+            hurdleImageRef.current,
+            guardImageRef.current,
+            trainImageRef.current,
+            skateImageRef.current
+          );
+          gameStartedRef.current = true;
+          lastRenderTimeRef.current = performance.now();
+          gameOverRef.current.style.display = 'none';
+          bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
+          requestAnimationFrame(gameLoop); // Start game loop
+          console.log('Game started successfully');
+        })
+        .catch((error) => {
+          console.error('Start game error:', error);
+          alert('Failed to start game: ' + error.message);
+        });
+    } else {
+      console.log('Game not started: already running or assets not selected');
+    }
+  };
+
 
   return <div></div>;
 };
