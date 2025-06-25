@@ -4,15 +4,16 @@
     <title>Sign Up - Vision Play Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     {% load static %}
+    {% load socialaccount %}
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: "Hanken Grotesk", sans-serif;
+            font-family: "Hanken Grotesque", sans-serif;
             font-optical-sizing: auto;
             font-weight: 700;
             letter-spacing: -0.05em;
@@ -38,19 +39,55 @@
         }
 
         .button-design {
-        padding: 8px 16px;
-        background: none;      
-        border: none;         
-        color: #ffffff;
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
         }
 
         .button-design:hover {
-        text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
-        color: #ffffff;  /* keep text white */
-        background: none; /* no background on hover either */
-        border: none;    /* no border on hover */
+            text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+            color: #ffffff;
+            background: none;
+            border: none;
+        }
+
+        .google-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #000000;
+            text-decoration: none;
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .google-button:hover {
+            box-shadow: 0 0 8px #fff, 0 0 12px #00f0ff;
+        }
+
+        .google-button img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .or-text {
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            text-align: center;
         }
 
         form {
@@ -64,6 +101,13 @@
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 20px;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        input::placeholder {
+            font-family: "Bricolage Grotesque", sans-serif;
+            color: #999;
+            font-size: 0.95rem;
         }
 
         .VPH-header {
@@ -105,27 +149,6 @@
         nav a {
             text-decoration: none;
         }
-
-        form, form *, .form-container {
-            font-family: "Bricolage Grotesque", sans-serif;
-        }
-
-        input {
-            margin: 5px 0;
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            font-family: "Bricolage Grotesque", sans-serif; /* for typed text */
-        }
-
-        input::placeholder {
-            font-family: "Bricolage Grotesque", sans-serif; /* for placeholder text */
-            color: #999; 
-            font-size: 0.95rem;
-        }
-
     </style>
 </head>
 <body>
@@ -161,7 +184,7 @@
             <a href="{% url 'leaderboard' %}">
                 <button class="button-design">Leaderboards</button>
             </a>
-            <a href="http://localhost:8000/accounts/profile/">
+            <a href="/accounts/profile/">
                 <button class="button-design">Profile</button>
             </a>
         </div>
@@ -184,8 +207,15 @@
                 <input type="password" name="password" placeholder="Password" required><br>
                 <button class="button-design" type="submit">Sign Up</button>
             </form>
-            <p style="color: white;">Already have an account?</p>
-            <a href="{% url 'login' %}"><button class="button-design" style="font-size: 0.9rem;">Log In</button></a>    
+            <div class="or-text">OR</div>
+            <a href="{% provider_login_url 'google' %}" class="google-button">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo">
+                Sign up with Google
+            </a>
+            <p style="color: white; margin-top: 20px;">Already have an account?</p>
+            <a href="{% url 'login' %}">
+                <button class="button-design" style="font-size: 0.9rem;">Log In</button>
+            </a>
         </div>
     </div>
 </body>
