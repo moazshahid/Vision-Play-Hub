@@ -154,6 +154,7 @@
       <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
       <a href="{% url 'leaderboard' %}"><button class="button-design">Leaderboards</button></a>
       <a href="http://localhost:8000/accounts/profile/"><button class="button-design">Profile</button></a>
+      <a href="{% url 'logout' %}"><button class="button-design">Log Out</button></a>
     </div>
   </nav>
 
@@ -161,9 +162,9 @@
   <div class="profile-container">
     <div class="profile-card">
       <h1>Profile</h1>
-      {% if user %}
+      {% if user.is_authenticated %}
         <p>Username: <span class="highlight">{{ user.username }}</span></p>
-        <p>Email: <span class="highlight">{{ user.email }}</span></p>
+        <p>Email: <span class="highlight">{{ user.email|default:"No email stored" }}</span></p>
         <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
         <p>Last Login: <span class="highlight">{{ user.last_login|default:"Never" }}</span></p>
       {% else %}
