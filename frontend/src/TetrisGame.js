@@ -24,6 +24,7 @@ const TetrisGame = () => {
       if (gameStartedRef.current && gameObjectRef.current) {
         const deltaTime = timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;
+        gameObjectRef.current.updateWithoutRender(deltaTime);
         gameObjectRef.current.render(canvas);
         requestAnimationFrame(gameLoop);
       }
@@ -56,11 +57,61 @@ const TetrisGame = () => {
       this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
       this.pieceY = 0;
       this.ctx = ctx;
+      this.lastDropTime = 0;
+      this.dropSpeed = 800;
     }
 
     newPiece() {
       const index = Math.floor(Math.random() * this.shapes.length);
       return this.shapes[index].map(row => [...row]);
+    }
+
+    isValidMove(piece, x, y) {
+      for (let py = 0; py < piece.length; py++) {
+        for (let px = 0; px < piece[0].length; px++) {
+          if (piece[py][px]) {
+            const gridX = x + px;
+            const gridY = y + py;
+            if (
+              gridX < 0 || gridX >= this.gridWidth ||
+              gridY >= this.gridHeight ||
+              (gridY >= 0 && this.grid[gridY][gridX])
+            ) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+
+    updateWithoutRender(deltaTime) {
+      this.lastDropTime += deltaTime;
+      if (this.lastDropTime >= this.dropSpeed) {
+        if (this.isValidMove(this.currentPiece, this.pieceX, this.pieceY + 1)) {
+          this.pieceY++;
+        } else {
+          this.mergePiece();
+        }
+        this.lastDropTime = 0;
+      }
+    }
+
+    mergePiece() {
+      for (let py = 0; py < this.currentPiece.length; py++) {
+        for (let px = 0; px < this.currentPiece[0].length; px++) {
+          if (this.currentPiece[py][px]) {
+            const gridY = this.pieceY + py;
+            if (gridY < 0) return;
+            if (gridY < this.gridHeight) {
+              this.grid[gridY][this.pieceX + px] = 1;
+            }
+          }
+        }
+        this.currentPiece = this.newPiece();
+        this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
+        this.pieceY = 0;
+      }
     }
 
     render(ctx) {
