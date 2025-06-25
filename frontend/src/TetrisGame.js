@@ -1,9 +1,40 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Game.css';
 
 const TetrisGame = () => {
   const [showGame, setShowGame] = useState(false);
   const canvasRef = useRef(null);
+  const gameObjectRef = useRef(null);
+  const gameStartedRef = useRef(false);
+  const lastRenderTimeRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current.getContext('2d');
+
+    const startGame = () => {
+      if (!gameStartedRef.current) {
+        gameObjectRef.current = new GameLogic(canvas);
+        gameStartedRef.current = true;
+        lastRenderTimeRef.current = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+    };
+
+    const gameLoop = (timestamp) => {
+      if (gameStartedRef.current && gameObjectRef.current) {
+        const deltaTime = timestamp - lastRenderTimeRef.current;
+        lastRenderTimeRef.current = timestamp;
+        gameObjectRef.current.render(canvas);
+        requestAnimationFrame(gameLoop);
+      }
+    };
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+
+    return () => {
+      gameStartedRef.current = false;
+    };
+  }, []);
 
   class GameLogic {
     constructor(ctx) {
