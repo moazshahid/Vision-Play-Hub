@@ -615,6 +615,43 @@ const SurfDash = ({ setSelectedGame }) => {
     }
   };
 
+  // Game loop to update and render the game
+  const gameLoop = (timestamp) => {
+    if (gameStartedRef.current && gameObjectRef.current) {
+      const deltaTime = timestamp - lastRenderTimeRef.current;
+      lastRenderTimeRef.current = timestamp;
+      gameObjectRef.current.updateWithoutRender(deltaTime, setImmunityMessage, setSkateMessage);
+      requestAnimationFrame(gameLoop); // Continue loop
+    }
+  };
+
+  // Processes hand-tracking results and updates game
+  const onHandResults = (results, ctx, video, gameObj, started, over, score) => {
+    ctx.save();
+    ctx.clearRect(0, 0, 1280, 720); // Clear canvas
+    ctx.save();
+    ctx.translate(1280, 0);
+    ctx.scale(-1, 1); // Mirror video feed
+    ctx.drawImage(results.image, 0, 0, 1280, 720);
+    ctx.restore();
+    if (started && gameObj) {
+      if (!gameObj.gameOver || gameObj.deathAnimation) {
+        // Update runner position based on hand tracking
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && !gameObj.gameOver) {
+          const indexFinger = results.multiHandLandmarks[0][8]; // Index finger tip
+          const fingerX = Math.floor(1280 - indexFinger.x * 1280); // Mirror X-coordinate
+          const fingerY = Math.floor(indexFinger.y * 720);
+          gameObj.updateFingerPosition(fingerX, fingerY);
+        }
+        gameObj.render(ctx); // Render game
+      }
+      // Display game over screen
+      if (gameObj.gameOver && !gameObj.deathAnimation) {
+        drawGameOverOnCanvas(ctx, gameObj.score, over, score);
+      }
+    }
+    ctx.restore();
+  };
 
   return <div></div>;
 };
