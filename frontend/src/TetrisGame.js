@@ -1,24 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Game.css';
+import { submitScore } from './utils/api';
 
 const TetrisGame = () => {
   const [showGame, setShowGame] = useState(false);
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const gameStatsRef = useRef(null);
+  const gameOverRef = useRef(null);
+  const finalScoreRef = useRef(null);
+  const debugRef = useRef(null);
+  const gameObjectRef = useRef(null);
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(null);
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
-  const debugRef = useRef(null);
-  const gameObjectRef = useRef(null);
   const lastFistDetectedRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
     const video = videoRef.current;
     const gameStats = gameStatsRef.current;
+    const gameOver = gameOverRef.current;
+    const finalScore = finalScoreRef.current;
     const debug = debugRef.current;
+
+    gameOver.style.display = 'none';
 
     const initHandDetection = () => {
       handsRef.current = new window.Hands({
@@ -31,7 +38,7 @@ const TetrisGame = () => {
         minTrackingConfidence: 0.9,
       });
       handsRef.current.onResults((results) =>
-        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current)
+        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current, gameOver, finalScore)
       );
     };
 
@@ -62,6 +69,7 @@ const TetrisGame = () => {
             gameObjectRef.current = new GameLogic(canvas, gameStats);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
+            gameOver.style.display = 'none';
             requestAnimationFrame(gameLoop);
           })
           .catch((error) => {
@@ -71,7 +79,7 @@ const TetrisGame = () => {
     };
 
     const gameLoop = (timestamp) => {
-      if (gameStartedRef.current && gameObjectRef.current && !gameObjectRef.current.gameOver) {
+      if (gameStartedRef.current && gameObjectRef.current && !gameObjectRef.current.gameOver && !gameObjectRef.current.gameWon) {
         const deltaTime = timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;
         gameObjectRef.current.updateWithoutRender(deltaTime);
@@ -102,21 +110,53 @@ const TetrisGame = () => {
       );
     };
 
-    const onHandResults = (results, ctx, video, gameObj, started) => {
+    const onHandResults = (results, ctx, video, gameObj, started, over, score) => {
       ctx.save();
       ctx.clearRect(0, 0, 1280, 720);
-      if (started && gameObj && results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        const landmarks = results.multiHandLandmarks[0];
-        const indexFinger = landmarks[8];
-        const fingerX = Math.floor(1280 - indexFinger.x * 1280);
-        const fingerY = Math.floor(indexFinger.y * 720);
-        const isFist = isFistGesture(landmarks);
-        const wasFist = lastFistDetectedRef.current;
-        lastFistDetectedRef.current = isFist;
-        gameObj.updateFingerPosition(fingerX, fingerY, isFist && !wasFist);
-        gameObj.render(ctx);
+      if (started && gameObj && !gameObj.gameOver && !gameObj.gameWon) {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+          const landmarks = results.multiHandLandmarks[0];
+          const indexFinger = landmarks[8];
+          const fingerX = Math.floor(1280 - indexFinger.x * 1280);
+          const fingerY = Math.floor(indexFinger.y * 720);
+          const isFist = isFistGesture(landmarks);
+          const wasFist = lastFistDetectedRef.current;
+          lastFistDetectedRef.current = isFist;
+          gameObj.updateFingerPosition(fingerX, fingerY, isFist && !wasFist);
+          gameObj.render(ctx);
+        } else {
+          lastFistDetectedRef.current = false;
+          gameObj.render(ctx);
+        }
+      }
+      if (gameObj && (gameObj.gameOver || gameObj.gameWon)) {
+        drawGameOverOnCanvas(ctx, gameObj.score, gameObj.linesCleared, over, score, gameObj.gameWon);
       }
       ctx.restore();
+    };
+
+    const drawGameOverOnCanvas = (ctx, score, linesCleared, over, finalScore, gameWon) => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, 1280, 720);
+      ctx.fillStyle = gameWon ? '#00FF00' : '#FF0000';
+      ctx.font = 'bold 100px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(gameWon ? 'YOU WIN!' : 'GAME OVER', 640, 300);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 60px Arial';
+      ctx.fillText(`Score: ${score} Lines: ${linesCleared}`, 640, 400);
+      finalScore.textContent = score;
+      over.style.display = 'block';
+      if (!gameObjectRef.current.scoreSubmitted) {
+        submitScore('Tetris Game', score)
+          .then(() => {
+            gameObjectRef.current.scoreSubmitted = true;
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.message);
+          });
+      }
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
@@ -156,6 +196,9 @@ const TetrisGame = () => {
       this.score = 0;
       this.linesCleared = 0;
       this.gameOver = false;
+      this.gameWon = false;
+      this.scoreSubmitted = false;
+      this.linesToWin = 10;
       this.moveCooldown = 0;
       this.rotationCooldown = 0;
       this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
@@ -222,6 +265,9 @@ const TetrisGame = () => {
         this.linesCleared += lines;
         this.score += lines * 100 * (lines > 1 ? lines : 1);
         this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
+        if (this.linesCleared >= this.linesToWin) {
+          this.gameWon = true;
+        }
       }
     }
 
@@ -310,6 +356,8 @@ const TetrisGame = () => {
               <li><strong>Move the piece:</strong> Move your index finger left or right to shift the piece.</li>
               <li><strong>Rotate the piece:</strong> Close your hand into a fist to rotate.</li>
               <li><strong>Fast drop:</strong> Lower your finger below your wrist to drop faster.</li>
+              <li><strong>Clear lines:</strong> Complete rows to score points (100 per line).</li>
+              <li><strong>Win/Lose:</strong> Clear 10 lines to win; lose if blocks reach the top.</li>
             </ul>
           </div>
         </div>
@@ -341,6 +389,11 @@ const TetrisGame = () => {
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
           <div ref={gameStatsRef} className="game-stats">Score: 0 Lines: 0</div>
+          <div ref={gameOverRef} className="game-over">
+            <h2>{gameObjectRef.current?.gameWon ? 'You Win!' : 'Game Over!'}</h2>
+            <p>Your Score: <span ref={finalScoreRef}>0</span></p>
+            <button id="play-again-btn">Play Again</button>
+          </div>
         </div>
       </div>
     </div>
