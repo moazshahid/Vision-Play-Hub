@@ -717,6 +717,125 @@ const SurfDash = ({ setSelectedGame }) => {
     setSelectedGame(null); // Return to game selection
   };
 
+  // useEffect hook for initialization and cleanup
+  useEffect(() => {
+    const canvas = canvasRef.current.getContext('2d');
+    const gameOver = gameOverRef.current;
+
+    gameOver.style.display = 'none'; // Hide game over screen initially
+
+    // Load game assets
+    coinImageRef.current = new Image();
+    coinImageRef.current.src = '/static/images/coin.png';
+    coinImageRef.current.onload = () => console.log('Coin image loaded successfully');
+
+    hurdleImageRef.current = new Image();
+    hurdleImageRef.current.src = '/static/images/hurdle.png';
+    hurdleImageRef.current.onload = () => console.log('Hurdle image loaded successfully');
+
+    guardImageRef.current = new Image();
+    guardImageRef.current.src = '/static/images/guard.png';
+    guardImageRef.current.onload = () => console.log('Guard image loaded successfully');
+
+    trainImageRef.current = new Image();
+    trainImageRef.current.src = '/static/images/train.png';
+    trainImageRef.current.onload = () => console.log('Train image loaded successfully');
+
+    // Load audio assets
+    bgMusicRef.current = new Audio('/static/sounds/bgmusic.mp3');
+    bgMusicRef.current.loop = true;
+    bgMusicRef.current.volume = 0.3;
+    bgMusicRef.current.preload = 'auto';
+    bgMusicRef.current.load();
+
+    deathSoundRef.current = new Audio('/static/sounds/death.mp3');
+    deathSoundRef.current.volume = 0.5;
+    deathSoundRef.current.preload = 'auto';
+
+    gameOverSoundRef.current = new Audio('/static/sounds/gameover.mp3');
+    gameOverSoundRef.current.volume = 0.5;
+    gameOverSoundRef.current.preload = 'auto';
+
+    immunitySoundRef.current = new Audio('/static/sounds/immunity.mp3');
+    immunitySoundRef.current.volume = 0.5;
+    immunitySoundRef.current.preload = 'auto';
+
+    initHandDetection(); // Initialize hand-tracking
+
+    // Set up button event listeners
+    const startButton = document.getElementById('start-btn');
+    const restartButton = document.getElementById('restart-btn');
+    const testCameraButton = document.getElementById('test-camera-btn');
+    const playAgainButton = document.getElementById('play-again-btn');
+
+    const startHandler = () => {
+      console.log('Start button clicked');
+      startGame();
+    };
+    const restartHandler = () => {
+      console.log('Restart button clicked');
+      restartGame();
+    };
+    const testCameraHandler = () => {
+      console.log('Test camera button clicked');
+      startCamera();
+    };
+    const playAgainHandler = () => {
+      console.log('Play again button clicked');
+      restartGame();
+    };
+
+    if (startButton) startButton.addEventListener('click', startHandler);
+    if (restartButton) restartButton.addEventListener('click', restartHandler);
+    if (testCameraButton) testCameraButton.addEventListener('click', testCameraHandler);
+    if (playAgainButton) playAgainButton.addEventListener('click', playAgainHandler);
+
+    // Keyboard controls
+    const keydownHandler = (e) => {
+      if (gameObjectRef.current && !gameObjectRef.current.gameOver) {
+        if (e.key === 'a' || e.key === 'A') {
+          gameObjectRef.current.moveLeft();
+        } else if (e.key === 'd' || e.key === 'D') {
+          gameObjectRef.current.moveRight();
+        } else if (e.key === ' ') {
+          gameObjectRef.current.jump();
+        } else if (e.key === 's' || e.key === 'S') {
+          gameObjectRef.current.slide();
+        }
+      }
+      if (e.key === 'r' || e.key === 'R') {
+        console.log('R key pressed for restart');
+        restartGame();
+      } else if (e.key === 'q' || e.key === 'Q') {
+        console.log('Q key pressed to quit');
+        quitGame();
+      }
+    };
+
+    document.addEventListener('keydown', keydownHandler);
+
+    // Cleanup on component unmount
+    return () => {
+      console.log('Cleaning up SurfDash');
+      if (cameraRef.current) cameraRef.current.stop();
+      gameStartedRef.current = false;
+      gameObjectRef.current = null;
+      bgMusicRef.current.pause();
+      bgMusicRef.current.currentTime = 0;
+      deathSoundRef.current.pause();
+      deathSoundRef.current.currentTime = 0;
+      gameOverSoundRef.current.pause();
+      gameOverSoundRef.current.currentTime = 0;
+      immunitySoundRef.current.pause();
+      immunitySoundRef.current.currentTime = 0;
+      if (startButton) startButton.removeEventListener('click', startHandler);
+      if (restartButton) restartButton.removeEventListener('click', restartHandler);
+      if (testCameraButton) testCameraButton.removeEventListener('click', testCameraHandler);
+      if (playAgainButton) playAgainButton.removeEventListener('click', playAgainHandler);
+      document.removeEventListener('keydown', keydownHandler);
+    };
+  }, []);
+
   return <div></div>;
 };
 
