@@ -28,8 +28,7 @@ from cv_games_app.views import SubmitScoreAPIView
 # Added: URL patterns 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='index.html'), name='home'),  
-    path('auth/', include('cv_games_app.urls')),  
+    path('', include('cv_games_app.urls')),   
     path('accounts/', include('accounts.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

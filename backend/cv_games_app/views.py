@@ -12,6 +12,7 @@ from .models import Games, Leaderboards
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 import logging
+import time
 import json
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,10 @@ def signin(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+
+            request.session['login_time'] = int(time.time())  # or use timezone.now().isoformat() for readable time
+            request.session['username'] = username
+
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
@@ -126,6 +131,18 @@ def signout(request):
     request.session.flush()
     messages.success(request, 'You have been logged out.')
     return redirect('login')
+
+def home(request):
+    username = request.session.get('username')
+    login_time = request.session.get('login_time')
+    now = int(time.time())
+    time_left = 0
+    if login_time:
+        elapsed = now - login_time
+        time_left = max(0, 30 - elapsed)
+    if not username:
+        username = 'Guest'
+    return render(request, 'index.html', {'username': username, 'time_left': time_left})
 
 def leaderboard(request):
     games = Games.objects.all()
