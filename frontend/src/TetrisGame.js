@@ -11,6 +11,8 @@ const TetrisGame = () => {
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const debugRef = useRef(null);
+  const gameObjectRef = useRef(null);
+  const lastFistDetectedRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
@@ -28,11 +30,9 @@ const TetrisGame = () => {
         minDetectionConfidence: 0.9,
         minTrackingConfidence: 0.9,
       });
-      handsRef.current.onResults((results) => {
-        canvas.save();
-        canvas.clearRect(0, 0, 1280, 720);
-        canvas.restore();
-      });
+      handsRef.current.onResults((results) =>
+        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current)
+      );
     };
 
     const startCamera = async () => {
@@ -75,9 +75,48 @@ const TetrisGame = () => {
         const deltaTime = timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;
         gameObjectRef.current.updateWithoutRender(deltaTime);
-        gameObjectRef.current.render(canvas);
         requestAnimationFrame(gameLoop);
       }
+    };
+
+    const isFistGesture = (landmarks) => {
+      const thumbTip = landmarks[4];
+      const indexTip = landmarks[8];
+      const middleTip = landmarks[12];
+      const ringTip = landmarks[16];
+      const pinkyTip = landmarks[20];
+      const wrist = landmarks[0];
+
+      const dist = (p1, p2) => Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+      const thumbToWrist = dist(thumbTip, wrist);
+      const indexToWrist = dist(indexTip, wrist);
+      const middleToWrist = dist(middleTip, wrist);
+      const ringToWrist = dist(ringTip, wrist);
+      const pinkyToWrist = dist(pinkyTip, wrist);
+
+      return (
+        indexToWrist < thumbToWrist &&
+        middleToWrist < thumbToWrist &&
+        ringToWrist < thumbToWrist &&
+        pinkyToWrist < thumbToWrist
+      );
+    };
+
+    const onHandResults = (results, ctx, video, gameObj, started) => {
+      ctx.save();
+      ctx.clearRect(0, 0, 1280, 720);
+      if (started && gameObj && results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        const indexFinger = landmarks[8];
+        const fingerX = Math.floor(1280 - indexFinger.x * 1280);
+        const fingerY = Math.floor(indexFinger.y * 720);
+        const isFist = isFistGesture(landmarks);
+        const wasFist = lastFistDetectedRef.current;
+        lastFistDetectedRef.current = isFist;
+        gameObj.updateFingerPosition(fingerX, fingerY, isFist && !wasFist);
+        gameObj.render(ctx);
+      }
+      ctx.restore();
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
@@ -117,6 +156,8 @@ const TetrisGame = () => {
       this.score = 0;
       this.linesCleared = 0;
       this.gameOver = false;
+      this.moveCooldown = 0;
+      this.rotationCooldown = 0;
       this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
     }
 
@@ -184,6 +225,42 @@ const TetrisGame = () => {
       }
     }
 
+    rotatePiece() {
+      const newPiece = Array(this.currentPiece[0].length).fill().map(() => []);
+      for (let y = 0; y < this.currentPiece.length; y++) {
+        for (let x = 0; x < this.currentPiece[0].length; x++) {
+          newPiece[x][this.currentPiece.length - 1 - y] = this.currentPiece[y][x];
+        }
+      }
+      let newX = this.pieceX;
+      if (newX + newPiece[0].length > this.gridWidth) {
+        newX = this.gridWidth - newPiece[0].length;
+      } else if (newX < 0) {
+        newX = 0;
+      }
+      if (this.isValidMove(newPiece, newX, this.pieceY)) {
+        this.currentPiece = newPiece;
+        this.pieceX = newX;
+      }
+    }
+
+    updateFingerPosition(fingerX, fingerY, triggerRotate) {
+      const gridCenter = 640;
+      const gridWidthPixels = this.gridWidth * this.blockSize;
+      const normalizedX = (fingerX - (gridCenter - gridWidthPixels / 2)) / this.blockSize;
+      const targetX = Math.max(0, Math.min(this.gridWidth - this.currentPiece[0].length, Math.round(normalizedX)));
+      if (this.moveCooldown <= 0 && targetX !== this.pieceX && this.isValidMove(this.currentPiece, targetX, this.pieceY)) {
+        this.pieceX = targetX;
+        this.moveCooldown = 30;
+      }
+      if (triggerRotate && this.rotationCooldown <= 0) {
+        this.rotatePiece();
+        this.rotationCooldown = 500;
+      }
+      this.moveCooldown = Math.max(0, this.moveCooldown - 16);
+      this.rotationCooldown = Math.max(0, this.rotationCooldown - 16);
+    }
+
     updateWithoutRender(deltaTime) {
       this.lastDropTime += deltaTime;
       if (this.lastDropTime >= this.dropSpeed) {
@@ -242,7 +319,7 @@ const TetrisGame = () => {
           </div>
           <div style={{ maxWidth: "20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh' }}>
             <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
- Banga-2              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
+              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
@@ -263,7 +340,7 @@ const TetrisGame = () => {
         <div className="game-container inter">
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-          <div ref={gameStatsRef} className="game-statsprincipals">Score: 0 Lines: 0</div>
+          <div ref={gameStatsRef} className="game-stats">Score: 0 Lines: 0</div>
         </div>
       </div>
     </div>
