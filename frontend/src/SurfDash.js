@@ -966,7 +966,7 @@ const SurfDash = ({ setSelectedGame }) => {
               </div>
             </div>
             <div style={{ maxWidth: '40%' }}>
-              <img src="static/images/pages/jumpdash-lineart.svg" alt="Jump Dash" style={{ width: '100%', height: 'auto' }} />
+              <img src="static/images/pages/surfdash-lineart.svg" alt="Jump Dash" style={{ width: '100%', height: 'auto' }} />
             </div>
           </div>
           {/* Game canvas slide */}
