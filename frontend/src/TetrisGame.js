@@ -189,6 +189,7 @@ const TetrisGame = () => {
       this.currentPiece = this.newPiece();
       this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
       this.pieceY = 0;
+      this.nextPiece = this.newPiece();
       this.ctx = ctx;
       this.stats = stats;
       this.lastDropTime = 0;
@@ -243,7 +244,8 @@ const TetrisGame = () => {
           }
         }
         this.clearLines();
-        this.currentPiece = this.newPiece();
+        this.currentPiece = this.nextPiece;
+        this.nextPiece = this.newPiece();
         this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
         this.pieceY = 0;
         if (!this.isValidMove(this.currentPiece, this.pieceX, this.pieceY)) {
@@ -339,6 +341,27 @@ const TetrisGame = () => {
         for (let px = 0; px < this.currentPiece[0].length; px++) {
           if (this.currentPiece[py][px]) {
             ctx.fillRect(450 + 5 + (this.pieceX + px) * this.blockSize, 100 + 5 + (this.pieceY + py) * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+          }
+        }
+      }
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(900, 100, 160, 160);
+      ctx.strokeStyle = '#1E90FF';
+      ctx.strokeRect(900, 100, 160, 160);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Next Block', 980, 80);
+      const nextShapeIndex = this.shapes.findIndex(shape => shape.every((row, y) => row.every((cell, x) => cell === this.nextPiece[y]?.[x]))) || 0;
+      ctx.fillStyle = this.colors[nextShapeIndex] || 'white';
+      const maxSize = Math.max(this.nextPiece.length, this.nextPiece[0].length);
+      const scale = 100 / maxSize;
+      const offsetX = 900 + (160 - this.nextPiece[0].length * scale) / 2;
+      const offsetY = 100 + (160 - this.nextPiece.length * scale) / 2;
+      for (let py = 0; py < this.nextPiece.length; py++) {
+        for (let px = 0; px < this.nextPiece[0].length; px++) {
+          if (this.nextPiece[py][px]) {
+            ctx.fillRect(offsetX + px * scale, offsetY + py * scale, scale - 2, scale - 2);
           }
         }
       }
