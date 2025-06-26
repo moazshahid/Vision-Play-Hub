@@ -274,8 +274,8 @@ const App = () => {
           <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Sign Up</button>
           </a>
-          <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Leaderboards</button>
+          <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+            <button className="hanken-grotesk-bold back-button">Leaderboard</button>
           </a>
           <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Profile</button>
