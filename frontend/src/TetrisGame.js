@@ -16,6 +16,7 @@ const TetrisGame = () => {
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const lastFistDetectedRef = useRef(false);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
@@ -24,6 +25,7 @@ const TetrisGame = () => {
     const gameOver = gameOverRef.current;
     const finalScore = finalScoreRef.current;
     const debug = debugRef.current;
+    const audio = audioRef.current;
 
     gameOver.style.display = 'none';
 
@@ -70,12 +72,21 @@ const TetrisGame = () => {
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
+            audio.play().catch((error) => console.error('Audio playback error:', error.message));
             requestAnimationFrame(gameLoop);
           })
           .catch((error) => {
             alert('Camera access error: ' + error.message);
           });
       }
+    };
+
+    const playAgain = () => {
+      if (cameraRef.current) cameraRef.current.stop();
+      gameStartedRef.current = false;
+      audio.pause();
+      audio.currentTime = 0;
+      startGame();
     };
 
     const gameLoop = (timestamp) => {
@@ -161,12 +172,14 @@ const TetrisGame = () => {
 
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
+    document.getElementById('play-again-btn').addEventListener('click', playAgain);
 
     initHandDetection();
 
     return () => {
       if (cameraRef.current) cameraRef.current.stop();
       gameStartedRef.current = false;
+      audio.pause();
     };
   }, []);
 
@@ -411,6 +424,7 @@ const TetrisGame = () => {
         <div className="game-container inter">
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <audio ref={audioRef} src="static/audio/tetris-theme.mp3" loop />
           <div ref={gameStatsRef} className="game-stats">Score: 0 Lines: 0</div>
           <div ref={gameOverRef} className="game-over">
             <h2>{gameObjectRef.current?.gameWon ? 'You Win!' : 'Game Over!'}</h2>
