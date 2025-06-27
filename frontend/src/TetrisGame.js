@@ -4,19 +4,19 @@ import { submitScore } from './utils/api';
 
 const TetrisGame = () => {
   const [showGame, setShowGame] = useState(false);
-  const canvasRef = useRef(null);
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const gameStatsRef = useRef(null);
   const gameOverRef = useRef(null);
   const finalScoreRef = useRef(null);
   const debugRef = useRef(null);
+  const handsRef = useRef(null);
+  const cameraRef = useRef(null);
   const gameObjectRef = useRef(null);
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(null);
-  const handsRef = useRef(null);
-  const cameraRef = useRef(null);
+  const bgMusicRef = useRef(null);
   const lastFistDetectedRef = useRef(false);
-  const audioRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
@@ -25,7 +25,6 @@ const TetrisGame = () => {
     const gameOver = gameOverRef.current;
     const finalScore = finalScoreRef.current;
     const debug = debugRef.current;
-    const audio = audioRef.current;
 
     gameOver.style.display = 'none';
 
@@ -69,24 +68,19 @@ const TetrisGame = () => {
         startCamera()
           .then(() => {
             gameObjectRef.current = new GameLogic(canvas, gameStats);
+            bgMusicRef.current = new Audio('/static/sounds/background.mp3');
+            bgMusicRef.current.volume = 0.3;
+            bgMusicRef.current.loop = true;
+            bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
-            audio.play().catch((error) => console.error('Audio playback error:', error.message));
             requestAnimationFrame(gameLoop);
           })
           .catch((error) => {
             alert('Camera access error: ' + error.message);
           });
       }
-    };
-
-    const playAgain = () => {
-      if (cameraRef.current) cameraRef.current.stop();
-      gameStartedRef.current = false;
-      audio.pause();
-      audio.currentTime = 0;
-      startGame();
     };
 
     const gameLoop = (timestamp) => {
@@ -97,6 +91,54 @@ const TetrisGame = () => {
         requestAnimationFrame(gameLoop);
       }
     };
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      if (bgMusicRef.current) bgMusicRef.current.pause();
+      gameObjectRef.current = new GameLogic(canvas, gameStats);
+      bgMusicRef.current = new Audio('/static/sounds/background.mp3');
+      bgMusicRef.current.volume = 0.3;
+      bgMusicRef.current.loop = true;
+      bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
+      gameOver.style.display = 'none';
+      gameStartedRef.current = true;
+      lastRenderTimeRef.current = performance.now();
+      requestAnimationFrame(gameLoop);
+    });
+    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      if (bgMusicRef.current) bgMusicRef.current.pause();
+      gameObjectRef.current = new GameLogic(canvas, gameStats);
+      bgMusicRef.current = new Audio('/static/sounds/background.mp3');
+      bgMusicRef.current.volume = 0.3;
+      bgMusicRef.current.loop = true;
+      bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
+      gameOver.style.display = 'none';
+      gameStartedRef.current = true;
+      lastRenderTimeRef.current = performance.now();
+      requestAnimationFrame(gameLoop);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        if (bgMusicRef.current) bgMusicRef.current.pause();
+        gameObjectRef.current = new GameLogic(canvas, gameStats);
+        bgMusicRef.current = new Audio('/static/sounds/background.mp3');
+        bgMusicRef.current.volume = 0.3;
+        bgMusicRef.current.loop = true;
+        bgMusicRef.current.play().catch((e) => console.log('Error playing background music:', e));
+        gameOver.style.display = 'none';
+        gameStartedRef.current = true;
+        lastRenderTimeRef.current = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+      if (e.key === 'q' || e.key === 'Q') {
+        if (cameraRef.current) cameraRef.current.stop();
+        if (bgMusicRef.current) bgMusicRef.current.pause();
+        gameStartedRef.current = false;
+      }
+    });
+
+    initHandDetection();
 
     const isFistGesture = (landmarks) => {
       const thumbTip = landmarks[4];
@@ -110,34 +152,48 @@ const TetrisGame = () => {
       const thumbToWrist = dist(thumbTip, wrist);
       const indexToWrist = dist(indexTip, wrist);
       const middleToWrist = dist(middleTip, wrist);
-      const ringToWrist = dist(ringTip, wrist);
+      const ringToWrist = dist(ringTip, wrist); // Removed uint16_t
       const pinkyToWrist = dist(pinkyTip, wrist);
 
-      return (
+      const fingersCurled = (
         indexToWrist < thumbToWrist &&
         middleToWrist < thumbToWrist &&
         ringToWrist < thumbToWrist &&
         pinkyToWrist < thumbToWrist
       );
+
+      return fingersCurled;
     };
 
     const onHandResults = (results, ctx, video, gameObj, started, over, score) => {
       ctx.save();
       ctx.clearRect(0, 0, 1280, 720);
-      if (started && gameObj && !gameObj.gameOver && !gameObj.gameWon) {
-        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      //ctx.globalAlpha = 0.3;
+      //ctx.save();
+      //ctx.translate(1280, 0);
+      //ctx.scale(-1, 1);
+      //ctx.drawImage(results.image, 0, 0, 1280, 720);
+      //ctx.restore();
+      //ctx.globalAlpha = 1.0;
+
+      if (started && gameObj) {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && !gameObj.gameOver && !gameObj.gameWon) {
           const landmarks = results.multiHandLandmarks[0];
           const indexFinger = landmarks[8];
           const fingerX = Math.floor(1280 - indexFinger.x * 1280);
           const fingerY = Math.floor(indexFinger.y * 720);
+
           const isFist = isFistGesture(landmarks);
           const wasFist = lastFistDetectedRef.current;
           lastFistDetectedRef.current = isFist;
+
           gameObj.updateFingerPosition(fingerX, fingerY, isFist && !wasFist);
-          gameObj.render(ctx);
         } else {
           lastFistDetectedRef.current = false;
-          gameObj.render(ctx);
+        }
+        gameObj.render(ctx);
+        if (gameStartedRef.current && !gameObj.gameOver && !gameObj.gameWon) {
+          requestAnimationFrame(gameLoop);
         }
       }
       if (gameObj && (gameObj.gameOver || gameObj.gameWon)) {
@@ -157,6 +213,9 @@ const TetrisGame = () => {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 60px Arial';
       ctx.fillText(`Score: ${score} Lines: ${linesCleared}`, 640, 400);
+      ctx.fillStyle = '#1E90FF';
+      ctx.font = '40px Arial';
+      ctx.fillText('Press "R" to Restart', 640, 500);
       finalScore.textContent = score;
       over.style.display = 'block';
       if (!gameObjectRef.current.scoreSubmitted) {
@@ -170,89 +229,105 @@ const TetrisGame = () => {
       }
     };
 
-    document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
-    document.getElementById('play-again-btn').addEventListener('click', playAgain);
+    class GameLogic {
+      constructor(ctx, stats) {
+        this.gridWidth = 10;
+        this.gridHeight = 20;
+        this.blockSize = 30;
+        this.grid = Array(this.gridHeight).fill().map(() => Array(this.gridWidth).fill(0));
+        this.shapes = [
+          [[1, 1, 1, 1]], // I
+          [[1, 1], [1, 1]], // O
+          [[1, 1, 1], [0, 1, 0]], // T
+          [[1, 1, 1], [1, 0, 0]], // L
+          [[1, 1, 1], [0, 0, 1]], // J
+          [[1, 1, 0], [0, 1, 1]], // S
+          [[0, 1, 1], [1, 1, 0]], // Z
+        ];
+        this.colors = ['cyan', 'yellow', 'purple', 'orange', 'blue', 'green', 'red'];
+        this.currentPiece = this.newPiece();
+        this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
+        this.pieceY = 0;
+        this.nextPiece = this.newPiece();
+        this.score = 0;
+        this.linesCleared = 0;
+        this.gameOver = false;
+        this.gameWon = false;
+        this.ctx = ctx;
+        this.stats = stats;
+        this.moveCooldown = 0;
+        this.rotationCooldown = 0;
+        this.dropSpeed = 800;
+        this.lastDropTime = 0;
+        this.scoreSubmitted = false;
+        this.linesToWin = 10;
+        this.lastFingerX = null;
+        this.fastDropActive = false;
+        this.fastDropDebounce = 0;
+        this.backgroundImage = new Image();
+        this.backgroundImage.src = '/static/images/bg.png';
+        this.backgroundImageLoaded = false;
+        this.backgroundImage.onload = () => {
+          this.backgroundImageLoaded = true;
+        };
+      }
 
-    initHandDetection();
+      newPiece() {
+        const index = Math.floor(Math.random() * this.shapes.length);
+        return this.shapes[index].map(row => [...row]);
+      }
 
-    return () => {
-      if (cameraRef.current) cameraRef.current.stop();
-      gameStartedRef.current = false;
-      audio.pause();
-    };
-  }, []);
+      rotatePiece() {
+        const newPiece = Array(this.currentPiece[0].length).fill().map(() => []);
+        for (let y = 0; y < this.currentPiece.length; y++) {
+          for (let x = 0; x < this.currentPiece[0].length; x++) {
+            newPiece[x][this.currentPiece.length - 1 - y] = this.currentPiece[y][x];
+          }
+        }
+        let newX = this.pieceX;
+        if (newX + newPiece[0].length > this.gridWidth) {
+          newX = this.gridWidth - newPiece[0].length;
+        } else if (newX < 0) {
+          newX = 0;
+        }
+        if (this.isValidMove(newPiece, newX, this.pieceY)) {
+          this.currentPiece = newPiece;
+          this.pieceX = newX;
+        }
+      }
 
-  class GameLogic {
-    constructor(ctx, stats) {
-      this.gridWidth = 10;
-      this.gridHeight = 20;
-      this.blockSize = 30;
-      this.grid = Array(this.gridHeight).fill().map(() => Array(this.gridWidth).fill(0));
-      this.shapes = [
-        [[1, 1, 1, 1]], // I
-        [[1, 1], [1, 1]], // O
-        [[1, 1, 1], [0, 1, 0]], // T
-        [[1, 1, 1], [1, 0, 0]], // L
-        [[1, 1, 1], [0, 0, 1]], // J
-        [[1, 1, 0], [0, 1, 1]], // S
-        [[0, 1, 1], [1, 1, 0]], // Z
-      ];
-      this.colors = ['cyan', 'yellow', 'purple', 'orange', 'blue', 'green', 'red'];
-      this.currentPiece = this.newPiece();
-      this.pieceX = Math.floor(this.gridWidth / 2) - Math.floor(this.currentPiece[0].length / 2);
-      this.pieceY = 0;
-      this.nextPiece = this.newPiece();
-      this.ctx = ctx;
-      this.stats = stats;
-      this.lastDropTime = 0;
-      this.dropSpeed = 800;
-      this.score = 0;
-      this.linesCleared = 0;
-      this.gameOver = false;
-      this.gameWon = false;
-      this.scoreSubmitted = false;
-      this.linesToWin = 10;
-      this.moveCooldown = 0;
-      this.rotationCooldown = 0;
-      this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
-    }
-
-    newPiece() {
-      const index = Math.floor(Math.random() * this.shapes.length);
-      return this.shapes[index].map(row => [...row]);
-    }
-
-    isValidMove(piece, x, y) {
-      for (let py = 0; py < piece.length; py++) {
-        for (let px = 0; px < piece[0].length; px++) {
-          if (piece[py][px]) {
-            const gridX = x + px;
-            const gridY = y + py;
-            if (
-              gridX < 0 || gridX >= this.gridWidth ||
-              gridY >= this.gridHeight ||
-              (gridY >= 0 && this.grid[gridY][gridX])
-            ) {
-              return false;
+      isValidMove(piece, x, y) {
+        for (let py = 0; py < piece.length; py++) {
+          for (let px = 0; px < piece[0].length; px++) {
+            if (piece[py][px]) {
+              const gridX = x + px;
+              const gridY = y + py;
+              if (
+                gridX < 0 || gridX >= this.gridWidth ||
+                gridY >= this.gridHeight ||
+                (gridY >= 0 && this.grid[gridY][gridX])
+              ) {
+                return false;
+              }
             }
           }
         }
+        return true;
       }
-      return true;
-    }
 
-    mergePiece() {
-      for (let py = 0; py < this.currentPiece.length; py++) {
-        for (let px = 0; px < this.currentPiece[0].length; px++) {
-          if (this.currentPiece[py][px]) {
-            const gridY = this.pieceY + py;
-            if (gridY < 0) {
-              this.gameOver = true;
-              return;
-            }
-            if (gridY < this.gridHeight) {
-              this.grid[gridY][this.pieceX + px] = 1;
+      mergePiece() {
+        for (let py = 0; py < this.currentPiece.length; py++) {
+          for (let px = 0; px < this.currentPiece[0].length; px++) {
+            if (this.currentPiece[py][px]) {
+              const gridY = this.pieceY + py;
+              const gridX = this.pieceX + px;
+              if (gridY < 0) {
+                this.gameOver = true;
+                return;
+              }
+              if (gridY < this.gridHeight) {
+                this.grid[gridY][gridX] = 1;
+              }
             }
           }
         }
@@ -265,121 +340,163 @@ const TetrisGame = () => {
           this.gameOver = true;
         }
       }
-    }
 
-    clearLines() {
-      let lines = 0;
-      for (let y = this.gridHeight - 1; y >= 0; y--) {
-        if (this.grid[y].every(cell => cell)) {
-          this.grid.splice(y, 1);
-          this.grid.unshift(Array(this.gridWidth).fill(0));
-          lines++;
+      clearLines() {
+        let lines = 0;
+        for (let y = this.gridHeight - 1; y >= 0; y--) {
+          if (this.grid[y].every(cell => cell)) {
+            this.grid.splice(y, 1);
+            this.grid.unshift(Array(this.gridWidth).fill(0));
+            lines++;
+          }
+        }
+        if (lines > 0) {
+          this.linesCleared += lines;
+          this.score += lines * 100 * (lines > 1 ? lines : 1);
+          this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
+          this.dropSpeed = Math.max(300, this.dropSpeed - lines * 50);
+          try {
+            const clearSound = new Audio('/static/sounds/clear.mp3');
+            clearSound.volume = 0.5;
+            clearSound.play().catch((e) => console.log('Error playing clear sound:', e));
+          } catch (e) {
+            console.log('Could not load or play clear sound:', e);
+          }
+          if (this.linesCleared >= this.linesToWin) {
+            this.gameWon = true;
+          }
         }
       }
-      if (lines > 0) {
-        this.linesCleared += lines;
-        this.score += lines * 100 * (lines > 1 ? lines : 1);
-        this.stats.textContent = `Score: ${this.score} Lines: ${this.linesCleared}`;
-        if (this.linesCleared >= this.linesToWin) {
-          this.gameWon = true;
+
+      updateFingerPosition(fingerX, fingerY, triggerRotate) {
+        if (this.gameOver || this.gameWon) return;
+        const gridCenter = 640;
+        const gridWidthPixels = this.gridWidth * this.blockSize;
+        const normalizedX = (fingerX - (gridCenter - gridWidthPixels / 2)) / this.blockSize;
+        const targetX = Math.max(0, Math.min(this.gridWidth - this.currentPiece[0].length, Math.round(normalizedX)));
+        if (this.moveCooldown <= 0 && targetX !== this.pieceX && this.isValidMove(this.currentPiece, targetX, this.pieceY)) {
+          this.pieceX = targetX;
+          this.moveCooldown = 30;
+        }
+        this.lastFingerX = fingerX;
+        if (fingerY > 600 && this.fastDropDebounce <= 0) {
+          this.fastDropActive = true;
+          this.fastDropDebounce = 500;
+        } else if (fingerY <= 600 && this.fastDropActive) {
+          this.fastDropActive = false;
+          this.fastDropDebounce = 0;
+        }
+        if (triggerRotate && this.rotationCooldown <= 0) {
+          this.rotatePiece();
+          this.rotationCooldown = 500;
+          try {
+            const rotateSound = new Audio('/static/sounds/rotate.mp3');
+            rotateSound.volume = 0.5;
+            rotateSound.play().catch((e) => console.log('Error playing rotate sound:', e));
+          } catch (e) {
+            console.log('Could not load or play rotate sound:', e);
+          }
+        }
+        this.fastDropDebounce = Math.max(0, this.fastDropDebounce - 16);
+      }
+
+      updateWithoutRender(deltaTime) {
+        if (this.gameOver || this.gameWon) return;
+        this.moveCooldown -= deltaTime;
+        this.rotationCooldown -= deltaTime;
+        this.lastDropTime += deltaTime;
+        this.dropSpeed = this.fastDropActive ? 100 : (800 - Math.floor(this.linesCleared / 2) * 50);
+        if (this.lastDropTime >= this.dropSpeed) {
+          if (this.isValidMove(this.currentPiece, this.pieceX, this.pieceY + 1)) {
+            this.pieceY++;
+          } else {
+            this.mergePiece();
+          }
+          this.lastDropTime = 0;
         }
       }
-    }
 
-    rotatePiece() {
-      const newPiece = Array(this.currentPiece[0].length).fill().map(() => []);
-      for (let y = 0; y < this.currentPiece.length; y++) {
-        for (let x = 0; x < this.currentPiece[0].length; x++) {
-          newPiece[x][this.currentPiece.length - 1 - y] = this.currentPiece[y][x];
-        }
-      }
-      let newX = this.pieceX;
-      if (newX + newPiece[0].length > this.gridWidth) {
-        newX = this.gridWidth - newPiece[0].length;
-      } else if (newX < 0) {
-        newX = 0;
-      }
-      if (this.isValidMove(newPiece, newX, this.pieceY)) {
-        this.currentPiece = newPiece;
-        this.pieceX = newX;
-      }
-    }
-
-    updateFingerPosition(fingerX, fingerY, triggerRotate) {
-      const gridCenter = 640;
-      const gridWidthPixels = this.gridWidth * this.blockSize;
-      const normalizedX = (fingerX - (gridCenter - gridWidthPixels / 2)) / this.blockSize;
-      const targetX = Math.max(0, Math.min(this.gridWidth - this.currentPiece[0].length, Math.round(normalizedX)));
-      if (this.moveCooldown <= 0 && targetX !== this.pieceX && this.isValidMove(this.currentPiece, targetX, this.pieceY)) {
-        this.pieceX = targetX;
-        this.moveCooldown = 30;
-      }
-      if (triggerRotate && this.rotationCooldown <= 0) {
-        this.rotatePiece();
-        this.rotationCooldown = 500;
-      }
-      this.moveCooldown = Math.max(0, this.moveCooldown - 16);
-      this.rotationCooldown = Math.max(0, this.rotationCooldown - 16);
-    }
-
-    updateWithoutRender(deltaTime) {
-      this.lastDropTime += deltaTime;
-      if (this.lastDropTime >= this.dropSpeed) {
-        if (this.isValidMove(this.currentPiece, this.pieceX, this.pieceY + 1)) {
-          this.pieceY++;
+      render(ctx) {
+        // Draw background image or fallback color
+        if (this.backgroundImageLoaded) {
+          ctx.drawImage(this.backgroundImage, 0, 0, 1280, 720);
         } else {
-          this.mergePiece();
+          ctx.fillStyle = 'rgba(20, 20, 20, 0.8)';
+          ctx.fillRect(0, 0, 1280, 720);
         }
-        this.lastDropTime = 0;
+        const boardX = 450;
+        const boardY = 100;
+        const boardWidth = this.gridWidth * this.blockSize + 10;
+        const boardHeight = this.gridHeight * this.blockSize + 10;
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
+        ctx.strokeStyle = '#1E90FF';
+        ctx.lineWidth = 5;
+        ctx.shadowColor = '#1E90FF';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
+        ctx.shadowBlur = 0;
+        for (let y = 0; y < this.gridHeight; y++) {
+          for (let x = 0; x < this.gridWidth; x++) {
+            if (this.grid[y][x]) {
+              ctx.fillStyle = 'gray';
+              ctx.fillRect(boardX + 5 + x * this.blockSize, boardY + 5 + y * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+              ctx.strokeStyle = '#333';
+              ctx.strokeRect(boardX + 5 + x * this.blockSize, boardY + 5 + y * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+            }
+          }
+        }
+        const shapeIndex = this.shapes.findIndex(shape => shape.every((row, y) => row.every((cell, x) => cell === this.currentPiece[y]?.[x]))) || 0;
+        ctx.fillStyle = this.colors[shapeIndex] || 'white';
+        for (let py = 0; py < this.currentPiece.length; py++) {
+          for (let px = 0; px < this.currentPiece[0].length; px++) {
+            if (this.currentPiece[py][px]) {
+              const gridY = this.pieceY + py;
+              if (gridY >= 0 && gridY < this.gridHeight) {
+                ctx.fillRect(boardX + 5 + (this.pieceX + px) * this.blockSize, boardY + 5 + (this.pieceY + py) * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+                ctx.strokeStyle = '#333';
+                ctx.strokeRect(boardX + 5 + (this.pieceX + px) * this.blockSize, boardY + 5 + (this.pieceY + py) * this.blockSize, this.blockSize - 2, this.blockSize - 2);
+              }
+            }
+          }
+        }
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(900, 100, 160, 160);
+        ctx.strokeStyle = '#1E90FF';
+        ctx.shadowColor = '#1E90FF';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(900, 100, 160, 160);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Next Block', 980, 80);
+        const nextShapeIndex = this.shapes.findIndex(shape => shape.every((row, y) => row.every((cell, x) => cell === this.nextPiece[y]?.[x]))) || 0;
+        ctx.fillStyle = this.colors[nextShapeIndex] || 'white';
+        const maxSize = Math.max(this.nextPiece.length, this.nextPiece[0].length);
+        const scale = 100 / maxSize;
+        const offsetX = 900 + (160 - this.nextPiece[0].length * scale) / 2;
+        const offsetY = 100 + (160 - this.nextPiece.length * scale) / 2;
+        for (let py = 0; py < this.nextPiece.length; py++) {
+          for (let px = 0; px < this.nextPiece[0].length; px++) {
+            if (this.nextPiece[py][px]) {
+              ctx.fillRect(offsetX + px * scale, offsetY + py * scale, scale - 2, scale - 2);
+            }
+          }
+        }
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Score: ${this.score}`, 50, 50);
+        ctx.fillText(`Lines: ${this.linesCleared}`, 50, 100);
       }
     }
 
-    render(ctx) {
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(450, 100, this.gridWidth * this.blockSize + 10, this.gridHeight * this.blockSize + 10);
-      ctx.strokeStyle = '#1E90FF';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(450, 100, this.gridWidth * this.blockSize + 10, this.gridHeight * this.blockSize + 10);
-      for (let y = 0; y < this.gridHeight; y++) {
-        for (let x = 0; x < this.gridWidth; x++) {
-          if (this.grid[y][x]) {
-            ctx.fillStyle = 'gray';
-            ctx.fillRect(450 + 5 + x * this.blockSize, 100 + 5 + y * this.blockSize, this.blockSize - 2, this.blockSize - 2);
-          }
-        }
-      }
-      const shapeIndex = this.shapes.findIndex(shape => shape.every((row, y) => row.every((cell, x) => cell === this.currentPiece[y]?.[x]))) || 0;
-      ctx.fillStyle = this.colors[shapeIndex] || 'white';
-      for (let py = 0; py < this.currentPiece.length; py++) {
-        for (let px = 0; px < this.currentPiece[0].length; px++) {
-          if (this.currentPiece[py][px]) {
-            ctx.fillRect(450 + 5 + (this.pieceX + px) * this.blockSize, 100 + 5 + (this.pieceY + py) * this.blockSize, this.blockSize - 2, this.blockSize - 2);
-          }
-        }
-      }
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(900, 100, 160, 160);
-      ctx.strokeStyle = '#1E90FF';
-      ctx.strokeRect(900, 100, 160, 160);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '20px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('Next Block', 980, 80);
-      const nextShapeIndex = this.shapes.findIndex(shape => shape.every((row, y) => row.every((cell, x) => cell === this.nextPiece[y]?.[x]))) || 0;
-      ctx.fillStyle = this.colors[nextShapeIndex] || 'white';
-      const maxSize = Math.max(this.nextPiece.length, this.nextPiece[0].length);
-      const scale = 100 / maxSize;
-      const offsetX = 900 + (160 - this.nextPiece[0].length * scale) / 2;
-      const offsetY = 100 + (160 - this.nextPiece.length * scale) / 2;
-      for (let py = 0; py < this.nextPiece.length; py++) {
-        for (let px = 0; px < this.nextPiece[0].length; px++) {
-          if (this.nextPiece[py][px]) {
-            ctx.fillRect(offsetX + px * scale, offsetY + py * scale, scale - 2, scale - 2);
-          }
-        }
-      }
-    }
-  }
+    return () => {
+      if (cameraRef.current) cameraRef.current.stop();
+      if (bgMusicRef.current) bgMusicRef.current.pause();
+    };
+  }, []);
 
   return (
     <div className='inter'>
@@ -394,6 +511,7 @@ const TetrisGame = () => {
               <li><strong>Fast drop:</strong> Lower your finger below your wrist to drop faster.</li>
               <li><strong>Clear lines:</strong> Complete rows to score points (100 per line).</li>
               <li><strong>Win/Lose:</strong> Clear 10 lines to win; lose if blocks reach the top.</li>
+              <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
             </ul>
           </div>
         </div>
@@ -412,6 +530,9 @@ const TetrisGame = () => {
       <div style={{ width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
             <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
             </button>
@@ -424,7 +545,6 @@ const TetrisGame = () => {
         <div className="game-container inter">
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-          <audio ref={audioRef} src="static/audio/tetris-theme.mp3" loop />
           <div ref={gameStatsRef} className="game-stats">Score: 0 Lines: 0</div>
           <div ref={gameOverRef} className="game-over">
             <h2>{gameObjectRef.current?.gameWon ? 'You Win!' : 'Game Over!'}</h2>
