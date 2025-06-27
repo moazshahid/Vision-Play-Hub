@@ -497,11 +497,50 @@ const TetrisGame = () => {
             }
           }
         }
+        // Stats box 
+        const statsBoxX = 900;
+        const statsBoxY = 280; // Position below next block box
+        const statsBoxWidth = 200;
+        const statsBoxHeight = 120;
+
+        // Draw stats box background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(statsBoxX, statsBoxY, statsBoxWidth, statsBoxHeight);
+
+        // Draw stats box border with glow effect
+        ctx.strokeStyle = '#1E90FF';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#1E90FF';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(statsBoxX, statsBoxY, statsBoxWidth, statsBoxHeight);
+        ctx.shadowBlur = 0;
+
+        // Stats box title
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = '30px Arial';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('STATISTICS', statsBoxX + statsBoxWidth/2, statsBoxY + 25);
+
+        // Score display
+        ctx.fillStyle = '#FFD700'; // Gold color for score
+        ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(`Score: ${this.score}`, 50, 50);
-        ctx.fillText(`Lines: ${this.linesCleared}`, 50, 100);
+        ctx.fillText('SCORE', statsBoxX + 15, statsBoxY + 50);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(this.score.toString(), statsBoxX + statsBoxWidth - 15, statsBoxY + 50);
+
+        // Lines display
+        ctx.fillStyle = '#00FF7F'; // Spring green for lines
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('Lines Cleared', statsBoxX + 15, statsBoxY + 80);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(this.linesCleared.toString(), statsBoxX + statsBoxWidth - 15, statsBoxY + 80);
+
       }
     }
 
