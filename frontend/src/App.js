@@ -4,6 +4,7 @@ import SnakeGame from './SnakeGame';
 import WhackAMole from './WhackAMole';
 import DessertSlash from './DessertSlash';
 import AirHockey from './AirHockey';
+import SurfDash from './SurfDash';
 import { login } from './utils/api';
 import TetrisGame from './TetrisGame';
 
@@ -199,6 +200,7 @@ const App = () => {
     { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.jpg' },
     { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.jpg' },
     { id: 'tetris', name: 'Tetris Game', component: <TetrisGame />, icon: 'static/images/pages/tetris-colour.jpg' },
+    { id: 'surfdash', name: 'Surf Dash', component: <SurfDash />, icon: 'static/images/pages/surfdash-colour.png' },
     // More games will be added here in the future
   ];
 
