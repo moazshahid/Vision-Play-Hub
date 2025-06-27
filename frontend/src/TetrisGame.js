@@ -39,7 +39,7 @@ const TetrisGame = () => {
         minTrackingConfidence: 0.9,
       });
       handsRef.current.onResults((results) =>
-        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current, gameOver, finalScore)
+        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef, gameOver, finalScore, video)
       );
     };
 
@@ -67,7 +67,7 @@ const TetrisGame = () => {
       if (!gameStartedRef.current) {
         startCamera()
           .then(() => {
-            gameObjectRef.current = new GameLogic(canvas, gameStats);
+            gameObjectRef.current = new GameLogic(canvas, gameStats, video);
             bgMusicRef.current = new Audio('/static/sounds/background.mp3');
             bgMusicRef.current.volume = 0.3;
             bgMusicRef.current.loop = true;
@@ -95,7 +95,7 @@ const TetrisGame = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', () => {
       if (bgMusicRef.current) bgMusicRef.current.pause();
-      gameObjectRef.current = new GameLogic(canvas, gameStats);
+      gameObjectRef.current = new GameLogic(canvas, gameStats, video);
       bgMusicRef.current = new Audio('/static/sounds/background.mp3');
       bgMusicRef.current.volume = 0.3;
       bgMusicRef.current.loop = true;
@@ -108,7 +108,7 @@ const TetrisGame = () => {
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
       if (bgMusicRef.current) bgMusicRef.current.pause();
-      gameObjectRef.current = new GameLogic(canvas, gameStats);
+      gameObjectRef.current = new GameLogic(canvas, gameStats, video);
       bgMusicRef.current = new Audio('/static/sounds/background.mp3');
       bgMusicRef.current.volume = 0.3;
       bgMusicRef.current.loop = true;
@@ -121,7 +121,7 @@ const TetrisGame = () => {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
         if (bgMusicRef.current) bgMusicRef.current.pause();
-        gameObjectRef.current = new GameLogic(canvas, gameStats);
+        gameObjectRef.current = new GameLogic(canvas, gameStats, video);
         bgMusicRef.current = new Audio('/static/sounds/background.mp3');
         bgMusicRef.current.volume = 0.3;
         bgMusicRef.current.loop = true;
@@ -165,7 +165,7 @@ const TetrisGame = () => {
       return fingersCurled;
     };
 
-    const onHandResults = (results, ctx, video, gameObj, started, over, score) => {
+    const onHandResults = (results, ctx, video, gameObj, started, over, score, videoElement) => {
       ctx.save();
       ctx.clearRect(0, 0, 1280, 720);
 
@@ -235,7 +235,7 @@ const TetrisGame = () => {
     };
 
     class GameLogic {
-      constructor(ctx, stats) {
+      constructor(ctx, stats, videoElement) {
         this.gridWidth = 10;
         this.gridHeight = 20;
         this.blockSize = 30;
@@ -276,6 +276,7 @@ const TetrisGame = () => {
           this.backgroundImageLoaded = true;
         };
         this.gameOverSoundPlayed = false;
+        this.videoElement = videoElement;
       }
 
       newPiece() {
@@ -540,6 +541,174 @@ const TetrisGame = () => {
         ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'right';
         ctx.fillText(this.linesCleared.toString(), statsBoxX + statsBoxWidth - 15, statsBoxY + 80);
+
+        // Camera preview box 
+        const previewBoxX = 50;
+        const previewBoxY = 100;
+        const previewBoxWidth = 320;
+        const previewBoxHeight = 240; // 4:3 aspect ratio
+
+        // Draw camera preview background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight);
+
+        // Draw camera preview border
+        ctx.strokeStyle = '#1E90FF';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#1E90FF';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight);
+        ctx.shadowBlur = 0;
+
+        // Camera preview title
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('CAMERA PREVIEW', previewBoxX + previewBoxWidth/2, previewBoxY - 10);
+
+        // Calculate proper aspect ratio for video
+        if (this.videoElement && this.videoElement.videoWidth > 0) {
+          const videoAspect = this.videoElement.videoWidth / this.videoElement.videoHeight;
+          const boxAspect = previewBoxWidth / previewBoxHeight;
+          
+          let drawWidth, drawHeight, drawX, drawY;
+          
+          if (videoAspect > boxAspect) {
+            // Video is wider, fit to height
+            drawHeight = previewBoxHeight;
+            drawWidth = drawHeight * videoAspect;
+            drawX = previewBoxX - (drawWidth - previewBoxWidth) / 2;
+            drawY = previewBoxY;
+          } else {
+            // Video is taller, fit to width
+            drawWidth = previewBoxWidth;
+            drawHeight = drawWidth / videoAspect;
+            drawX = previewBoxX;
+            drawY = previewBoxY + (previewBoxHeight - drawHeight) / 2;
+          }
+          
+          // Clip to preview box area
+          ctx.save();
+          ctx.rect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight);
+          ctx.clip();
+          
+          // Draw the video feed (flipped horizontally like a mirror)
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(this.videoElement, -drawX - drawWidth, drawY, drawWidth, drawHeight);
+          ctx.restore();
+          
+          ctx.restore();
+        }
+
+        // Draw control regions overlay
+        // Left region (red)
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(previewBoxX, previewBoxY, previewBoxWidth * 0.3, previewBoxHeight);
+        ctx.strokeStyle = '#FF0000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(previewBoxX, previewBoxY, previewBoxWidth * 0.3, previewBoxHeight);
+
+        // Right region (blue)
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+        ctx.fillRect(previewBoxX + previewBoxWidth * 0.7, previewBoxY, previewBoxWidth * 0.3, previewBoxHeight);
+        ctx.strokeStyle = '#0000FF';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(previewBoxX + previewBoxWidth * 0.7, previewBoxY, previewBoxWidth * 0.3, previewBoxHeight);
+
+        // Fast drop region (green - bottom area)
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+        ctx.fillRect(previewBoxX, previewBoxY + previewBoxHeight * 0.75, previewBoxWidth, previewBoxHeight * 0.25);
+        ctx.strokeStyle = '#00FF00';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(previewBoxX, previewBoxY + previewBoxHeight * 0.75, previewBoxWidth, previewBoxHeight * 0.25);
+        ctx.setLineDash([]);
+
+        // Region labels with better styling
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+
+        // Left label
+        ctx.strokeText('MOVE LEFT', previewBoxX + previewBoxWidth * 0.15, previewBoxY + previewBoxHeight/2);
+        ctx.fillText('MOVE LEFT', previewBoxX + previewBoxWidth * 0.15, previewBoxY + previewBoxHeight/2);
+
+        // Right label
+        ctx.strokeText('MOVE RIGHT', previewBoxX + previewBoxWidth * 0.85, previewBoxY + previewBoxHeight/2);
+        ctx.fillText('MOVE RIGHT', previewBoxX + previewBoxWidth * 0.85, previewBoxY + previewBoxHeight/2);
+
+        // Fast drop label
+        ctx.strokeText('FAST DROP', previewBoxX + previewBoxWidth/2, previewBoxY + previewBoxHeight * 0.87);
+        ctx.fillText('FAST DROP', previewBoxX + previewBoxWidth/2, previewBoxY + previewBoxHeight * 0.87);
+
+        // Instructions box (right side)
+        const instructionsBoxX = 900;
+        const instructionsBoxY = 420;
+        const instructionsBoxWidth = 250; 
+        const instructionsBoxHeight = 300; 
+
+        // Draw instructions box background with gradient effect
+        const gradient = ctx.createLinearGradient(instructionsBoxX, instructionsBoxY, instructionsBoxX, instructionsBoxY + instructionsBoxHeight);
+        gradient.addColorStop(0, '#2a2a2a');
+        gradient.addColorStop(1, '#1a1a1a');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(instructionsBoxX, instructionsBoxY, instructionsBoxWidth, instructionsBoxHeight);
+
+        // Draw instructions box border with glow
+        ctx.strokeStyle = '#1E90FF';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#1E90FF';
+        ctx.shadowBlur = 15;
+        ctx.strokeRect(instructionsBoxX, instructionsBoxY, instructionsBoxWidth, instructionsBoxHeight);
+        ctx.shadowBlur = 0;
+
+        // Instructions title with background
+        ctx.fillStyle = '#1E90FF';
+        ctx.fillRect(instructionsBoxX + 5, instructionsBoxY + 5, instructionsBoxWidth - 10, 35); 
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px Arial'; 
+        ctx.textAlign = 'center';
+        ctx.fillText('HOW TO PLAY', instructionsBoxX + instructionsBoxWidth/2, instructionsBoxY + 28);
+
+        // Instructions with icons and better formatting
+        ctx.textAlign = 'left';
+        const instructionItems = [
+          { icon: '👆', text: 'Move finger left/right', subtext: 'to control piece position' },
+          { icon: '✊', text: 'Make a fist', subtext: 'to rotate the piece' },
+          { icon: '⬇️', text: 'Lower your finger', subtext: 'for fast drop' },
+          { icon: '🎯', text: 'Clear 10 lines to WIN!', subtext: '' },
+          { icon: '⌨️', text: 'Press R to restart', subtext: 'Press Q to quit' }
+        ];
+
+        let yOffset = instructionsBoxY + 60; 
+        instructionItems.forEach((item, index) => {
+          // Icon
+          ctx.font = '20px Arial'; 
+          ctx.fillStyle = '#FFD700';
+          ctx.fillText(item.icon, instructionsBoxX + 15, yOffset);
+          
+          // Main text
+          ctx.font = 'bold 14px Arial'; 
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(item.text, instructionsBoxX + 45, yOffset); 
+          
+          // Subtext
+          if (item.subtext) {
+            ctx.font = '12px Arial'; 
+            ctx.fillStyle = '#CCCCCC';
+            ctx.fillText(item.subtext, instructionsBoxX + 45, yOffset + 15);
+            yOffset += 42; 
+          } else {
+            yOffset += 30; 
+          }
+        });
+
+        // Add a decorative bottom border
+        ctx.fillStyle = '#1E90FF';
+        ctx.fillRect(instructionsBoxX + 20, instructionsBoxY + instructionsBoxHeight - 15, instructionsBoxWidth - 40, 2);
 
       }
     }
