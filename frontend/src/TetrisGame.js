@@ -152,7 +152,7 @@ const TetrisGame = () => {
       const thumbToWrist = dist(thumbTip, wrist);
       const indexToWrist = dist(indexTip, wrist);
       const middleToWrist = dist(middleTip, wrist);
-      const ringToWrist = dist(ringTip, wrist); // Removed uint16_t
+      const ringToWrist = dist(ringTip, wrist); 
       const pinkyToWrist = dist(pinkyTip, wrist);
 
       const fingersCurled = (
@@ -168,13 +168,6 @@ const TetrisGame = () => {
     const onHandResults = (results, ctx, video, gameObj, started, over, score) => {
       ctx.save();
       ctx.clearRect(0, 0, 1280, 720);
-      //ctx.globalAlpha = 0.3;
-      //ctx.save();
-      //ctx.translate(1280, 0);
-      //ctx.scale(-1, 1);
-      //ctx.drawImage(results.image, 0, 0, 1280, 720);
-      //ctx.restore();
-      //ctx.globalAlpha = 1.0;
 
       if (started && gameObj) {
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && !gameObj.gameOver && !gameObj.gameWon) {
@@ -210,6 +203,18 @@ const TetrisGame = () => {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(gameWon ? 'YOU WIN!' : 'GAME OVER', 640, 300);
+      
+      if (!gameWon && !gameObjectRef.current.gameOverSoundPlayed) {
+        gameObjectRef.current.gameOverSoundPlayed = true;
+        try {
+          const gameOverSound = new Audio('/static/sounds/game-over.mp3');
+          gameOverSound.volume = 0.6;
+          gameOverSound.play().catch((e) => console.log('Error playing game over sound:', e));
+        } catch (e) {
+          console.log('Could not load or play game over sound:', e);
+        }
+      }
+
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 60px Arial';
       ctx.fillText(`Score: ${score} Lines: ${linesCleared}`, 640, 400);
@@ -270,6 +275,7 @@ const TetrisGame = () => {
         this.backgroundImage.onload = () => {
           this.backgroundImageLoaded = true;
         };
+        this.gameOverSoundPlayed = false;
       }
 
       newPiece() {
@@ -316,6 +322,13 @@ const TetrisGame = () => {
       }
 
       mergePiece() {
+        try {
+          const placeSound = new Audio('/static/sounds/place-block.mp3');
+          placeSound.volume = 1.0;
+          placeSound.play().catch((e) => console.log('Error playing place sound:', e));
+        } catch (e) {
+          console.log('Could not load or play place sound:', e);
+        }
         for (let py = 0; py < this.currentPiece.length; py++) {
           for (let px = 0; px < this.currentPiece[0].length; px++) {
             if (this.currentPiece[py][px]) {
