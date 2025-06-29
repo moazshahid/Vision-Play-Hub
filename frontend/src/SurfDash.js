@@ -47,7 +47,7 @@ const SurfDash = ({ setSelectedGame }) => {
   class GameLogic {
     constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage, backgroundImage) {
       // Initialize game state and assets
-      this.lanes = [320, 640, 960]; // X-coordinates for three lanes
+      this.lanes = [150, 640, 1150]; // X-coordinates for three lanes
       this.currentLane = 1; // Start in the middle lane
       this.runnerY = 596; // Base Y-position of the runner
       this.jumpHeight = 0; // Current jump height
@@ -89,6 +89,24 @@ const SurfDash = ({ setSelectedGame }) => {
       this.skateActive = false; // Tracks if skate power-up is active
       this.skateUsed = false; // Tracks if skate power-up has been used
       this.backgroundImage = backgroundImage; //used for background image
+      this.curveFactor = 0.85; // Controls curvature strength
+      this.startOffset = 190; // Initial x offset at z=0
+    }
+
+    // New method to calculate dynamic x position based on z and lane
+    getLaneX(lane, z) {
+      if (lane === 1) return this.lanes[lane]; // Center lane is straight
+      const t = z / 600; // Normalize z from 0 to 600 (runner position)
+      let offset;
+      if (lane === 0) {
+        // Left lane: Start more to the right, curve left
+        offset = this.startOffset * (1 - t) * this.curveFactor;
+        return this.lanes[lane] + offset;
+      } else {
+        // Right lane: Start more to the left, curve right
+        offset = this.startOffset * (1 - t) * this.curveFactor;
+        return this.lanes[lane] - offset;
+      }
     }
 
     // Spawns a new object (coin, hurdle, or train) in a random lane
@@ -104,7 +122,7 @@ const SurfDash = ({ setSelectedGame }) => {
       const lane = Math.floor(Math.random() * 3); // Random lane (0, 1, or 2)
       // Randomly choose object type: 50% coin, 25% hurdle, 25% train
       const type = Math.random() < 0.5 ? 'coin' : Math.random() < 0.5 ? 'hurdle' : 'train';
-      const z = 0; // Start at z=0 (far end of the track)
+      const z = -150; // Start at z=-150 for initial offset to match background image
       if (type === 'coin') {
         this.coins.push({ lane, z });
       } else if (type === 'hurdle') {
@@ -248,41 +266,45 @@ const SurfDash = ({ setSelectedGame }) => {
           coin.z += moveDistance; // Move coin closer
           const screenY = this.mapZToScreenY(coin.z); // Convert z to screen Y
           if (screenY > 720) return false; // Remove coins off screen
+          const coinX = this.getLaneX(coin.lane, coin.z);
           // Check for coin collection
-          if (coin.lane === this.currentLane && screenY > 590 && screenY < 610 && !this.isJumping && !this.isSliding) {
-            this.coinsCollected += 1;
-            this.score += 10;
-            this.stats.textContent = `Score: ${this.score} | Coins: ${this.coinsCollected}`;
-            try {
-              const coinSound = new Audio('/static/sounds/coin.mp3');
-              coinSound.volume = 0.5;
-              coinSound.play().catch((e) => console.log('Error playing sound:', e));
-            } catch (e) {
-              console.log('Could not play sound:', e);
+          if (coin.lane === this.currentLane && screenY > 610 && screenY < 630 && !this.isJumping && !this.isSliding) {
+            const runnerX = this.getLaneX(this.currentLane, 600);
+            if (Math.abs(coinX - runnerX) < this.objectSize / 2) {
+              this.coinsCollected += 1;
+              this.score += 10;
+              this.stats.textContent = `Score: ${this.score} | Coins: ${this.coinsCollected}`;
+              try {
+                const coinSound = new Audio('/static/sounds/coin.mp3');
+                coinSound.volume = 0.5;
+                coinSound.play().catch((e) => console.log('Error playing sound:', e));
+              } catch (e) {
+                console.log('Could not play sound:', e);
+              }
+              // Activate immunity at 10 coins
+              if (this.coinsCollected >= 10 && !this.immunityActive) {
+                this.immunityActive = true;
+                this.playImmunitySound();
+                setImmunityMessage(true);
+                console.log('Immunity activated at 10 coins collected!');
+                setTimeout(() => {
+                  setImmunityMessage(false);
+                  console.log('Immunity message hidden');
+                }, 3000);
+              }
+              // Activate skate at 5 coins
+              if (this.coinsCollected >= 5 && !this.skateActive && !this.skateUsed) {
+                this.skateActive = true;
+                this.skateUsed = true;
+                setSkateMessage(true);
+                console.log('Skate power-up activated at 5 coins collected!');
+                setTimeout(() => {
+                  setSkateMessage(false);
+                  console.log('Skate message hidden');
+                }, 3000);
+              }
+              return false; // Remove collected coin
             }
-            // Activate immunity at 10 coins
-            if (this.coinsCollected >= 10 && !this.immunityActive) {
-              this.immunityActive = true;
-              this.playImmunitySound();
-              setImmunityMessage(true);
-              console.log('Immunity activated at 10 coins collected!');
-              setTimeout(() => {
-                setImmunityMessage(false);
-                console.log('Immunity message hidden');
-              }, 3000);
-            }
-            // Activate skate at 5 coins
-            if (this.coinsCollected >= 5 && !this.skateActive && !this.skateUsed) {
-              this.skateActive = true;
-              this.skateUsed = true;
-              setSkateMessage(true);
-              console.log('Skate power-up activated at 5 coins collected!');
-              setTimeout(() => {
-                setSkateMessage(false);
-                console.log('Skate message hidden');
-              }, 3000);
-            }
-            return false; // Remove collected coin
           }
           return true;
         });
@@ -291,70 +313,81 @@ const SurfDash = ({ setSelectedGame }) => {
           hurdle.z += moveDistance; // Move hurdle closer
           const screenY = this.mapZToScreenY(hurdle.z);
           if (screenY > 720) return false; // Remove hurdles off screen
-          // Check for collision
-          if (hurdle.lane === this.currentLane && screenY > 590 && screenY < 610) {
-            const isHighHurdle = hurdle.type === 'high';
-            const isLowHurdle = hurdle.type === 'low';
-            const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
-            const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
-            const avoided = (isHighHurdle && (this.isJumping || jumpBuffer)) || (isLowHurdle && (this.isSliding || slideBuffer));
-            console.log(`Hurdle at screenY: ${screenY.toFixed(2)}, Type: ${hurdle.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
-            if (!avoided && this.skateActive) {
-              this.skateActive = false; // Consume skate power-up
-              console.log('Skate used to avoid hurdle collision!');
-              return false;
-            } else if (!avoided && this.immunityActive) {
-              this.immunityActive = false; // Consume immunity
-              this.playImmunitySound();
-              console.log('Immunity used to avoid hurdle collision!');
-              return false;
-            } else if (!avoided) {
-              console.log(`Collision detected with hurdle! Game Over. Lane: ${hurdle.lane}, Runner Lane: ${this.currentLane}, Hurdle Y: ${screenY.toFixed(2)}, z: ${hurdle.z.toFixed(2)}`);
-              this.gameOver = true;
-              this.deathAnimation = true;
-              this.deathStartTime = performance.now();
-              bgMusicRef.current.pause();
-              bgMusicRef.current.currentTime = 0;
-              this.playGameOverSounds();
-              return false;
-            } else {
-              console.log(`Hurdle avoided successfully!`);
+          const hurdleX = this.getLaneX(hurdle.lane, hurdle.z);
+          if (hurdle.lane === this.currentLane && screenY > 580 && screenY < 660) {
+            const runnerX = this.getLaneX(this.currentLane, 600);
+            if (Math.abs(hurdleX - runnerX) < this.objectSize * 0.8) {
+              // Check for collision
+              if (hurdle.lane === this.currentLane && screenY > 590 && screenY < 610) {
+                const isHighHurdle = hurdle.type === 'high';
+                const isLowHurdle = hurdle.type === 'low';
+                const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
+                const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
+                const avoided = (isHighHurdle && (this.isJumping || jumpBuffer)) || (isLowHurdle && (this.isSliding || slideBuffer));
+                console.log(`Hurdle at screenY: ${screenY.toFixed(2)}, Type: ${hurdle.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
+                if (!avoided && this.skateActive) {
+                  this.skateActive = false; // Consume skate power-up
+                  console.log('Skate used to avoid hurdle collision!');
+                  return false;
+                } else if (!avoided && this.immunityActive) {
+                  this.immunityActive = false; // Consume immunity
+                  this.playImmunitySound();
+                  console.log('Immunity used to avoid hurdle collision!');
+                  return false;
+                } else if (!avoided) {
+                  console.log(`Collision detected with hurdle! Game Over. Lane: ${hurdle.lane}, Runner Lane: ${this.currentLane}, Hurdle Y: ${screenY.toFixed(2)}, z: ${hurdle.z.toFixed(2)}`);
+                  this.gameOver = true;
+                  this.deathAnimation = true;
+                  this.deathStartTime = performance.now();
+                  bgMusicRef.current.pause();
+                  bgMusicRef.current.currentTime = 0;
+                  this.playGameOverSounds();
+                  return false;
+                } else {
+                  console.log(`Hurdle avoided successfully!`);
+                }
+              }
             }
           }
           return true;
         });
-        // Update trains (similar to hurdles)
+        
+        // Update trains
         this.trains = this.trains.filter((train) => {
           train.z += moveDistance;
           const screenY = this.mapZToScreenY(train.z);
           if (screenY > 720) return false;
-          if (train.lane === this.currentLane && screenY > 590 && screenY < 610) {
-            const isHighTrain = train.type === 'high';
-            const isLowTrain = train.type === 'low';
-            const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
-            const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
-            const avoided = (isHighTrain && (this.isJumping || jumpBuffer)) || (isLowTrain && (this.isSliding || slideBuffer));
-            console.log(`Train at screenY: ${screenY.toFixed(2)}, Type: ${train.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
-            if (!avoided && this.skateActive) {
-              this.skateActive = false;
-              console.log('Skate used to avoid train collision!');
-              return false;
-            } else if (!avoided && this.immunityActive) {
-              this.immunityActive = false;
-              this.playImmunitySound();
-              console.log('Immunity used to avoid train collision!');
-              return false;
-            } else if (!avoided) {
-              console.log(`Collision detected with train! Game Over. Lane: ${train.lane}, Runner Lane: ${this.currentLane}, Train Y: ${screenY.toFixed(2)}, z: ${train.z.toFixed(2)}`);
-              this.gameOver = true;
-              this.deathAnimation = true;
-              this.deathStartTime = performance.now();
-              bgMusicRef.current.pause();
-              bgMusicRef.current.currentTime = 0;
-              this.playGameOverSounds();
-              return false;
-            } else {
-              console.log(`Train avoided successfully!`);
+          const trainX = this.getLaneX(train.lane, train.z);
+          if (train.lane === this.currentLane && screenY > 610 && screenY < 630) {
+            const runnerX = this.getLaneX(this.currentLane, 600);
+            if (Math.abs(trainX - runnerX) < this.objectSize / 2) {
+              const isHighTrain = train.type === 'high';
+              const isLowTrain = train.type === 'low';
+              const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
+              const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
+              const avoided = (isHighTrain && (this.isJumping || jumpBuffer)) || (isLowTrain && (this.isSliding || slideBuffer));
+              console.log(`Train at screenY: ${screenY.toFixed(2)}, Type: ${train.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
+              if (!avoided && this.skateActive) {
+                this.skateActive = false;
+                console.log('Skate used to avoid train collision!');
+                return false;
+              } else if (!avoided && this.immunityActive) {
+                this.immunityActive = false;
+                this.playImmunitySound();
+                console.log('Immunity used to avoid train collision!');
+                return false;
+              } else if (!avoided) {
+                console.log(`Collision detected with train! Game Over. Lane: ${train.lane}, Runner Lane: ${this.currentLane}, Train Y: ${screenY.toFixed(2)}, z: ${train.z.toFixed(2)}`);
+                this.gameOver = true;
+                this.deathAnimation = true;
+                this.deathStartTime = performance.now();
+                bgMusicRef.current.pause();
+                bgMusicRef.current.currentTime = 0;
+                this.playGameOverSounds();
+                return false;
+              } else {
+                console.log(`Train avoided successfully!`);
+              }
             }
           }
           return true;
@@ -401,12 +434,13 @@ const SurfDash = ({ setSelectedGame }) => {
         const screenY = this.mapZToScreenY(coin.z);
         const scale = this.mapZToScale(coin.z);
         const size = this.objectSize * scale;
+        const x = this.getLaneX(coin.lane, coin.z);
         if (this.coinImage && this.coinImage.complete) {
-          ctx.drawImage(this.coinImage, this.lanes[coin.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.drawImage(this.coinImage, x - size / 2, screenY - size / 2, size, size);
         } else {
-          // Fallback rendering
+          //fallback rendering
           ctx.beginPath();
-          ctx.arc(this.lanes[coin.lane], screenY, size / 2, 0, 2 * Math.PI);
+          ctx.arc(x, screenY, size / 2, 0, 2 * Math.PI);
           ctx.fillStyle = '#FFD700';
           ctx.fill();
         }
@@ -417,11 +451,12 @@ const SurfDash = ({ setSelectedGame }) => {
         const screenY = this.mapZToScreenY(hurdle.z);
         const scale = this.mapZToScale(hurdle.z);
         const size = this.objectSize * scale;
+        const x = this.getLaneX(hurdle.lane, hurdle.z);
         if (this.hurdleImage && this.hurdleImage.complete) {
-          ctx.drawImage(this.hurdleImage, this.lanes[hurdle.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.drawImage(this.hurdleImage, x - size / 2, screenY - size / 2, size, size);
         } else {
           ctx.fillStyle = hurdle.type === 'high' ? '#FF0000' : '#FFA500';
-          ctx.fillRect(this.lanes[hurdle.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.fillRect(x - size / 2, screenY - size / 2, size, size);
         }
       });
 
@@ -430,20 +465,21 @@ const SurfDash = ({ setSelectedGame }) => {
         const screenY = this.mapZToScreenY(train.z);
         const scale = this.mapZToScale(train.z);
         const size = this.objectSize * scale;
+        const x = this.getLaneX(train.lane, train.z);
         if (this.trainImage && this.trainImage.complete) {
-          ctx.drawImage(this.trainImage, this.lanes[train.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.drawImage(this.trainImage, x - size / 2, screenY - size / 2, size, size);
         } else {
           ctx.fillStyle = train.type === 'high' ? '#4682B4' : '#87CEEB';
-          ctx.fillRect(this.lanes[train.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.fillRect(x - size / 2, screenY - size / 2, size, size);
         }
       });
 
       // Render runner
-      const runnerX = this.lanes[this.currentLane];
+      const runnerX = this.getLaneX(this.currentLane, 600);
       let runnerY = this.runnerY - this.jumpHeight;
       let runnerSize = this.objectSize * this.mapZToScale(600);
       if (this.isSliding) {
-        runnerY += 20; // Adjust Y-position for sliding
+        runnerY += 30; // Adjust Y-position for sliding
       }
       if (this.deathAnimation) {
         const deathTime = performance.now() - this.deathStartTime;
