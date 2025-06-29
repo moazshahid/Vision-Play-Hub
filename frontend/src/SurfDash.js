@@ -28,6 +28,7 @@ const SurfDash = ({ setSelectedGame }) => {
   const deathSoundRef = useRef(null); // Reference to the death sound audio
   const gameOverSoundRef = useRef(null); // Reference to the game over sound audio
   const immunitySoundRef = useRef(null); // Reference to the immunity sound audio
+  const backgroundImageRef = useRef(null); // Reference to background Image
 
   // useState hooks for managing UI state
   const [showCharacterSelection, setShowCharacterSelection] = useState(true); // Controls character selection screen visibility
@@ -44,7 +45,7 @@ const SurfDash = ({ setSelectedGame }) => {
 
   // GameLogic class encapsulates the core game mechanics
   class GameLogic {
-    constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage) {
+    constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage, backgroundImage) {
       // Initialize game state and assets
       this.lanes = [320, 640, 960]; // X-coordinates for three lanes
       this.currentLane = 1; // Start in the middle lane
@@ -87,6 +88,7 @@ const SurfDash = ({ setSelectedGame }) => {
       this.immunityActive = false; // Tracks if immunity power-up is active
       this.skateActive = false; // Tracks if skate power-up is active
       this.skateUsed = false; // Tracks if skate power-up has been used
+      this.backgroundImage = backgroundImage; //used for background image
     }
 
     // Spawns a new object (coin, hurdle, or train) in a random lane
@@ -385,31 +387,14 @@ const SurfDash = ({ setSelectedGame }) => {
 
     // Renders the game scene to the canvas
     render(ctx) {
-      // Draw road with gradient
-      const roadGradient = ctx.createLinearGradient(0, 100, 0, 720);
-      roadGradient.addColorStop(0, '#A9A9A9');
-      roadGradient.addColorStop(1, '#696969');
-      ctx.fillStyle = roadGradient;
-      ctx.beginPath();
-      ctx.moveTo(200, 720);
-      ctx.lineTo(480, 100);
-      ctx.lineTo(800, 100);
-      ctx.lineTo(1080, 720);
-      ctx.closePath();
-      ctx.fill();
-
-      // Draw lane lines
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([20, 20]);
-      for (let i = 0; i < 3; i++) {
-        const x = this.lanes[i];
-        ctx.beginPath();
-        ctx.moveTo(x, 720);
-        ctx.lineTo(x, 100);
-        ctx.stroke();
+      
+      //render background image
+      if (this.backgroundImage && this.backgroundImage.complete) {
+        ctx.drawImage(this.backgroundImage, 0, 0, 1280, 720);
+      } else {
+        ctx.fillStyle = '#4A4A4A';
+        ctx.fillRect(0, 0, 1280, 720);
       }
-      ctx.setLineDash([]);
 
       // Render coins
       this.coins.forEach((coin) => {
@@ -597,7 +582,8 @@ const SurfDash = ({ setSelectedGame }) => {
             hurdleImageRef.current,
             guardImageRef.current,
             trainImageRef.current,
-            skateImageRef.current
+            skateImageRef.current,
+            backgroundImageRef.current
           );
           gameStartedRef.current = true;
           lastRenderTimeRef.current = performance.now();
@@ -725,6 +711,10 @@ const SurfDash = ({ setSelectedGame }) => {
     gameOver.style.display = 'none'; // Hide game over screen initially
 
     // Load game assets
+    backgroundImageRef.current = new Image();
+    backgroundImageRef.current.src = '/static/images/subway.png';
+    backgroundImageRef.current.onload = () => console.log('Background image loaded successfully');
+
     coinImageRef.current = new Image();
     coinImageRef.current.src = '/static/images/coin.png';
     coinImageRef.current.onload = () => console.log('Coin image loaded successfully');
