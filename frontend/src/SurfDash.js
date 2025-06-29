@@ -91,6 +91,8 @@ const SurfDash = ({ setSelectedGame }) => {
       this.backgroundImage = backgroundImage; //used for background image
       this.curveFactor = 0.85; // Controls curvature strength
       this.startOffset = 190; // Initial x offset at z=0
+      this.collisionWarnings = new Map(); // Store active warnings
+      this.warningDistance = 100; // Distance at which to show warning
     }
 
     // New method to calculate dynamic x position based on z and lane
@@ -107,6 +109,29 @@ const SurfDash = ({ setSelectedGame }) => {
         offset = this.startOffset * (1 - t) * this.curveFactor;
         return this.lanes[lane] - offset;
       }
+    }
+
+    //new method to display warnings before collision of character with object
+    updateCollisionWarnings() {
+      this.collisionWarnings.clear();
+      this.hurdles.forEach((hurdle, index) => {
+        if (hurdle.lane === this.currentLane && hurdle.z < this.warningDistance && hurdle.z > -50) {
+          this.collisionWarnings.set(`hurdle_${index}`, {
+            type: 'hurdle',
+            object: hurdle,
+            intensity: Math.max(0, 1 - (hurdle.z + 50) / (this.warningDistance + 50))
+          });
+        }
+      });
+      this.trains.forEach((train, index) => {
+        if (train.lane === this.currentLane && train.z < this.warningDistance && train.z > -50) {
+          this.collisionWarnings.set(`train_${index}`, {
+            type: 'train',
+            object: train,
+            intensity: Math.max(0, 1 - (train.z + 50) / (this.warningDistance + 50))
+          });
+        }
+      });
     }
 
     // Spawns a new object (coin, hurdle, or train) in a random lane
@@ -241,6 +266,7 @@ const SurfDash = ({ setSelectedGame }) => {
         // Gradually increase speed up to max
         this.speed = Math.min(this.speed + this.speedIncrease * deltaSeconds, this.maxSpeed);
         this.spawnObject(); // Attempt to spawn new objects
+        this.updateCollisionWarnings();
         // Handle jumping animation
         if (this.isJumping) {
           const jumpTime = performance.now() - this.jumpStartTime;
@@ -474,6 +500,26 @@ const SurfDash = ({ setSelectedGame }) => {
         }
       });
 
+      this.collisionWarnings.forEach((warning) => {
+        const obj = warning.object;
+        const screenY = this.mapZToScreenY(obj.z);
+        const scale = this.mapZToScale(obj.z);
+        const size = this.objectSize * scale;
+        const x = this.getLaneX(obj.lane, obj.z);
+        const alpha = 0.3 + 0.4 * Math.sin(Date.now() * 0.01) * warning.intensity;
+        ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+        ctx.lineWidth = 15 * warning.intensity;
+        ctx.setLineDash([10, 10]);
+        ctx.strokeRect(x - size / 2 - 10, screenY - size / 2 - 10, size + 20, size + 20);
+        ctx.setLineDash([]);
+      });
+      if (this.collisionWarnings.size > 0) {
+        const maxIntensity = Math.max(...Array.from(this.collisionWarnings.values()).map(w => w.intensity));
+        const flashAlpha = 0.1 * maxIntensity * (0.5 + 0.5 * Math.sin(Date.now() * 0.02));
+        ctx.fillStyle = `rgba(255, 0, 0, ${flashAlpha})`;
+        ctx.fillRect(0, 0, 1280, 720);
+      }
+      
       // Render runner
       const runnerX = this.getLaneX(this.currentLane, 600);
       let runnerY = this.runnerY - this.jumpHeight;
