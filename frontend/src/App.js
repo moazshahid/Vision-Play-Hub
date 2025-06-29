@@ -188,28 +188,36 @@ const GameCarousel = ({ games, onSelectGame }) => {
 
 const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
-    const [showHero, setShowHero] = useState(true);
-    const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
-  
-    useEffect(() => {
-      if (username === "Guest" || !username) {
-        // Don't start countdown if username is "Guest" or empty
-        return;
-      }
-  
-      const countdown = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(countdown);
-            window.location.reload();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-  
-      return () => clearInterval(countdown);
-    }, [username]);
+  const [showHero, setShowHero] = useState(true);
+  const [username, setUsername] = useState('');
+  const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
+
+  useEffect(() => {
+    // Pull username from global variable injected by Django
+    if (window.REACT_USERNAME) {
+      setUsername(window.REACT_USERNAME);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (username === "Guest" || !username) {
+      // Don't start countdown if username is "Guest" or empty
+      return;
+    }
+
+    const countdown = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          window.location.reload();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown);
+  }, [username]);
 
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.jpg' },
