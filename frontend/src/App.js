@@ -189,6 +189,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
 const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
   const [username, setUsername] = useState('');
   const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
 
@@ -277,7 +278,7 @@ const App = () => {
 
       <header></header>
 
-    {(timeLeft <= 10 && timeLeft > 0) && (
+      {(timeLeft <= 10 && timeLeft > 0) && (
         <div style={{position: "absolute", top: 0, right: "50%", transform: "translate(50%, 0%)", borderRadius: "0 0 500% 500%", backgroundColor: 'white', justifyContent: "center", alignItems: "center", padding: "1em", zIndex: 10, width: "10em", height: "10em", textAlign: "center"}}>
           <p style={{ color: "black" , fontWeight: "bold", fontSize: "1.25em"}}>You Still There?<br/><h2 style={{color: "black" , fontWeight: "bold", fontSize: "2em"}}>{timeLeft}</h2></p>
         </div>
@@ -300,7 +301,7 @@ const App = () => {
             />
           </a>
         </div>
-        {!selectedGame && !isAuthenticated && (
+        {(!selectedGame && !isAuthenticated && username == 'Guest') ? (
         <div style={{ display: 'flex', gap: '0.8vw' }}>
           <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Log In</button>
@@ -314,7 +315,12 @@ const App = () => {
           <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Profile</button>
           </a>
-        </div>)}
+        </div>
+        ) : (
+          <div style={{backgroundColor: light, borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center", color: dark, fontSize: "1.5em", fontWeight: "0.75em"}}>
+            {window.REACT_USERNAME.charAt(0).toUpperCase()}
+          </div>
+        )}
       </nav>
 
       {showHero && (
