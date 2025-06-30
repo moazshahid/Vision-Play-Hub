@@ -28,6 +28,7 @@ const SurfDash = ({ setSelectedGame }) => {
   const deathSoundRef = useRef(null); // Reference to the death sound audio
   const gameOverSoundRef = useRef(null); // Reference to the game over sound audio
   const immunitySoundRef = useRef(null); // Reference to the immunity sound audio
+  const backgroundImageRef = useRef(null); // Reference to background Image
 
   // useState hooks for managing UI state
   const [showCharacterSelection, setShowCharacterSelection] = useState(true); // Controls character selection screen visibility
@@ -41,18 +42,19 @@ const SurfDash = ({ setSelectedGame }) => {
   const [hoveredSkate, setHoveredSkate] = useState(null); // Tracks the currently hovered skate
   const [immunityMessage, setImmunityMessage] = useState(false); // Controls immunity power-up message visibility
   const [skateMessage, setSkateMessage] = useState(false); // Controls skate power-up message visibility
+  const [showGame, setShowGame] = useState(false);
 
   // GameLogic class encapsulates the core game mechanics
   class GameLogic {
-    constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage) {
+    constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage, backgroundImage) {
       // Initialize game state and assets
-      this.lanes = [320, 640, 960]; // X-coordinates for three lanes
+      this.lanes = [150, 640, 1150]; // X-coordinates for three lanes
       this.currentLane = 1; // Start in the middle lane
-      this.runnerY = 596; // Base Y-position of the runner
+      this.runnerY = 620; // Base Y-position of the runner
       this.jumpHeight = 0; // Current jump height
       this.isJumping = false; // Tracks if the runner is jumping
       this.isSliding = false; // Tracks if the runner is sliding
-      this.jumpSpeed = 400; // Max height of jump
+      this.jumpSpeed = 200; // Max height of jump
       this.jumpDuration = 800; // Duration of jump in milliseconds
       this.slideDuration = 800; // Duration of slide in milliseconds
       this.jumpStartTime = 0; // Timestamp when jump started
@@ -78,7 +80,7 @@ const SurfDash = ({ setSelectedGame }) => {
       this.guardImage = guardImage; // Guard image
       this.trainImage = trainImage; // Train image
       this.skateImage = skateImage; // Skate image
-      this.objectSize = 60; // Base size of objects
+      this.objectSize = 200; // Base size of objects
       this.lastSpawnTime = 0; // Timestamp of last object spawn
       this.spawnInterval = 2000; // Minimum time between spawns (ms)
       this.lastFingerY = 360; // Last Y-position of finger for gesture detection
@@ -87,6 +89,50 @@ const SurfDash = ({ setSelectedGame }) => {
       this.immunityActive = false; // Tracks if immunity power-up is active
       this.skateActive = false; // Tracks if skate power-up is active
       this.skateUsed = false; // Tracks if skate power-up has been used
+      this.backgroundImage = backgroundImage; //used for background image
+      this.curveFactor = 0.85; // Controls curvature strength
+      this.startOffset = 190; // Initial x offset at z=0
+      this.collisionWarnings = new Map(); // Store active warnings
+      this.warningDistance = 100; // Distance at which to show warning
+    }
+
+    // New method to calculate dynamic x position based on z and lane
+    getLaneX(lane, z) {
+      if (lane === 1) return this.lanes[lane]; // Center lane is straight
+      const t = z / 600; // Normalize z from 0 to 600 (runner position)
+      let offset;
+      if (lane === 0) {
+        // Left lane: Start more to the right, curve left
+        offset = this.startOffset * (1 - t) * this.curveFactor;
+        return this.lanes[lane] + offset;
+      } else {
+        // Right lane: Start more to the left, curve right
+        offset = this.startOffset * (1 - t) * this.curveFactor;
+        return this.lanes[lane] - offset;
+      }
+    }
+
+    //new method to display warnings before collision of character with object
+    updateCollisionWarnings() {
+      this.collisionWarnings.clear();
+      this.hurdles.forEach((hurdle, index) => {
+        if (hurdle.lane === this.currentLane && hurdle.z < this.warningDistance && hurdle.z > -50) {
+          this.collisionWarnings.set(`hurdle_${index}`, {
+            type: 'hurdle',
+            object: hurdle,
+            intensity: Math.max(0, 1 - (hurdle.z + 50) / (this.warningDistance + 50))
+          });
+        }
+      });
+      this.trains.forEach((train, index) => {
+        if (train.lane === this.currentLane && train.z < this.warningDistance && train.z > -50) {
+          this.collisionWarnings.set(`train_${index}`, {
+            type: 'train',
+            object: train,
+            intensity: Math.max(0, 1 - (train.z + 50) / (this.warningDistance + 50))
+          });
+        }
+      });
     }
 
     // Spawns a new object (coin, hurdle, or train) in a random lane
@@ -102,7 +148,7 @@ const SurfDash = ({ setSelectedGame }) => {
       const lane = Math.floor(Math.random() * 3); // Random lane (0, 1, or 2)
       // Randomly choose object type: 50% coin, 25% hurdle, 25% train
       const type = Math.random() < 0.5 ? 'coin' : Math.random() < 0.5 ? 'hurdle' : 'train';
-      const z = 0; // Start at z=0 (far end of the track)
+      const z = -150; // Start at z=-150 for initial offset to match background image
       if (type === 'coin') {
         this.coins.push({ lane, z });
       } else if (type === 'hurdle') {
@@ -221,6 +267,7 @@ const SurfDash = ({ setSelectedGame }) => {
         // Gradually increase speed up to max
         this.speed = Math.min(this.speed + this.speedIncrease * deltaSeconds, this.maxSpeed);
         this.spawnObject(); // Attempt to spawn new objects
+        this.updateCollisionWarnings();
         // Handle jumping animation
         if (this.isJumping) {
           const jumpTime = performance.now() - this.jumpStartTime;
@@ -246,41 +293,45 @@ const SurfDash = ({ setSelectedGame }) => {
           coin.z += moveDistance; // Move coin closer
           const screenY = this.mapZToScreenY(coin.z); // Convert z to screen Y
           if (screenY > 720) return false; // Remove coins off screen
+          const coinX = this.getLaneX(coin.lane, coin.z);
           // Check for coin collection
-          if (coin.lane === this.currentLane && screenY > 590 && screenY < 610 && !this.isJumping && !this.isSliding) {
-            this.coinsCollected += 1;
-            this.score += 10;
-            this.stats.textContent = `Score: ${this.score} | Coins: ${this.coinsCollected}`;
-            try {
-              const coinSound = new Audio('/static/sounds/coin.mp3');
-              coinSound.volume = 0.5;
-              coinSound.play().catch((e) => console.log('Error playing sound:', e));
-            } catch (e) {
-              console.log('Could not play sound:', e);
+          if (coin.lane === this.currentLane && screenY > 610 && screenY < 630 && !this.isJumping && !this.isSliding) {
+            const runnerX = this.getLaneX(this.currentLane, 600);
+            if (Math.abs(coinX - runnerX) < this.objectSize / 2) {
+              this.coinsCollected += 1;
+              this.score += 10;
+              this.stats.textContent = `Score: ${this.score} | Coins: ${this.coinsCollected}`;
+              try {
+                const coinSound = new Audio('/static/sounds/coin.mp3');
+                coinSound.volume = 0.5;
+                coinSound.play().catch((e) => console.log('Error playing sound:', e));
+              } catch (e) {
+                console.log('Could not play sound:', e);
+              }
+              // Activate immunity at 10 coins
+              if (this.coinsCollected >= 10 && !this.immunityActive) {
+                this.immunityActive = true;
+                this.playImmunitySound();
+                setImmunityMessage(true);
+                console.log('Immunity activated at 10 coins collected!');
+                setTimeout(() => {
+                  setImmunityMessage(false);
+                  console.log('Immunity message hidden');
+                }, 3000);
+              }
+              // Activate skate at 5 coins
+              if (this.coinsCollected >= 5 && !this.skateActive && !this.skateUsed) {
+                this.skateActive = true;
+                this.skateUsed = true;
+                setSkateMessage(true);
+                console.log('Skate power-up activated at 5 coins collected!');
+                setTimeout(() => {
+                  setSkateMessage(false);
+                  console.log('Skate message hidden');
+                }, 3000);
+              }
+              return false; // Remove collected coin
             }
-            // Activate immunity at 10 coins
-            if (this.coinsCollected >= 10 && !this.immunityActive) {
-              this.immunityActive = true;
-              this.playImmunitySound();
-              setImmunityMessage(true);
-              console.log('Immunity activated at 10 coins collected!');
-              setTimeout(() => {
-                setImmunityMessage(false);
-                console.log('Immunity message hidden');
-              }, 3000);
-            }
-            // Activate skate at 5 coins
-            if (this.coinsCollected >= 5 && !this.skateActive && !this.skateUsed) {
-              this.skateActive = true;
-              this.skateUsed = true;
-              setSkateMessage(true);
-              console.log('Skate power-up activated at 5 coins collected!');
-              setTimeout(() => {
-                setSkateMessage(false);
-                console.log('Skate message hidden');
-              }, 3000);
-            }
-            return false; // Remove collected coin
           }
           return true;
         });
@@ -289,70 +340,81 @@ const SurfDash = ({ setSelectedGame }) => {
           hurdle.z += moveDistance; // Move hurdle closer
           const screenY = this.mapZToScreenY(hurdle.z);
           if (screenY > 720) return false; // Remove hurdles off screen
-          // Check for collision
-          if (hurdle.lane === this.currentLane && screenY > 590 && screenY < 610) {
-            const isHighHurdle = hurdle.type === 'high';
-            const isLowHurdle = hurdle.type === 'low';
-            const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
-            const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
-            const avoided = (isHighHurdle && (this.isJumping || jumpBuffer)) || (isLowHurdle && (this.isSliding || slideBuffer));
-            console.log(`Hurdle at screenY: ${screenY.toFixed(2)}, Type: ${hurdle.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
-            if (!avoided && this.skateActive) {
-              this.skateActive = false; // Consume skate power-up
-              console.log('Skate used to avoid hurdle collision!');
-              return false;
-            } else if (!avoided && this.immunityActive) {
-              this.immunityActive = false; // Consume immunity
-              this.playImmunitySound();
-              console.log('Immunity used to avoid hurdle collision!');
-              return false;
-            } else if (!avoided) {
-              console.log(`Collision detected with hurdle! Game Over. Lane: ${hurdle.lane}, Runner Lane: ${this.currentLane}, Hurdle Y: ${screenY.toFixed(2)}, z: ${hurdle.z.toFixed(2)}`);
-              this.gameOver = true;
-              this.deathAnimation = true;
-              this.deathStartTime = performance.now();
-              bgMusicRef.current.pause();
-              bgMusicRef.current.currentTime = 0;
-              this.playGameOverSounds();
-              return false;
-            } else {
-              console.log(`Hurdle avoided successfully!`);
+          const hurdleX = this.getLaneX(hurdle.lane, hurdle.z);
+          if (hurdle.lane === this.currentLane && screenY > 580 && screenY < 660) {
+            const runnerX = this.getLaneX(this.currentLane, 600);
+            if (Math.abs(hurdleX - runnerX) < this.objectSize * 0.8) {
+              // Check for collision
+              if (hurdle.lane === this.currentLane && screenY > 590 && screenY < 610) {
+                const isHighHurdle = hurdle.type === 'high';
+                const isLowHurdle = hurdle.type === 'low';
+                const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
+                const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
+                const avoided = (isHighHurdle && (this.isJumping || jumpBuffer)) || (isLowHurdle && (this.isSliding || slideBuffer));
+                console.log(`Hurdle at screenY: ${screenY.toFixed(2)}, Type: ${hurdle.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
+                if (!avoided && this.skateActive) {
+                  this.skateActive = false; // Consume skate power-up
+                  console.log('Skate used to avoid hurdle collision!');
+                  return false;
+                } else if (!avoided && this.immunityActive) {
+                  this.immunityActive = false; // Consume immunity
+                  this.playImmunitySound();
+                  console.log('Immunity used to avoid hurdle collision!');
+                  return false;
+                } else if (!avoided) {
+                  console.log(`Collision detected with hurdle! Game Over. Lane: ${hurdle.lane}, Runner Lane: ${this.currentLane}, Hurdle Y: ${screenY.toFixed(2)}, z: ${hurdle.z.toFixed(2)}`);
+                  this.gameOver = true;
+                  this.deathAnimation = true;
+                  this.deathStartTime = performance.now();
+                  bgMusicRef.current.pause();
+                  bgMusicRef.current.currentTime = 0;
+                  this.playGameOverSounds();
+                  return false;
+                } else {
+                  console.log(`Hurdle avoided successfully!`);
+                }
+              }
             }
           }
           return true;
         });
-        // Update trains (similar to hurdles)
+        
+        // Update trains
         this.trains = this.trains.filter((train) => {
           train.z += moveDistance;
           const screenY = this.mapZToScreenY(train.z);
           if (screenY > 720) return false;
-          if (train.lane === this.currentLane && screenY > 590 && screenY < 610) {
-            const isHighTrain = train.type === 'high';
-            const isLowTrain = train.type === 'low';
-            const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
-            const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
-            const avoided = (isHighTrain && (this.isJumping || jumpBuffer)) || (isLowTrain && (this.isSliding || slideBuffer));
-            console.log(`Train at screenY: ${screenY.toFixed(2)}, Type: ${train.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
-            if (!avoided && this.skateActive) {
-              this.skateActive = false;
-              console.log('Skate used to avoid train collision!');
-              return false;
-            } else if (!avoided && this.immunityActive) {
-              this.immunityActive = false;
-              this.playImmunitySound();
-              console.log('Immunity used to avoid train collision!');
-              return false;
-            } else if (!avoided) {
-              console.log(`Collision detected with train! Game Over. Lane: ${train.lane}, Runner Lane: ${this.currentLane}, Train Y: ${screenY.toFixed(2)}, z: ${train.z.toFixed(2)}`);
-              this.gameOver = true;
-              this.deathAnimation = true;
-              this.deathStartTime = performance.now();
-              bgMusicRef.current.pause();
-              bgMusicRef.current.currentTime = 0;
-              this.playGameOverSounds();
-              return false;
-            } else {
-              console.log(`Train avoided successfully!`);
+          const trainX = this.getLaneX(train.lane, train.z);
+          if (train.lane === this.currentLane && screenY > 610 && screenY < 630) {
+            const runnerX = this.getLaneX(this.currentLane, 600);
+            if (Math.abs(trainX - runnerX) < this.objectSize / 2) {
+              const isHighTrain = train.type === 'high';
+              const isLowTrain = train.type === 'low';
+              const jumpBuffer = (performance.now() - this.jumpStartTime) < this.jumpDuration + 100;
+              const slideBuffer = (performance.now() - this.slideStartTime) < this.slideDuration + 100;
+              const avoided = (isHighTrain && (this.isJumping || jumpBuffer)) || (isLowTrain && (this.isSliding || slideBuffer));
+              console.log(`Train at screenY: ${screenY.toFixed(2)}, Type: ${train.type}, isJumping: ${this.isJumping}, isSliding: ${this.isSliding}, jumpBuffer: ${jumpBuffer}, slideBuffer: ${slideBuffer}, Avoided: ${avoided}`);
+              if (!avoided && this.skateActive) {
+                this.skateActive = false;
+                console.log('Skate used to avoid train collision!');
+                return false;
+              } else if (!avoided && this.immunityActive) {
+                this.immunityActive = false;
+                this.playImmunitySound();
+                console.log('Immunity used to avoid train collision!');
+                return false;
+              } else if (!avoided) {
+                console.log(`Collision detected with train! Game Over. Lane: ${train.lane}, Runner Lane: ${this.currentLane}, Train Y: ${screenY.toFixed(2)}, z: ${train.z.toFixed(2)}`);
+                this.gameOver = true;
+                this.deathAnimation = true;
+                this.deathStartTime = performance.now();
+                bgMusicRef.current.pause();
+                bgMusicRef.current.currentTime = 0;
+                this.playGameOverSounds();
+                return false;
+              } else {
+                console.log(`Train avoided successfully!`);
+              }
             }
           }
           return true;
@@ -385,43 +447,27 @@ const SurfDash = ({ setSelectedGame }) => {
 
     // Renders the game scene to the canvas
     render(ctx) {
-      // Draw road with gradient
-      const roadGradient = ctx.createLinearGradient(0, 100, 0, 720);
-      roadGradient.addColorStop(0, '#A9A9A9');
-      roadGradient.addColorStop(1, '#696969');
-      ctx.fillStyle = roadGradient;
-      ctx.beginPath();
-      ctx.moveTo(200, 720);
-      ctx.lineTo(480, 100);
-      ctx.lineTo(800, 100);
-      ctx.lineTo(1080, 720);
-      ctx.closePath();
-      ctx.fill();
-
-      // Draw lane lines
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([20, 20]);
-      for (let i = 0; i < 3; i++) {
-        const x = this.lanes[i];
-        ctx.beginPath();
-        ctx.moveTo(x, 720);
-        ctx.lineTo(x, 100);
-        ctx.stroke();
+      
+      //render background image
+      if (this.backgroundImage && this.backgroundImage.complete) {
+        ctx.drawImage(this.backgroundImage, 0, 0, 1280, 720);
+      } else {
+        ctx.fillStyle = '#4A4A4A';
+        ctx.fillRect(0, 0, 1280, 720);
       }
-      ctx.setLineDash([]);
 
       // Render coins
       this.coins.forEach((coin) => {
         const screenY = this.mapZToScreenY(coin.z);
         const scale = this.mapZToScale(coin.z);
         const size = this.objectSize * scale;
+        const x = this.getLaneX(coin.lane, coin.z);
         if (this.coinImage && this.coinImage.complete) {
-          ctx.drawImage(this.coinImage, this.lanes[coin.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.drawImage(this.coinImage, x - size / 2, screenY - size / 2, size, size);
         } else {
-          // Fallback rendering
+          //fallback rendering
           ctx.beginPath();
-          ctx.arc(this.lanes[coin.lane], screenY, size / 2, 0, 2 * Math.PI);
+          ctx.arc(x, screenY, size / 2, 0, 2 * Math.PI);
           ctx.fillStyle = '#FFD700';
           ctx.fill();
         }
@@ -432,11 +478,12 @@ const SurfDash = ({ setSelectedGame }) => {
         const screenY = this.mapZToScreenY(hurdle.z);
         const scale = this.mapZToScale(hurdle.z);
         const size = this.objectSize * scale;
+        const x = this.getLaneX(hurdle.lane, hurdle.z);
         if (this.hurdleImage && this.hurdleImage.complete) {
-          ctx.drawImage(this.hurdleImage, this.lanes[hurdle.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.drawImage(this.hurdleImage, x - size / 2, screenY - size / 2, size, size);
         } else {
           ctx.fillStyle = hurdle.type === 'high' ? '#FF0000' : '#FFA500';
-          ctx.fillRect(this.lanes[hurdle.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.fillRect(x - size / 2, screenY - size / 2, size, size);
         }
       });
 
@@ -445,20 +492,41 @@ const SurfDash = ({ setSelectedGame }) => {
         const screenY = this.mapZToScreenY(train.z);
         const scale = this.mapZToScale(train.z);
         const size = this.objectSize * scale;
+        const x = this.getLaneX(train.lane, train.z);
         if (this.trainImage && this.trainImage.complete) {
-          ctx.drawImage(this.trainImage, this.lanes[train.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.drawImage(this.trainImage, x - size / 2, screenY - size / 2, size, size);
         } else {
           ctx.fillStyle = train.type === 'high' ? '#4682B4' : '#87CEEB';
-          ctx.fillRect(this.lanes[train.lane] - size / 2, screenY - size / 2, size, size);
+          ctx.fillRect(x - size / 2, screenY - size / 2, size, size);
         }
       });
 
+      this.collisionWarnings.forEach((warning) => {
+        const obj = warning.object;
+        const screenY = this.mapZToScreenY(obj.z);
+        const scale = this.mapZToScale(obj.z);
+        const size = this.objectSize * scale;
+        const x = this.getLaneX(obj.lane, obj.z);
+        const alpha = 0.3 + 0.4 * Math.sin(Date.now() * 0.01) * warning.intensity;
+        ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+        ctx.lineWidth = 15 * warning.intensity;
+        ctx.setLineDash([10, 10]);
+        ctx.strokeRect(x - size / 2 - 10, screenY - size / 2 - 10, size + 20, size + 20);
+        ctx.setLineDash([]);
+      });
+      if (this.collisionWarnings.size > 0) {
+        const maxIntensity = Math.max(...Array.from(this.collisionWarnings.values()).map(w => w.intensity));
+        const flashAlpha = 0.1 * maxIntensity * (0.5 + 0.5 * Math.sin(Date.now() * 0.02));
+        ctx.fillStyle = `rgba(255, 0, 0, ${flashAlpha})`;
+        ctx.fillRect(0, 0, 1280, 720);
+      }
+      
       // Render runner
-      const runnerX = this.lanes[this.currentLane];
+      const runnerX = this.getLaneX(this.currentLane, 600);
       let runnerY = this.runnerY - this.jumpHeight;
       let runnerSize = this.objectSize * this.mapZToScale(600);
       if (this.isSliding) {
-        runnerY += 20; // Adjust Y-position for sliding
+        runnerY += 30; // Adjust Y-position for sliding
       }
       if (this.deathAnimation) {
         const deathTime = performance.now() - this.deathStartTime;
@@ -597,7 +665,8 @@ const SurfDash = ({ setSelectedGame }) => {
             hurdleImageRef.current,
             guardImageRef.current,
             trainImageRef.current,
-            skateImageRef.current
+            skateImageRef.current,
+            backgroundImageRef.current
           );
           gameStartedRef.current = true;
           lastRenderTimeRef.current = performance.now();
@@ -714,6 +783,7 @@ const SurfDash = ({ setSelectedGame }) => {
     immunitySoundRef.current.currentTime = 0;
     setImmunityMessage(false);
     setSkateMessage(false);
+    setShowGame(false);
     setSelectedGame(null); // Return to game selection
   };
 
@@ -725,6 +795,10 @@ const SurfDash = ({ setSelectedGame }) => {
     gameOver.style.display = 'none'; // Hide game over screen initially
 
     // Load game assets
+    backgroundImageRef.current = new Image();
+    backgroundImageRef.current.src = '/static/images/subway.png';
+    backgroundImageRef.current.onload = () => console.log('Background image loaded successfully');
+
     coinImageRef.current = new Image();
     coinImageRef.current.src = '/static/images/coin.png';
     coinImageRef.current.onload = () => console.log('Coin image loaded successfully');
@@ -770,6 +844,7 @@ const SurfDash = ({ setSelectedGame }) => {
 
     const startHandler = () => {
       console.log('Start button clicked');
+      setShowGame(true);
       startGame();
     };
     const restartHandler = () => {
@@ -838,163 +913,200 @@ const SurfDash = ({ setSelectedGame }) => {
 
   // JSX for rendering the game UI
   return (
-    <div>
-      {/* Character selection screen */}
-      {showCharacterSelection && !hasSelectedCharacter && (
-        <div className="character-selection">
-          <h2>Choose Your Character</h2>
-          <div className="selection-controls">
-            {[1, 2].map((char) => (
-              <button
-                key={char}
-                onClick={() => selectCharacter(char)}
-                onMouseEnter={() => setHoveredCharacter(char)}
-                onMouseLeave={() => setHoveredCharacter(null)}
-                className="character-btn"
-              >
-                <img
-                  src={`/static/images/character${char}.png`}
-                  alt={`Character ${char}`}
-                  className="character-img"
-                />
-              </button>
-            ))}
+    <div className='inter'>
+      <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/surfdash-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
+        <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="instructions inter" style={{ color: "#fff" }}>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Surf Dash</h2>
+            <ul>
+              <li><strong>Choose character and skate:</strong> Select your character (1 or 2) and skate (1, 2, or 3) before starting.</li>
+              <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
+              <li><strong>Move left/right:</strong> Move your index finger left or right to switch lanes.</li>
+              <li><strong>Jump:</strong> Quickly raise your hand to jump over high hurdles or trains.</li>
+              <li><strong>Slide:</strong> Quickly lower your hand to slide under low hurdles or trains.</li>
+              <li><strong>Collect coins:</strong> Run into coins to increase your score (10 points per coin) and coin count.</li>
+              <li><strong>Skate Power-Up:</strong> Collect 5 coins to activate your chosen skate, protecting you from one hurdle or train collision and increasing speed slightly. Consumed after use.</li>
+              <li><strong>Immunity Power-Up:</strong> Collect 10 coins to gain immunity, protecting you from one hurdle or train collision. Consumed after use.</li>
+              <li><strong>Avoid hurdles and trains:</strong> Jump or slide to dodge hurdles and trains; hitting one ends the game unless skate or immunity is active.</li>
+              <li><strong>Keyboard controls:</strong> Use 'A'/'D' to move, 'Space' to jump, 'S' to slide, 'R' to restart, 'Q' to quit.</li>
+            </ul>
           </div>
-          {hoveredCharacter && (
-            <div className="preview">
-              <img
-                src={`/static/images/character${hoveredCharacter}.png`}
-                alt={`Character ${hoveredCharacter}`}
-                className="preview-img"
-              />
-            </div>
-          )}
-          {selectionMessage && <p>{selectionMessage}</p>}
         </div>
-      )}
-      {/* Skate selection screen */}
-      {showSkateSelection && hasSelectedCharacter && !hasSelectedSkate && (
-        <div className="skate-selection">
-          <h2>Choose Your Skate</h2>
-          <div className="selection-controls">
-            {[1, 2, 3].map((skate) => (
-              <button
-                key={skate}
-                onClick={() => selectSkate(skate)}
-                onMouseEnter={() => setHoveredSkate(skate)}
-                onMouseLeave={() => setHoveredSkate(null)}
-                className="skate-btn"
-              >
-                <img
-                  src={`/static/images/skate${skate}.png`}
-                  alt={`Skate ${skate}`}
-                  className="skate-img"
-                />
-              </button>
-            ))}
+        <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{ maxWidth: "40%" }}>
+            <img src="static/images/pages/surfdash-lineart.svg" alt="Surf Dash" style={{ width: '100%', height: 'auto' }} />
           </div>
-          {hoveredSkate && (
-            <div className="preview">
-              <img
-                src={`/static/images/skate${hoveredSkate}.png`}
-                alt={`Skate ${hoveredSkate}`}
-                className="preview-img"
-              />
-            </div>
-          )}
-          {selectionMessage && <p>{selectionMessage}</p>}
-        </div>
-      )}
-      {/* Immunity power-up message */}
-      {immunityMessage && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '10px', 
-          left: '50%', 
-          transform: 'translateX(-50%)', 
-          fontSize: '24px', 
-          color: '#FFD700', 
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <img 
-            src="/static/images/immunity.png" 
-            alt="Immunity Icon" 
-            width="30" 
-            height="30" 
-            style={{ display: immunityMessage ? 'inline' : 'none' }} 
-          />
-          Immunity Activated!
-        </div>
-      )}
-      {/* Skate power-up message */}
-      {skateMessage && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '50px', 
-          left: '50%', 
-          transform: 'translateX(-50%)', 
-          fontSize: '24px', 
-          color: '#00CED1', 
-          zIndex: 1000 
-        }}>
-          Skate Activated!
-        </div>
-      )}
-      {/* Main game UI */}
-      <div className="slider-container">
-        <div className="slider">
-          {/* Instructions slide */}
-          <div className="slide" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ maxWidth: '60%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', overflowY: 'auto' }}>
-              <div className="instructions inter">
-                <h2 style={{ '--inter-weight': 900, fontSize: '6em', margin: 0 }}>Jump Dash</h2>
-                <ul>
-                  <li><strong>Choose character and skate:</strong> Select your character (1 or 2) and skate (1, 2, or 3) before starting.</li>
-                  <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
-                  <li><strong>Move left/right:</strong> Move your index finger left or right to switch lanes.</li>
-                  <li><strong>Jump:</strong> Quickly raise your hand to jump over high hurdles or trains.</li>
-                  <li><strong>Slide:</strong> Quickly lower your hand to slide under low hurdles or trains.</li>
-                  <li><strong>Collect coins:</strong> Run into coins to increase your score (10 points per coin) and coin count.</li>
-                  <li><strong>Skate Power-Up:</strong> Collect 5 coins to activate your chosen skate, protecting you from one hurdle or train collision and increasing speed slightly. Consumed after use.</li>
-                  <li><strong>Immunity Power-Up:</strong> Collect 10 coins to gain immunity, protecting you from one hurdle or train collision. Consumed after use.</li>
-                  <li><strong>Avoid hurdles and trains:</strong> Jump or slide to dodge hurdles and trains; hitting one ends the game unless skate or immunity is active.</li>
-                  <li><strong>Keyboard controls:</strong> Use 'A'/'D' to move, 'Space' to jump, 'S' to slide, 'R' to restart, 'Q' to quit.</li>
-                </ul>
-              </div>
-            </div>
-            <div style={{ maxWidth: '40%' }}>
-              <img src="static/images/pages/surfdash-lineart.svg" alt="Jump Dash" style={{ width: '100%', height: 'auto' }} />
-            </div>
+          <div style={{ maxWidth: "20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh' }}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
+              <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
+            </button>
           </div>
-          {/* Game canvas slide */}
-          <div className="slide" style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-              <div className="controls" style={{ maxWidth: '70vw', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+        </div>
+      </div>
+      <div style={{ width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        {showCharacterSelection && !hasSelectedCharacter && (
+          <div className="character-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #4CAF50'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Your Character</h2>
+            <div className="selection-controls" style={{
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {[1, 2].map((char) => (
+                <button
+                  key={char}
+                  onClick={() => selectCharacter(char)}
+                  onMouseEnter={() => setHoveredCharacter(char)}
+                  onMouseLeave={() => setHoveredCharacter(null)}
+                  style={{
+                    background: 'none',
+                    border: hoveredCharacter === char ? '3px solid #4CAF50' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <img
+                    src={`/static/images/character${char}.png`}
+                    alt={`Character ${char}`}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      objectFit: 'contain'
+                    }}
+                  />
                 </button>
-                <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: showCharacterSelection || showSkateSelection ? 'none' : 'inline' }}>
-                  <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
-                </button>
-                <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
-                </button>
-              </div>
+              ))}
             </div>
-            <div ref={debugRef} className="debug-box" style={{ backgroundColor: '#fff' }}></div>
-            <div className="game-container inter">
-              <canvas ref={canvasRef} width="1280" height="720"></canvas>
-              <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-              <div ref={gameStatsRef} className="game-stats">Score: 0 | Coins: 0</div>
-              <div ref={gameOverRef} className="game-over">
-                <h2>Game Over!</h2>
-                <p>Your Score: <span ref={finalScoreRef}>0</span></p>
-                <button id="play-again-btn">Play Again</button>
-              </div>
+            {selectionMessage && (
+              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{selectionMessage}</p>
+            )}
+          </div>
+        )}
+        {showSkateSelection && hasSelectedCharacter && !hasSelectedSkate && (
+          <div className="skate-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #FF9800'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Your Skate</h2>
+            <div className="selection-controls" style={{
+              display: 'flex',
+              gap: '20px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {[1, 2, 3].map((skate) => (
+                <button
+                  key={skate}
+                  onClick={() => selectSkate(skate)}
+                  onMouseEnter={() => setHoveredSkate(skate)}
+                  onMouseLeave={() => setHoveredSkate(null)}
+                  style={{
+                    background: 'none',
+                    border: hoveredSkate === skate ? '3px solid #FF9800' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <img
+                    src={`/static/images/skate${skate}.png`}
+                    alt={`Skate ${skate}`}
+                    style={{
+                      width: '100px',
+                      height: '100px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </button>
+              ))}
             </div>
+            {selectionMessage && (
+              <p style={{ color: '#FF9800', fontSize: '1.5em', margin: '20px 0' }}>{selectionMessage}</p>
+            )}
+          </div>
+        )}
+        {immunityMessage && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '10px', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            fontSize: '24px', 
+            color: '#FFD700', 
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <img 
+              src="/static/images/immunity.png" 
+              alt="Immunity Icon" 
+              width="30" 
+              height="30" 
+              style={{ display: immunityMessage ? 'inline' : 'none' }} 
+            />
+            Immunity Activated!
+          </div>
+        )}
+        {skateMessage && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '50px', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            fontSize: '24px', 
+            color: '#00CED1', 
+            zIndex: 1000 
+          }}>
+            Skate Activated!
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: showCharacterSelection || showSkateSelection ? 'none' : 'inline' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+            </button>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+            </button>
+          </div>
+        </div>
+        <div ref={debugRef} className="debug-box" style={{ backgroundColor: "transparent" }}></div>
+        <div className="game-container inter">
+          <canvas ref={canvasRef} width="1280" height="720"></canvas>
+          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <div ref={gameStatsRef} className="game-stats">Score: 0 | Coins: 0</div>
+          <div ref={gameOverRef} className="game-over">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span ref={finalScoreRef}>0</span></p>
+            <button id="play-again-btn">Play Again</button>
           </div>
         </div>
       </div>
