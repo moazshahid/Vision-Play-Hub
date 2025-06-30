@@ -46,7 +46,7 @@ const SurfDash = ({ setSelectedGame }) => {
 
   // GameLogic class encapsulates the core game mechanics
   class GameLogic {
-    constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage, backgroundImage) {
+    constructor(ctx, stats, runnerImage, coinImage, hurdleImage, guardImage, trainImage, skateImage, backgroundImage, videoElement) {
       // Initialize game state and assets
       this.lanes = [150, 640, 1150]; // X-coordinates for three lanes
       this.currentLane = 1; // Start in the middle lane
@@ -94,6 +94,7 @@ const SurfDash = ({ setSelectedGame }) => {
       this.startOffset = 190; // Initial x offset at z=0
       this.collisionWarnings = new Map(); // Store active warnings
       this.warningDistance = 100; // Distance at which to show warning
+      this.videoElement = videoElement; // Store video element for camera preview
     }
 
     // New method to calculate dynamic x position based on z and lane
@@ -565,7 +566,199 @@ const SurfDash = ({ setSelectedGame }) => {
           ctx.fillStyle = '#00FF00';
           ctx.fill();
         }
-      }  
+      }
+      
+      // Camera preview box
+      const previewBoxX = 70;
+      const previewBoxY = 80;
+      const previewBoxWidth = 320;
+      const previewBoxHeight = 240;
+
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight);
+      ctx.strokeStyle = '#1E90FF';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#1E90FF';
+      ctx.shadowBlur = 10;
+      ctx.strokeRect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('CAMERA PREVIEW', previewBoxX + previewBoxWidth / 2, previewBoxY - 10);
+
+      if (this.videoElement && this.videoElement.videoWidth > 0) {
+        const videoAspect = this.videoElement.videoWidth / this.videoElement.videoHeight;
+        const boxAspect = previewBoxWidth / previewBoxHeight;
+        let drawWidth, drawHeight, drawX, drawY;
+        if (videoAspect > boxAspect) {
+          drawHeight = previewBoxHeight;
+          drawWidth = drawHeight * videoAspect;
+          drawX = previewBoxX - (drawWidth - previewBoxWidth) / 2;
+          drawY = previewBoxY;
+        } else {
+          drawWidth = previewBoxWidth;
+          drawHeight = drawWidth / videoAspect;
+          drawX = previewBoxX;
+          drawY = previewBoxY + (previewBoxHeight - drawHeight) / 2;
+        }
+        ctx.save();
+        ctx.rect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight);
+        ctx.clip();
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(this.videoElement, -drawX - drawWidth, drawY, drawWidth, drawHeight);
+        ctx.restore();
+        ctx.restore();
+      }
+
+      // Control regions overlay
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+      ctx.fillRect(previewBoxX, previewBoxY, previewBoxWidth * 0.33, previewBoxHeight);
+      ctx.strokeStyle = '#FF0000';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(previewBoxX, previewBoxY, previewBoxWidth * 0.33, previewBoxHeight);
+
+      ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+      ctx.fillRect(previewBoxX + previewBoxWidth * 0.67, previewBoxY, previewBoxWidth * 0.33, previewBoxHeight);
+      ctx.strokeStyle = '#0000FF';
+      ctx.strokeRect(previewBoxX + previewBoxWidth * 0.67, previewBoxY, previewBoxWidth * 0.33, previewBoxHeight);
+
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+      ctx.fillRect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight * 0.25);
+      ctx.strokeStyle = '#00FF00';
+      ctx.strokeRect(previewBoxX, previewBoxY, previewBoxWidth, previewBoxHeight * 0.25);
+
+      ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+      ctx.fillRect(previewBoxX, previewBoxY + previewBoxHeight * 0.75, previewBoxWidth, previewBoxHeight * 0.25);
+      ctx.strokeStyle = '#FFFF00';
+      ctx.strokeRect(previewBoxX, previewBoxY + previewBoxHeight * 0.75, previewBoxWidth, previewBoxHeight * 0.25);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.strokeText('LEFT', previewBoxX + previewBoxWidth * 0.165, previewBoxY + previewBoxHeight / 2);
+      ctx.fillText('LEFT', previewBoxX + previewBoxWidth * 0.165, previewBoxY + previewBoxHeight / 2);
+      ctx.strokeText('RIGHT', previewBoxX + previewBoxWidth * 0.835, previewBoxY + previewBoxHeight / 2);
+      ctx.fillText('RIGHT', previewBoxX + previewBoxWidth * 0.835, previewBoxY + previewBoxHeight / 2);
+      ctx.strokeText('JUMP', previewBoxX + previewBoxWidth / 2, previewBoxY + previewBoxHeight * 0.125);
+      ctx.fillText('JUMP', previewBoxX + previewBoxWidth / 2, previewBoxY + previewBoxHeight * 0.125);
+      ctx.strokeText('SLIDE', previewBoxX + previewBoxWidth / 2, previewBoxY + previewBoxHeight * 0.875);
+      ctx.fillText('SLIDE', previewBoxX + previewBoxWidth / 2, previewBoxY + previewBoxHeight * 0.875);
+
+      // Instructions box
+      const instructionsBoxX = 1000;
+      const instructionsBoxY = 200;
+      const instructionsBoxWidth = 220;
+      const instructionsBoxHeight = 300;
+
+      const gradient = ctx.createLinearGradient(instructionsBoxX, instructionsBoxY, instructionsBoxX, instructionsBoxY + instructionsBoxHeight);
+      gradient.addColorStop(0, '#2a2a2a');
+      gradient.addColorStop(1, '#1a1a1a');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(instructionsBoxX, instructionsBoxY, instructionsBoxWidth, instructionsBoxHeight);
+      ctx.strokeStyle = '#1E90FF';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#1E90FF';
+      ctx.shadowBlur = 15;
+      ctx.strokeRect(instructionsBoxX, instructionsBoxY, instructionsBoxWidth, instructionsBoxHeight);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#1E90FF';
+      ctx.fillRect(instructionsBoxX + 5, instructionsBoxY + 5, instructionsBoxWidth - 10, 35);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('HOW TO PLAY', instructionsBoxX + instructionsBoxWidth / 2, instructionsBoxY + 28);
+
+      ctx.textAlign = 'left';
+      const instructionItems = [
+        { icon: '👈', text: 'Move finger left', subtext: 'to switch to left lane' },
+        { icon: '👉', text: 'Move finger right', subtext: 'to switch to right lane' },
+        { icon: '👆', text: 'Raise finger', subtext: 'to jump over obstacles' },
+        { icon: '👇', text: 'Lower finger', subtext: 'to slide under obstacles' },
+        { icon: '💰', text: 'Collect coins', subtext: 'for power-ups and score' },
+        { icon: '⌨️', text: 'Press R to restart', subtext: 'Press Q to quit' }
+      ];
+
+      let yOffset = instructionsBoxY + 60;
+      instructionItems.forEach((item) => {
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#FFD700';
+        ctx.fillText(item.icon, instructionsBoxX + 15, yOffset);
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(item.text, instructionsBoxX + 45, yOffset);
+        if (item.subtext) {
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#CCCCCC';
+          ctx.fillText(item.subtext, instructionsBoxX + 45, yOffset + 15);
+          yOffset += 42;
+        } else {
+          yOffset += 30;
+        }
+      });
+
+      ctx.fillStyle = '#1E90FF';
+      ctx.fillRect(instructionsBoxX + 20, instructionsBoxY + instructionsBoxHeight - 15, instructionsBoxWidth - 40, 2);
+
+      // Stats box
+      const statsBoxX = 1000;
+      const statsBoxY = 70; // Position above instructions box
+      const statsBoxWidth = 220;
+      const statsBoxHeight = 110; // Reduced height to remove blank space
+
+      // Draw stats box background
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(statsBoxX, statsBoxY, statsBoxWidth, statsBoxHeight);
+
+      // Draw stats box border with glow effect
+      ctx.strokeStyle = '#1E90FF';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#1E90FF';
+      ctx.shadowBlur = 10;
+      ctx.strokeRect(statsBoxX, statsBoxY, statsBoxWidth, statsBoxHeight);
+      ctx.shadowBlur = 0;
+
+      // Stats box title
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '18px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('STATISTICS', statsBoxX + statsBoxWidth / 2, statsBoxY + 20);
+
+      // Score display
+      ctx.fillStyle = '#FFD700'; // Gold color for score
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText('SCORE', statsBoxX + 15, statsBoxY + 40);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillText(this.score.toString(), statsBoxX + statsBoxWidth - 15, statsBoxY + 40);
+
+      // Coins display
+      ctx.fillStyle = '#00FF7F'; // Spring green for coins
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText('COINS', statsBoxX + 15, statsBoxY + 65);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillText(this.coinsCollected.toString(), statsBoxX + statsBoxWidth - 15, statsBoxY + 65);
+
+      // Time display
+      ctx.fillStyle = '#FFA500'; // Orange for time
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText('TIME', statsBoxX + 15, statsBoxY + 90);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillText(((performance.now() - this.startTime) / 1000).toFixed(1), statsBoxX + statsBoxWidth - 15, statsBoxY + 90);
     }
   }
 
@@ -666,7 +859,8 @@ const SurfDash = ({ setSelectedGame }) => {
             guardImageRef.current,
             trainImageRef.current,
             skateImageRef.current,
-            backgroundImageRef.current
+            backgroundImageRef.current,
+            videoRef.current // Pass video element to GameLogic
           );
           gameStartedRef.current = true;
           lastRenderTimeRef.current = performance.now();
