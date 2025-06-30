@@ -50,11 +50,11 @@ const SurfDash = ({ setSelectedGame }) => {
       // Initialize game state and assets
       this.lanes = [150, 640, 1150]; // X-coordinates for three lanes
       this.currentLane = 1; // Start in the middle lane
-      this.runnerY = 596; // Base Y-position of the runner
+      this.runnerY = 620; // Base Y-position of the runner
       this.jumpHeight = 0; // Current jump height
       this.isJumping = false; // Tracks if the runner is jumping
       this.isSliding = false; // Tracks if the runner is sliding
-      this.jumpSpeed = 400; // Max height of jump
+      this.jumpSpeed = 200; // Max height of jump
       this.jumpDuration = 800; // Duration of jump in milliseconds
       this.slideDuration = 800; // Duration of slide in milliseconds
       this.jumpStartTime = 0; // Timestamp when jump started
@@ -80,7 +80,7 @@ const SurfDash = ({ setSelectedGame }) => {
       this.guardImage = guardImage; // Guard image
       this.trainImage = trainImage; // Train image
       this.skateImage = skateImage; // Skate image
-      this.objectSize = 60; // Base size of objects
+      this.objectSize = 200; // Base size of objects
       this.lastSpawnTime = 0; // Timestamp of last object spawn
       this.spawnInterval = 2000; // Minimum time between spawns (ms)
       this.lastFingerY = 360; // Last Y-position of finger for gesture detection
