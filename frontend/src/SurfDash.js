@@ -1246,7 +1246,7 @@ const SurfDash = ({ setSelectedGame }) => {
         {immunityMessage && (
           <div style={{ 
             position: 'absolute', 
-            top: '10px', 
+            top: '40%', 
             left: '50%', 
             transform: 'translateX(-50%)', 
             fontSize: '24px', 
@@ -1269,7 +1269,7 @@ const SurfDash = ({ setSelectedGame }) => {
         {skateMessage && (
           <div style={{ 
             position: 'absolute', 
-            top: '50px', 
+            top: '50%', 
             left: '50%', 
             transform: 'translateX(-50%)', 
             fontSize: '24px', 
