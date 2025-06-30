@@ -42,6 +42,7 @@ const SurfDash = ({ setSelectedGame }) => {
   const [hoveredSkate, setHoveredSkate] = useState(null); // Tracks the currently hovered skate
   const [immunityMessage, setImmunityMessage] = useState(false); // Controls immunity power-up message visibility
   const [skateMessage, setSkateMessage] = useState(false); // Controls skate power-up message visibility
+  const [showGame, setShowGame] = useState(false);
 
   // GameLogic class encapsulates the core game mechanics
   class GameLogic {
@@ -782,6 +783,7 @@ const SurfDash = ({ setSelectedGame }) => {
     immunitySoundRef.current.currentTime = 0;
     setImmunityMessage(false);
     setSkateMessage(false);
+    setShowGame(false);
     setSelectedGame(null); // Return to game selection
   };
 
@@ -842,6 +844,7 @@ const SurfDash = ({ setSelectedGame }) => {
 
     const startHandler = () => {
       console.log('Start button clicked');
+      setShowGame(true);
       startGame();
     };
     const restartHandler = () => {
@@ -910,163 +913,200 @@ const SurfDash = ({ setSelectedGame }) => {
 
   // JSX for rendering the game UI
   return (
-    <div>
-      {/* Character selection screen */}
-      {showCharacterSelection && !hasSelectedCharacter && (
-        <div className="character-selection">
-          <h2>Choose Your Character</h2>
-          <div className="selection-controls">
-            {[1, 2].map((char) => (
-              <button
-                key={char}
-                onClick={() => selectCharacter(char)}
-                onMouseEnter={() => setHoveredCharacter(char)}
-                onMouseLeave={() => setHoveredCharacter(null)}
-                className="character-btn"
-              >
-                <img
-                  src={`/static/images/character${char}.png`}
-                  alt={`Character ${char}`}
-                  className="character-img"
-                />
-              </button>
-            ))}
+    <div className='inter'>
+      <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/surfdash-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
+        <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="instructions inter" style={{ color: "#fff" }}>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Surf Dash</h2>
+            <ul>
+              <li><strong>Choose character and skate:</strong> Select your character (1 or 2) and skate (1, 2, or 3) before starting.</li>
+              <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
+              <li><strong>Move left/right:</strong> Move your index finger left or right to switch lanes.</li>
+              <li><strong>Jump:</strong> Quickly raise your hand to jump over high hurdles or trains.</li>
+              <li><strong>Slide:</strong> Quickly lower your hand to slide under low hurdles or trains.</li>
+              <li><strong>Collect coins:</strong> Run into coins to increase your score (10 points per coin) and coin count.</li>
+              <li><strong>Skate Power-Up:</strong> Collect 5 coins to activate your chosen skate, protecting you from one hurdle or train collision and increasing speed slightly. Consumed after use.</li>
+              <li><strong>Immunity Power-Up:</strong> Collect 10 coins to gain immunity, protecting you from one hurdle or train collision. Consumed after use.</li>
+              <li><strong>Avoid hurdles and trains:</strong> Jump or slide to dodge hurdles and trains; hitting one ends the game unless skate or immunity is active.</li>
+              <li><strong>Keyboard controls:</strong> Use 'A'/'D' to move, 'Space' to jump, 'S' to slide, 'R' to restart, 'Q' to quit.</li>
+            </ul>
           </div>
-          {hoveredCharacter && (
-            <div className="preview">
-              <img
-                src={`/static/images/character${hoveredCharacter}.png`}
-                alt={`Character ${hoveredCharacter}`}
-                className="preview-img"
-              />
-            </div>
-          )}
-          {selectionMessage && <p>{selectionMessage}</p>}
         </div>
-      )}
-      {/* Skate selection screen */}
-      {showSkateSelection && hasSelectedCharacter && !hasSelectedSkate && (
-        <div className="skate-selection">
-          <h2>Choose Your Skate</h2>
-          <div className="selection-controls">
-            {[1, 2, 3].map((skate) => (
-              <button
-                key={skate}
-                onClick={() => selectSkate(skate)}
-                onMouseEnter={() => setHoveredSkate(skate)}
-                onMouseLeave={() => setHoveredSkate(null)}
-                className="skate-btn"
-              >
-                <img
-                  src={`/static/images/skate${skate}.png`}
-                  alt={`Skate ${skate}`}
-                  className="skate-img"
-                />
-              </button>
-            ))}
+        <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{ maxWidth: "40%" }}>
+            <img src="static/images/pages/surfdash-lineart.svg" alt="Surf Dash" style={{ width: '100%', height: 'auto' }} />
           </div>
-          {hoveredSkate && (
-            <div className="preview">
-              <img
-                src={`/static/images/skate${hoveredSkate}.png`}
-                alt={`Skate ${hoveredSkate}`}
-                className="preview-img"
-              />
-            </div>
-          )}
-          {selectionMessage && <p>{selectionMessage}</p>}
-        </div>
-      )}
-      {/* Immunity power-up message */}
-      {immunityMessage && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '10px', 
-          left: '50%', 
-          transform: 'translateX(-50%)', 
-          fontSize: '24px', 
-          color: '#FFD700', 
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <img 
-            src="/static/images/immunity.png" 
-            alt="Immunity Icon" 
-            width="30" 
-            height="30" 
-            style={{ display: immunityMessage ? 'inline' : 'none' }} 
-          />
-          Immunity Activated!
-        </div>
-      )}
-      {/* Skate power-up message */}
-      {skateMessage && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '50px', 
-          left: '50%', 
-          transform: 'translateX(-50%)', 
-          fontSize: '24px', 
-          color: '#00CED1', 
-          zIndex: 1000 
-        }}>
-          Skate Activated!
-        </div>
-      )}
-      {/* Main game UI */}
-      <div className="slider-container">
-        <div className="slider">
-          {/* Instructions slide */}
-          <div className="slide" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ maxWidth: '60%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', overflowY: 'auto' }}>
-              <div className="instructions inter">
-                <h2 style={{ '--inter-weight': 900, fontSize: '6em', margin: 0 }}>Jump Dash</h2>
-                <ul>
-                  <li><strong>Choose character and skate:</strong> Select your character (1 or 2) and skate (1, 2, or 3) before starting.</li>
-                  <li><strong>Show your hand:</strong> Ensure your hand is visible to the webcam.</li>
-                  <li><strong>Move left/right:</strong> Move your index finger left or right to switch lanes.</li>
-                  <li><strong>Jump:</strong> Quickly raise your hand to jump over high hurdles or trains.</li>
-                  <li><strong>Slide:</strong> Quickly lower your hand to slide under low hurdles or trains.</li>
-                  <li><strong>Collect coins:</strong> Run into coins to increase your score (10 points per coin) and coin count.</li>
-                  <li><strong>Skate Power-Up:</strong> Collect 5 coins to activate your chosen skate, protecting you from one hurdle or train collision and increasing speed slightly. Consumed after use.</li>
-                  <li><strong>Immunity Power-Up:</strong> Collect 10 coins to gain immunity, protecting you from one hurdle or train collision. Consumed after use.</li>
-                  <li><strong>Avoid hurdles and trains:</strong> Jump or slide to dodge hurdles and trains; hitting one ends the game unless skate or immunity is active.</li>
-                  <li><strong>Keyboard controls:</strong> Use 'A'/'D' to move, 'Space' to jump, 'S' to slide, 'R' to restart, 'Q' to quit.</li>
-                </ul>
-              </div>
-            </div>
-            <div style={{ maxWidth: '40%' }}>
-              <img src="static/images/pages/surfdash-lineart.svg" alt="Jump Dash" style={{ width: '100%', height: 'auto' }} />
-            </div>
+          <div style={{ maxWidth: "20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh' }}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
+              <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
+            </button>
           </div>
-          {/* Game canvas slide */}
-          <div className="slide" style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-              <div className="controls" style={{ maxWidth: '70vw', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+        </div>
+      </div>
+      <div style={{ width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        {showCharacterSelection && !hasSelectedCharacter && (
+          <div className="character-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #4CAF50'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Your Character</h2>
+            <div className="selection-controls" style={{
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {[1, 2].map((char) => (
+                <button
+                  key={char}
+                  onClick={() => selectCharacter(char)}
+                  onMouseEnter={() => setHoveredCharacter(char)}
+                  onMouseLeave={() => setHoveredCharacter(null)}
+                  style={{
+                    background: 'none',
+                    border: hoveredCharacter === char ? '3px solid #4CAF50' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <img
+                    src={`/static/images/character${char}.png`}
+                    alt={`Character ${char}`}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      objectFit: 'contain'
+                    }}
+                  />
                 </button>
-                <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: showCharacterSelection || showSkateSelection ? 'none' : 'inline' }}>
-                  <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
-                </button>
-                <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                  <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
-                </button>
-              </div>
+              ))}
             </div>
-            <div ref={debugRef} className="debug-box" style={{ backgroundColor: '#fff' }}></div>
-            <div className="game-container inter">
-              <canvas ref={canvasRef} width="1280" height="720"></canvas>
-              <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
-              <div ref={gameStatsRef} className="game-stats">Score: 0 | Coins: 0</div>
-              <div ref={gameOverRef} className="game-over">
-                <h2>Game Over!</h2>
-                <p>Your Score: <span ref={finalScoreRef}>0</span></p>
-                <button id="play-again-btn">Play Again</button>
-              </div>
+            {selectionMessage && (
+              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{selectionMessage}</p>
+            )}
+          </div>
+        )}
+        {showSkateSelection && hasSelectedCharacter && !hasSelectedSkate && (
+          <div className="skate-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #FF9800'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Your Skate</h2>
+            <div className="selection-controls" style={{
+              display: 'flex',
+              gap: '20px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {[1, 2, 3].map((skate) => (
+                <button
+                  key={skate}
+                  onClick={() => selectSkate(skate)}
+                  onMouseEnter={() => setHoveredSkate(skate)}
+                  onMouseLeave={() => setHoveredSkate(null)}
+                  style={{
+                    background: 'none',
+                    border: hoveredSkate === skate ? '3px solid #FF9800' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <img
+                    src={`/static/images/skate${skate}.png`}
+                    alt={`Skate ${skate}`}
+                    style={{
+                      width: '100px',
+                      height: '100px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </button>
+              ))}
             </div>
+            {selectionMessage && (
+              <p style={{ color: '#FF9800', fontSize: '1.5em', margin: '20px 0' }}>{selectionMessage}</p>
+            )}
+          </div>
+        )}
+        {immunityMessage && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '10px', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            fontSize: '24px', 
+            color: '#FFD700', 
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <img 
+              src="/static/images/immunity.png" 
+              alt="Immunity Icon" 
+              width="30" 
+              height="30" 
+              style={{ display: immunityMessage ? 'inline' : 'none' }} 
+            />
+            Immunity Activated!
+          </div>
+        )}
+        {skateMessage && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '50px', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            fontSize: '24px', 
+            color: '#00CED1', 
+            zIndex: 1000 
+          }}>
+            Skate Activated!
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: showCharacterSelection || showSkateSelection ? 'none' : 'inline' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
+            </button>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
+            </button>
+          </div>
+        </div>
+        <div ref={debugRef} className="debug-box" style={{ backgroundColor: "transparent" }}></div>
+        <div className="game-container inter">
+          <canvas ref={canvasRef} width="1280" height="720"></canvas>
+          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <div ref={gameStatsRef} className="game-stats">Score: 0 | Coins: 0</div>
+          <div ref={gameOverRef} className="game-over">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span ref={finalScoreRef}>0</span></p>
+            <button id="play-again-btn">Play Again</button>
           </div>
         </div>
       </div>
