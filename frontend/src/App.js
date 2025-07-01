@@ -220,6 +220,39 @@ const App = () => {
     return () => clearInterval(countdown);
   }, [username]);
 
+  function genHexColorPair() {
+    let r, g, b, avg;
+
+    do {
+      r = Math.floor(Math.random() * 256);
+      g = Math.floor(Math.random() * 256);
+      b = Math.floor(Math.random() * 256);
+      avg = (r + g + b) / 3;
+    } while (avg < 125); // ensure it's light
+
+    // Create light color hex
+    const lightHex =
+      '#' +
+      r.toString(16).padStart(2, '0') +
+      g.toString(16).padStart(2, '0') +
+      b.toString(16).padStart(2, '0');
+
+    // Calculate darker version by reducing brightness by 30%
+    const darkR = Math.max(0, Math.floor(r * 0.7));
+    const darkG = Math.max(0, Math.floor(g * 0.7));
+    const darkB = Math.max(0, Math.floor(b * 0.7));
+
+    const darkHex =
+      '#' +
+      darkR.toString(16).padStart(2, '0') +
+      darkG.toString(16).padStart(2, '0') +
+      darkB.toString(16).padStart(2, '0');
+
+    return { light: lightHex, dark: darkHex };
+  }
+
+  const { light, dark } = { light: "#ededed", dark: "#232323" };
+
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.jpg' },
     { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.jpg' },
