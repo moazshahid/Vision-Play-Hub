@@ -347,9 +347,9 @@ const App = () => {
           <div style={{ display: 'flex', gap: '0.8vw' }}>
             <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
               <div style={{borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                <img src="/static/images/pages/leaderboard-icon.svg" alt="Leaderboards" style={{ width: "2em", height: "2em" }}/>
+                <img src="static/images/pages/leaderboard.svg" alt="Leaderboards" style={{ width: "2em", height: "2em" }}/>
+                <button className="hanken-grotesk-bold back-button">Leaderboards</button>
               </div>
-              <button className="hanken-grotesk-bold back-button">Leaderboards</button>
             </a>
             <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
               <div style={{backgroundColor: light, borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center", color: dark, fontSize: "1.5em", fontWeight: "0.75em"}}>
