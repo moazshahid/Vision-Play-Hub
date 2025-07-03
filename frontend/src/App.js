@@ -292,13 +292,32 @@ const App = () => {
         <div id='hero' style={{ position: "relative", minHeight: "50vh", maxHeight: "90vh", width: "100%", display: "flex", justifyContent: 'center' }}>
           <div style={{ display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)" }}>
             <div style={{ position: "relative" }}>
-              <h1 className="hanken-grotesk-bold" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
+              <h1 className="hanken-grotesk-bold glow-pulse" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
                 Vision Play Hub
               </h1>
             </div>
             <p className="bricolage-grotesque-regular" style={{ margin: 0, textAlign: "center", color: "#ffffff" }}>
               A home for your entertainment. Enjoy our selection of mini games for you to play!
             </p>
+            
+            {/* Press Start Button */}
+            <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center" }}>
+              <button
+                className="hanken-grotesk-bold back-button"
+                style={{
+                  fontSize: "1.5rem",
+                  padding: "1rem 2rem",
+                  border: "2px solid white",
+                  color: "white",
+                  backgroundColor: "transparent",
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                }}
+                onClick={() => setShowHero(false)}
+              >
+                Press Start
+              </button>
+            </div>
           </div>
         </div>
       )}
