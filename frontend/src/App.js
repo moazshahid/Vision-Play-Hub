@@ -193,7 +193,69 @@ const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
-  
+  const [username, setUsername] = useState('');
+  const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
+
+  useEffect(() => {
+    // Pull username from global variable injected by Django
+    if (window.REACT_USERNAME) {
+      setUsername(window.REACT_USERNAME);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (username === "Guest" || !username) {
+      // Don't start countdown if username is "Guest" or empty
+      return;
+    }
+
+    const countdown = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          window.location.reload();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown);
+  }, [username]);
+
+  function genHexColorPair() {
+    let r, g, b, avg;
+
+    do {
+      r = Math.floor(Math.random() * 256);
+      g = Math.floor(Math.random() * 256);
+      b = Math.floor(Math.random() * 256);
+      avg = (r + g + b) / 3;
+    } while (avg < 125); // ensure it's light
+
+    // Create light color hex
+    const lightHex =
+      '#' +
+      r.toString(16).padStart(2, '0') +
+      g.toString(16).padStart(2, '0') +
+      b.toString(16).padStart(2, '0');
+
+    // Calculate darker version by reducing brightness by 30%
+    const darkR = Math.max(0, Math.floor(r * 0.7));
+    const darkG = Math.max(0, Math.floor(g * 0.7));
+    const darkB = Math.max(0, Math.floor(b * 0.7));
+
+    const darkHex =
+      '#' +
+      darkR.toString(16).padStart(2, '0') +
+      darkG.toString(16).padStart(2, '0') +
+      darkB.toString(16).padStart(2, '0');
+
+    return { light: lightHex, dark: darkHex };
+  }
+
+  const { light, dark } = { light: "#ededed", dark: "#232323" };
+
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.jpg' },
     { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.jpg' },
@@ -254,6 +316,12 @@ const App = () => {
 
       <header></header>
 
+      {(timeLeft <= 10 && timeLeft > 0) && (
+        <div style={{position: "absolute", top: 0, right: "50%", transform: "translate(50%, 0%)", borderRadius: "0 0 500% 500%", backgroundColor: 'white', justifyContent: "center", alignItems: "center", padding: "1em", zIndex: 10, width: "10em", height: "10em", textAlign: "center"}}>
+          <p style={{ color: "black" , fontWeight: "bold", fontSize: "1.25em"}}>You Still There?<br/><h2 style={{color: "black" , fontWeight: "bold", fontSize: "2em"}}>{timeLeft}</h2></p>
+        </div>
+      )}
+
       {/* Navigation bar */}
       <nav style={{
         display: 'flex',
@@ -271,7 +339,7 @@ const App = () => {
             />
           </a>
         </div>
-        {!selectedGame && !isAuthenticated && (
+        {(!selectedGame && !isAuthenticated && username == 'Guest') ? (
         <div style={{ display: 'flex', gap: '0.8vw' }}>
           <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Log In</button>
@@ -279,13 +347,23 @@ const App = () => {
           <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Sign Up</button>
           </a>
-          <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Leaderboards</button>
-          </a>
-          <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Profile</button>
-          </a>
-        </div>)}
+        </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '0.8vw' }}>
+            <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
+              <div style={{borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                <img src="static/images/pages/leaderboard.svg" alt="Leaderboards" style={{ width: "2em", height: "2em" }}/>
+                <button className="hanken-grotesk-bold back-button">Leaderboards</button>
+              </div>
+            </a>
+            <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+              <div style={{backgroundColor: light, borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center", color: dark, fontSize: "1.5em", fontWeight: "0.75em"}}>
+                {window.REACT_USERNAME.charAt(0).toUpperCase()}
+              </div>
+              <button className="hanken-grotesk-bold back-button">Profile</button>
+            </a>
+          </div>
+        )}
       </nav>
 
       {showHero && (
