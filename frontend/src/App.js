@@ -299,25 +299,6 @@ const App = () => {
             <p className="bricolage-grotesque-regular" style={{ margin: 0, textAlign: "center", color: "#ffffff" }}>
               A home for your entertainment. Enjoy our selection of mini games for you to play!
             </p>
-            
-            {/* Press Start Button */}
-            <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center" }}>
-              <button
-                className="hanken-grotesk-bold back-button"
-                style={{
-                  fontSize: "1.5rem",
-                  padding: "1rem 2rem",
-                  border: "2px solid white",
-                  color: "white",
-                  backgroundColor: "transparent",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                }}
-                onClick={() => setShowHero(false)}
-              >
-                Press Start
-              </button>
-            </div>
           </div>
         </div>
       )}
