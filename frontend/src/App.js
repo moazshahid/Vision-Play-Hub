@@ -195,6 +195,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
   const [username, setUsername] = useState('');
   const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     // Pull username from global variable injected by Django
@@ -222,6 +223,36 @@ const App = () => {
 
     return () => clearInterval(countdown);
   }, [username]);
+
+  useEffect(() => {
+    let lastPing = 0;
+    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    const pingServerIfDue = () => {
+      const now = Date.now();
+      if (now - lastPing >= PING_INTERVAL) {
+        lastPing = now;
+        fetch('/ping/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    };
+
+    // Attach event listeners
+    document.addEventListener('click', pingServerIfDue);
+    document.addEventListener('keydown', pingServerIfDue);
+    document.addEventListener('mousemove', pingServerIfDue);
+
+    // Cleanup listeners on unmount
+    return () => {
+      document.removeEventListener('click', pingServerIfDue);
+      document.removeEventListener('keydown', pingServerIfDue);
+      document.removeEventListener('mousemove', pingServerIfDue);
+    };
+  }, []);
 
   function genHexColorPair() {
     let r, g, b, avg;
@@ -350,13 +381,13 @@ const App = () => {
         </div>
         ) : (
           <div style={{ display: 'flex', gap: '0.8vw' }}>
-            <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
+            <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none', alignItems: "center", justifyContent: "center", display: "flex" , flexDirection: "column" }}>
               <div style={{borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center"}}>
                 <img src="static/images/pages/leaderboard.svg" alt="Leaderboards" style={{ width: "2em", height: "2em" }}/>
-                <button className="hanken-grotesk-bold back-button">Leaderboards</button>
               </div>
+              <button className="hanken-grotesk-bold back-button">Leaderboards</button>
             </a>
-            <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+            <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none', alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column" }}>
               <div style={{backgroundColor: light, borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center", color: dark, fontSize: "1.5em", fontWeight: "0.75em"}}>
                 {window.REACT_USERNAME.charAt(0).toUpperCase()}
               </div>

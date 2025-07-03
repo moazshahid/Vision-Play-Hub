@@ -139,7 +139,7 @@ def home(request):
     time_left = 0
     if login_time:
         elapsed = now - login_time
-        time_left = max(0, 30 - elapsed)
+        time_left = max(0, 600 - elapsed)
     if not username:
         username = 'Guest'
     return render(request, 'index.html', {'username': username, 'time_left': time_left})
@@ -151,3 +151,7 @@ def leaderboard(request):
         entries = Leaderboards.objects.filter(game=game).order_by('ranking')
         leaderboard_data.append({'game': game, 'entries': entries})
     return render(request, 'cv_games_app/leaderboard.html', {'leaderboard_data': leaderboard_data})
+
+def keep_session_alive(request):
+    request.session.modified = True  # refresh session expiry
+    return JsonResponse({'status': 'alive'})
