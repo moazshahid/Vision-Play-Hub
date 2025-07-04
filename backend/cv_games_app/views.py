@@ -34,7 +34,7 @@ class SubmitScoreAPIView(APIView):
             if score < 0:
                 return Response({'error': 'Score cannot be negative'}, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
-            game = Games.objects.get(title=game_title.strip())  
+            game = Games.objects.get(title=game_title)  
             entry, created = Leaderboards.objects.update_or_create(
                 user=user,
                 game=game,
