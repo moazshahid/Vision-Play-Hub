@@ -6,29 +6,68 @@
     <title>Leaderboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     {% load static %}
+    <style>
+        body {
+            font-family: "Hanken Grotesk", sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 20px;
+            border-collapse: collapse;
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .no-entries {
+            font-style: italic;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
     <h1>Leaderboard</h1>
-    {% for data in leaderboard_data %}
-        <h2>{{ data.game.title }}</h2>
-        <table>
-            <tr>
-                <th>Rank</th>
-                <th>Username</th>
-                <th>Score</th>
-            </tr>
-            {% for entry in data.entries %}
+    {% if leaderboard_data %}
+        {% for data in leaderboard_data %}
+            <h2>{{ data.game.title }}</h2>
+            <table>
                 <tr>
-                    <td>{{ entry.ranking }}</td>
-                    <td>{{ entry.user.username }}</td>
-                    <td>{{ entry.score }}</td>
+                    <th>Rank</th>
+                    <th>Username</th>
+                    <th>Score</th>
                 </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="3">No entries yet.</td>
-                </tr>
-            {% endfor %}
-        </table>
-    {% endfor %}
+                {% for entry in data.entries %}
+                    <tr>
+                        <td>{{ entry.ranking }}</td>
+                        <td>{{ entry.user.username }}</td>
+                        <td>{{ entry.score }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="no-entries">Play the game to see scores here</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    {% else %}
+        <p class="no-entries" style="text-align: center;">No games available. Start playing to create leaderboards!</p>
+    {% endif %}
 </body>
 </html>
