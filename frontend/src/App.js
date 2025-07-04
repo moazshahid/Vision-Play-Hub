@@ -279,7 +279,7 @@ const App = () => {
           <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Sign Up</button>
           </a>
-          <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
+          <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
             <button className="hanken-grotesk-bold back-button">Leaderboards</button>
           </a>
           <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
@@ -316,7 +316,36 @@ const App = () => {
       ) : (
         <div>
           {selectedGame.component}
-          <button className="hanken-grotesk-bold back-button" onClick={() => { setSelectedGame(null); setShowHero(true); }}>
+          <button
+            className="hanken-grotesk-bold"
+            onClick={() => {
+              setSelectedGame(null);
+              setShowHero(true);
+            }}
+            style={{
+              position: 'fixed',
+              top: '6vh',
+              right: '2vw',
+              zIndex: 1000,
+              padding: '10px 20px',
+              borderRadius: '10px',
+              background: 'none',
+              border: '1px solid #66fcf1',
+              color: '#66fcf1',
+              cursor: 'pointer',
+              transition: 'background 0.3s, color 0.3s',
+              fontSize: '1rem',
+              fontFamily: '"Bricolage Grotesque", sans-serif'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#66fcf1';
+              e.target.style.color = '#0b0c10';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'none';
+              e.target.style.color = '#66fcf1';
+            }}
+          >
             Back to Game Selection
           </button>
         </div>
