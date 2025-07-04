@@ -14,7 +14,7 @@ class JWTCookieMiddleware:
             access_token = request.session.get('jwt_access_token')
             refresh_token = request.session.get('jwt_refresh_token')
             if access_token and refresh_token:
-                response.set_cookie('access_token', access_token, httponly=True)
+                response.set_cookie('access_token', access_token, httponly=False)
                 response.set_cookie('refresh_token', refresh_token, httponly=True)
                 logger.debug("Set JWT cookies: access_token=%s, refresh_token=%s", 
                              access_token[:10], refresh_token[:10])
