@@ -335,3 +335,39 @@ div.at-container {
     opacity:1;
   }
 }
+
+@keyframes glowPulse {
+  0% {
+    text-shadow:
+      0 0 7px rgba(255, 255, 255, 0.6),
+      0 0 15px rgba(0, 240, 255, 0.5),
+      0 0 20px rgba(0, 240, 255, 0.4),
+      0 0 30px rgba(0, 240, 255, 0.3);
+  }
+  33% {
+    text-shadow:
+      0 0 7px rgba(255, 255, 255, 0.6),
+      0 0 15px rgba(204, 0, 255, 0.5),
+      0 0 20px rgba(204, 0, 255, 0.4),
+      0 0 30px rgba(204, 0, 255, 0.3);
+  }
+  66% {
+    text-shadow:
+      0 0 7px rgba(255, 255, 255, 0.6),
+      0 0 15px rgba(255, 0, 128, 0.5),
+      0 0 20px rgba(255, 0, 128, 0.4),
+      0 0 30px rgba(255, 0, 128, 0.3);
+  }
+  100% {
+    text-shadow:
+      0 0 7px rgba(255, 255, 255, 0.6),
+      0 0 15px rgba(0, 240, 255, 0.5),
+      0 0 20px rgba(0, 240, 255, 0.4),
+      0 0 30px rgba(0, 240, 255, 0.3);
+  }
+}
+
+.glow-pulse {
+  animation: glowPulse 5s ease-in-out infinite;
+  color: #ffffff;
+}

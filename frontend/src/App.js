@@ -79,7 +79,8 @@ const GameCarousel = ({ games, onSelectGame }) => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              padding: "1rem",
+              height: "400px",
+              padding: "0",
               userSelect: "none",
             }}
             onClick={(e) => {
@@ -91,20 +92,15 @@ const GameCarousel = ({ games, onSelectGame }) => {
               src={game.icon}
               alt={game.name}
               style={{
-                maxHeight: "250px",
-                objectFit: "contain",
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
                 marginBottom: "1rem",
                 pointerEvents: "none",
                 borderRadius: "1em",
               }}
               draggable={false}
             />
-            <h3
-              className="hanken-grotesk-bold"
-              style={{ fontSize: "1.8rem", margin: 0, color: "#333", color: "white"}}
-            >
-              {game.name}
-            </h3>
           </div>
         ))}
       </div>
@@ -119,7 +115,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
         style={{
           position: "absolute",
           top: "50%",
-          left: "0",
+          left: "10px",
           transform: "translateY(-50%)",
           backgroundColor: "rgba(255,255,255,0.4)",
           border: "none",
@@ -144,7 +140,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
         style={{
           position: "absolute",
           top: "50%",
-          right: "0",
+          right: "10px",
           transform: "translateY(-50%)",
           backgroundColor: "rgba(255,255,255,0.4)",
           border: "none",
@@ -409,10 +405,10 @@ const App = () => {
       </nav>
 
       {showHero && (
-        <div id='hero' style={{ position: "relative", minHeight: "50vh", maxHeight: "90vh", width: "100%", display: "flex", justifyContent: 'center' }}>
+        <div id='hero' style={{ position: "relative", minHeight: "40vh", maxHeight: "60vh", width: "100%", display: "flex", justifyContent: 'center', paddingTop: "5vh" }}>
           <div style={{ display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)" }}>
             <div style={{ position: "relative" }}>
-              <h1 className="hanken-grotesk-bold" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
+              <h1 className="hanken-grotesk-bold glow-pulse" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
                 Vision Play Hub
               </h1>
             </div>
@@ -436,7 +432,36 @@ const App = () => {
       ) : (
         <div>
           {selectedGame.component}
-          <button className="hanken-grotesk-bold back-button" onClick={() => { setSelectedGame(null); setShowHero(true); }}>
+          <button
+            className="hanken-grotesk-bold"
+            onClick={() => {
+              setSelectedGame(null);
+              setShowHero(true);
+            }}
+            style={{
+              position: 'fixed',
+              top: '6vh',
+              right: '2vw',
+              zIndex: 1000,
+              padding: '10px 20px',
+              borderRadius: '10px',
+              background: 'none',
+              border: '1px solid #66fcf1',
+              color: '#66fcf1',
+              cursor: 'pointer',
+              transition: 'background 0.3s, color 0.3s',
+              fontSize: '1rem',
+              fontFamily: '"Bricolage Grotesque", sans-serif'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#66fcf1';
+              e.target.style.color = '#0b0c10';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'none';
+              e.target.style.color = '#66fcf1';
+            }}
+          >
             Back to Game Selection
           </button>
         </div>
