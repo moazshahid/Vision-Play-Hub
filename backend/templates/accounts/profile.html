@@ -88,12 +88,22 @@
     }
 
     .profile-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
       background-color: rgba(0, 0, 0, 0.7);
       padding: 2rem;
       border-radius: 16px;
       box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
-      max-width: 420px;
+      max-width: 820px;
       width: 90%;
+      flex-wrap: wrap;
+    }
+
+    .profile-left,
+    .profile-right {
+      flex: 1;
+      min-width: 280px;
     }
 
     .profile-card h1 {
