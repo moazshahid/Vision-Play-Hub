@@ -174,38 +174,29 @@
   <div class="leaderboard-container">
     <h1>Leaderboard</h1>
     {% if leaderboard_data %}
-      {% for data in leaderboard_data %}
-        <div class="leaderboard-card">
-          <h2>{{ data.game.title }}</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Username</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for entry in data.entries %}
+        {% for data in leaderboard_data %}
+            <h2>{{ data.game.title }}</h2>
+            <table>
                 <tr>
-                  <td>{{ entry.ranking }}</td>
-                  <td>{{ entry.user.username }}</td>
-                  <td>{{ entry.score }}</td>
+                    <th>Rank</th>
+                    <th>Username</th>
+                    <th>Score</th>
                 </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="3" class="no-entries">Play the game to see scores here</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% endfor %}
+                {% for entry in data.entries %}
+                    <tr>
+                        <td>{{ entry.ranking }}</td>
+                        <td>{{ entry.user.username }}</td>
+                        <td>{{ entry.score }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="no-entries">Play the game to see scores here</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
     {% else %}
-      <p class="no-entries">No games available. Start playing to create leaderboards!</p>
+        <p class="no-entries" style="text-align: center;">No games available. Start playing to create leaderboards!</p>
     {% endif %}
-    <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
-  </div>
-
 </body>
 </html>

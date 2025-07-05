@@ -202,14 +202,15 @@ const SnakeGame = () => {
       finalScore.textContent = score;
       over.style.display = 'block';
       if (!gameObjectRef.current.scoreSubmitted) {
-        submitScore('Snake Game', score)
-          .then((response) => {
-            console.log('Score submitted successfully:', response);
-           gameObjectRef.current.scoreSubmitted = true; // Mark as submitted
-          })
-          .catch((error) => {
-            console.error('Failed to submit score:', error.response?.data || error.message);
-        
+          gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
+          console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+          submitScore('SnakeGame', score)
+           .then((response) => {
+             console.log('Score submitted successfully:', response);
+           })
+           .catch((error) => {
+             console.error('Failed to submit score:', error.response?.data || error.message);
+             alert('Failed to submit score. Please ensure you are logged in.');
       });
   }
     };

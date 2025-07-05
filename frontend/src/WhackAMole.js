@@ -1,5 +1,6 @@
 import './Game.css';
 import React, { useEffect, useRef, useState } from 'react';
+import { submitScore } from './utils/api';
 
 const WhackAMole = () => {
   const [showGame, setShowGame] = useState(false); 
@@ -143,6 +144,18 @@ const WhackAMole = () => {
       ctx.fillText('Press "R" to Restart', 640, 500); // Adjusted to 500
       finalScore.textContent = score;
       over.style.display = 'block';
+      if (!gameObjectRef.current.scoreSubmitted) {
+        gameObjectRef.current.scoreSubmitted = true;
+        console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+        submitScore('Whack-A-Mole', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+            alert('Failed to submit score. Please ensure you are logged in.');
+          });
+      }
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
@@ -203,6 +216,7 @@ const WhackAMole = () => {
         this.cursorPosition = [640, 360];
         this.hammerImage = hammerImage;
         this.heartImage = heartImage;
+        this.scoreSubmitted = false;
       }
 
       spawnMole() {
