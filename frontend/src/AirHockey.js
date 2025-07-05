@@ -1,5 +1,6 @@
 import './Game.css';
 import React, { useEffect, useRef, useState } from 'react';
+import { submitScore } from './utils/api';
 
 // Define the AirHockey component for the hand-tracking Air Hockey game
 const AirHockey = () => {
@@ -456,6 +457,26 @@ const AirHockey = () => {
       ctx.font = '30px Arial';
       ctx.fillText('Press "R" to Restart', 480, 420);
       over.style.display = 'block';
+      if (!gameObjectRef.current.scoreSubmitted) {
+        gameObjectRef.current.scoreSubmitted = true;
+        const scoreToSubmit = gameObjectRef.current.gameMode === 'two' ? Math.max(playerScore, opponentScore) : playerScore;
+        const scoreLabel = gameObjectRef.current.gameMode === 'two' ? 
+          (playerScore > opponentScore ? 'Player 2' : opponentScore > playerScore ? 'Player 1' : 'Tie (highest score)') : 'Player';
+        console.log(`Attempting to submit score for ${scoreLabel}: ${scoreToSubmit}, Token: ${localStorage.getItem('access_token')}`);
+        submitScore('Air Hockey', scoreToSubmit)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+            const debug = debugRef.current;
+            debug.innerHTML = `<p>Score of ${scoreToSubmit} submitted for ${scoreLabel}!</p>`;
+            setTimeout(() => {
+              debug.innerHTML = '';
+            }, 3000);
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+            alert('Failed to submit score. Please ensure you are logged in.');
+          });
+}
     };
 
     class GameLogic {
@@ -467,6 +488,7 @@ const AirHockey = () => {
         this.video = video;
         this.difficulty = difficulty;
         this.gameMode = gameMode;
+        this.scoreSubmitted=false;
 
         // Game state
         this.playerScore = 0;

@@ -311,6 +311,12 @@ const App = () => {
       alert('Login failed');
     }
   };
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setIsAuthenticated(false);
+    window.location.href = 'http://localhost:8000/auth/logout/';
+  };
   return (
     <div className="App">
       <video
@@ -370,31 +376,36 @@ const App = () => {
             />
           </a>
         </div>
-        {(!selectedGame && !isAuthenticated && username == 'Guest') ? (
-        <div style={{ display: 'flex', gap: '0.8vw' }}>
-          <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Log In</button>
-          </a>
-          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Sign Up</button>
-          </a>
+                <div style={{ display: 'flex', gap: '0.8vw' }}>
+          {isAuthenticated ? (
+            <>
+              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
+              </a>
+              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Profile</button>
+              </a>
+              <button className="hanken-grotesk-bold back-button" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Log In</button>
+              </a>
+              <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Sign Up</button>
+              </a>
+              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
+              </a>
+              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Profile</button>
+              </a>
+            </>
+          )}
         </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '0.8vw' }}>
-            <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none', alignItems: "center", justifyContent: "center", display: "flex" , flexDirection: "column" }}>
-              <div style={{borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                <img src="static/images/pages/leaderboard.svg" alt="Leaderboards" style={{ width: "2em", height: "2em" }}/>
-              </div>
-              <button className="hanken-grotesk-bold back-button">Leaderboards</button>
-            </a>
-            <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none', alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column" }}>
-              <div style={{backgroundColor: light, borderRadius: "100%", width: "3em", height: "3em", display: "flex", alignItems: "center", justifyContent: "center", color: dark, fontSize: "1.5em", fontWeight: "0.75em"}}>
-                {window.REACT_USERNAME.charAt(0).toUpperCase()}
-              </div>
-              <button className="hanken-grotesk-bold back-button">Profile</button>
-            </a>
-          </div>
-        )}
       </nav>
 
       {showHero && (

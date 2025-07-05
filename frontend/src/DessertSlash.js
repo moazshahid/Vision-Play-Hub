@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './Game.css';
+import { submitScore } from './utils/api';
 
 // DessertSlash is a React component that implements a hand-tracking game where players slice desserts using their index finger.
 const DessertSlash = () => {
@@ -271,6 +272,18 @@ const DessertSlash = () => {
       ctx.fillText('Press "R" to Restart', 640, 500); // Display restart instructions
       finalScore.textContent = score; // Update the final score in the DOM
       over.style.display = 'block'; // Show the game over screen in the DOM
+      if (!gameObjectRef.current.scoreSubmitted) {
+        gameObjectRef.current.scoreSubmitted = true;
+        console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+        submitScore('Dessert Slash', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+            alert('Failed to submit score. Please ensure you are logged in.');
+          });
+      }
     };
 
     // GameLogic class to manage the game state and logic
@@ -320,6 +333,7 @@ const DessertSlash = () => {
         this.lastFingerY = 360; // Last known Y position of the finger
         this.lastStatsUpdate = 0; // Time of the last stats update
         this.statsUpdateInterval = 1000; // Interval for updating stats display (ms)
+        this.scoreSubmitted=false;
       }
 
       // Function to spawn a new game object (dessert, bomb, or power-up)
