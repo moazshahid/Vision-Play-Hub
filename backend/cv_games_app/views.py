@@ -11,8 +11,7 @@ from .models import Games, Leaderboards
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 import logging
-from django.views.decorators.csrf 
-import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie
 import time
 import json
 
