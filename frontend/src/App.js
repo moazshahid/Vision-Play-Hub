@@ -217,7 +217,7 @@ const App = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setIsAuthenticated(false);
-    window.location.href = 'http://localhost:8000/auth/signout/';
+    window.location.href = 'http://localhost:8000/auth/logout/';
   };
   return (
     <div className="App">
