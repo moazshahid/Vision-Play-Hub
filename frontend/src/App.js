@@ -4,7 +4,10 @@ import SnakeGame from './SnakeGame';
 import WhackAMole from './WhackAMole';
 import DessertSlash from './DessertSlash';
 import AirHockey from './AirHockey';
+import SurfDash from './SurfDash';
 import { login } from './utils/api';
+import TetrisGame from './TetrisGame';
+
 // --- NEW: GameCarousel Component ---
 const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -76,7 +79,8 @@ const GameCarousel = ({ games, onSelectGame }) => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              padding: "1rem",
+              height: "400px",
+              padding: "0",
               userSelect: "none",
             }}
             onClick={(e) => {
@@ -88,20 +92,15 @@ const GameCarousel = ({ games, onSelectGame }) => {
               src={game.icon}
               alt={game.name}
               style={{
-                maxHeight: "250px",
-                objectFit: "contain",
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
                 marginBottom: "1rem",
                 pointerEvents: "none",
                 borderRadius: "1em",
               }}
               draggable={false}
             />
-            <h3
-              className="hanken-grotesk-bold"
-              style={{ fontSize: "1.8rem", margin: 0, color: "#333", color: "white"}}
-            >
-              {game.name}
-            </h3>
           </div>
         ))}
       </div>
@@ -116,7 +115,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
         style={{
           position: "absolute",
           top: "50%",
-          left: "0",
+          left: "10px",
           transform: "translateY(-50%)",
           backgroundColor: "rgba(255,255,255,0.4)",
           border: "none",
@@ -141,7 +140,7 @@ const GameCarousel = ({ games, onSelectGame }) => {
         style={{
           position: "absolute",
           top: "50%",
-          right: "0",
+          right: "10px",
           transform: "translateY(-50%)",
           backgroundColor: "rgba(255,255,255,0.4)",
           border: "none",
@@ -190,12 +189,107 @@ const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
-  
+  const [username, setUsername] = useState('');
+  const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    // Pull username from global variable injected by Django
+    if (window.REACT_USERNAME) {
+      setUsername(window.REACT_USERNAME);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (username === "Guest" || !username) {
+      // Don't start countdown if username is "Guest" or empty
+      return;
+    }
+
+    const countdown = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          window.location.reload();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown);
+  }, [username]);
+
+  useEffect(() => {
+    let lastPing = 0;
+    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    const pingServerIfDue = () => {
+      const now = Date.now();
+      if (now - lastPing >= PING_INTERVAL) {
+        lastPing = now;
+        fetch('/ping/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    };
+
+    // Attach event listeners
+    document.addEventListener('click', pingServerIfDue);
+    document.addEventListener('keydown', pingServerIfDue);
+    document.addEventListener('mousemove', pingServerIfDue);
+
+    // Cleanup listeners on unmount
+    return () => {
+      document.removeEventListener('click', pingServerIfDue);
+      document.removeEventListener('keydown', pingServerIfDue);
+      document.removeEventListener('mousemove', pingServerIfDue);
+    };
+  }, []);
+
+  function genHexColorPair() {
+    let r, g, b, avg;
+
+    do {
+      r = Math.floor(Math.random() * 256);
+      g = Math.floor(Math.random() * 256);
+      b = Math.floor(Math.random() * 256);
+      avg = (r + g + b) / 3;
+    } while (avg < 125); // ensure it's light
+
+    // Create light color hex
+    const lightHex =
+      '#' +
+      r.toString(16).padStart(2, '0') +
+      g.toString(16).padStart(2, '0') +
+      b.toString(16).padStart(2, '0');
+
+    // Calculate darker version by reducing brightness by 30%
+    const darkR = Math.max(0, Math.floor(r * 0.7));
+    const darkG = Math.max(0, Math.floor(g * 0.7));
+    const darkB = Math.max(0, Math.floor(b * 0.7));
+
+    const darkHex =
+      '#' +
+      darkR.toString(16).padStart(2, '0') +
+      darkG.toString(16).padStart(2, '0') +
+      darkB.toString(16).padStart(2, '0');
+
+    return { light: lightHex, dark: darkHex };
+  }
+
+  const { light, dark } = { light: "#ededed", dark: "#232323" };
+
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.jpg' },
     { id: 'mole', name: 'Whack-a-Mole', component: <WhackAMole />, icon: 'static/images/pages/mole-colour.jpg' },
     { id: 'dessert', name: 'Dessert Slash', component: <DessertSlash />, icon: 'static/images/pages/dessert-colour.jpg' },
     { id: 'airhockey', name: 'Air Hockey', component: <AirHockey />, icon: 'static/images/pages/airhockey-colour.jpg' },
+    { id: 'tetris', name: 'Tetris Game', component: <TetrisGame />, icon: 'static/images/pages/tetris-colour.jpg' },
+    { id: 'surfdash', name: 'Surf Dash', component: <SurfDash />, icon: 'static/images/pages/surfdash-colour.png' },
     // More games will be added here in the future
   ];
 
@@ -212,6 +306,12 @@ const App = () => {
     } catch (error) {
       alert('Login failed');
     }
+  };
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setIsAuthenticated(false);
+    window.location.href = 'http://localhost:8000/auth/logout/';
   };
   return (
     <div className="App">
@@ -249,6 +349,12 @@ const App = () => {
 
       <header></header>
 
+      {(timeLeft <= 10 && timeLeft > 0) && (
+        <div style={{position: "absolute", top: 0, right: "50%", transform: "translate(50%, 0%)", borderRadius: "0 0 500% 500%", backgroundColor: 'white', justifyContent: "center", alignItems: "center", padding: "1em", zIndex: 10, width: "10em", height: "10em", textAlign: "center"}}>
+          <p style={{ color: "black" , fontWeight: "bold", fontSize: "1.25em"}}>You Still There?<br/><h2 style={{color: "black" , fontWeight: "bold", fontSize: "2em"}}>{timeLeft}</h2></p>
+        </div>
+      )}
+
       {/* Navigation bar */}
       <nav style={{
         display: 'flex',
@@ -266,28 +372,43 @@ const App = () => {
             />
           </a>
         </div>
-        {!selectedGame && !isAuthenticated && (
-        <div style={{ display: 'flex', gap: '0.8vw' }}>
-          <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Log In</button>
-          </a>
-          <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Sign Up</button>
-          </a>
-          <a href="http://localhost:8000/auth/leaderboards/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Leaderboards</button>
-          </a>
-          <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-            <button className="hanken-grotesk-bold back-button">Profile</button>
-          </a>
-        </div>)}
+                <div style={{ display: 'flex', gap: '0.8vw' }}>
+          {isAuthenticated ? (
+            <>
+              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
+              </a>
+              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Profile</button>
+              </a>
+              <button className="hanken-grotesk-bold back-button" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Log In</button>
+              </a>
+              <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Sign Up</button>
+              </a>
+              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
+              </a>
+              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+                <button className="hanken-grotesk-bold back-button">Profile</button>
+              </a>
+            </>
+          )}
+        </div>
       </nav>
 
       {showHero && (
-        <div id='hero' style={{ position: "relative", minHeight: "50vh", maxHeight: "90vh", width: "100%", display: "flex", justifyContent: 'center' }}>
+        <div id='hero' style={{ position: "relative", minHeight: "40vh", maxHeight: "60vh", width: "100%", display: "flex", justifyContent: 'center', paddingTop: "5vh" }}>
           <div style={{ display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)" }}>
             <div style={{ position: "relative" }}>
-              <h1 className="hanken-grotesk-bold" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
+              <h1 className="hanken-grotesk-bold glow-pulse" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
                 Vision Play Hub
               </h1>
             </div>
@@ -311,7 +432,36 @@ const App = () => {
       ) : (
         <div>
           {selectedGame.component}
-          <button className="hanken-grotesk-bold back-button" onClick={() => { setSelectedGame(null); setShowHero(true); }}>
+          <button
+            className="hanken-grotesk-bold"
+            onClick={() => {
+              setSelectedGame(null);
+              setShowHero(true);
+            }}
+            style={{
+              position: 'fixed',
+              top: '6vh',
+              right: '2vw',
+              zIndex: 1000,
+              padding: '10px 20px',
+              borderRadius: '10px',
+              background: 'none',
+              border: '1px solid #66fcf1',
+              color: '#66fcf1',
+              cursor: 'pointer',
+              transition: 'background 0.3s, color 0.3s',
+              fontSize: '1rem',
+              fontFamily: '"Bricolage Grotesque", sans-serif'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#66fcf1';
+              e.target.style.color = '#0b0c10';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'none';
+              e.target.style.color = '#66fcf1';
+            }}
+          >
             Back to Game Selection
           </button>
         </div>

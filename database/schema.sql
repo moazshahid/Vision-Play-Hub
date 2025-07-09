@@ -878,6 +878,15 @@ GRANT ALL ON SCHEMA public TO cv_games_user;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO cv_games_user;
 
+-- Insert data into games table
+INSERT INTO Games (title, genre, release_date)
+VALUES 
+    ('SnakeGame', 'Arcade', '2025-05-23'),
+    ('Whack-A-Mole', 'Casual', '2025-05-23'),
+    ('Dessert Slash', 'Action', '2025-06-02'),
+    ('Air Hockey', 'Sports', '2025-06-05'),
+    ('SurfDash', 'Action', '2025-07-06'),
+    ('Tetris', 'Puzzle', '2025-07-06');
 
 --
 -- PostgreSQL database dump complete

@@ -1,9 +1,8 @@
-# cv_games_app/views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User  # Use default User model
+from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,9 +11,16 @@ from .models import Games, Leaderboards
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 import logging
+from django.views.decorators.csrf import ensure_csrf_cookie
+import time
 import json
 
 logger = logging.getLogger(__name__)
+
+@ensure_csrf_cookie
+def csrf(request):
+    return JsonResponse({'message': 'CSRF cookie set'})
+
 
 class SubmitScoreAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -29,26 +35,21 @@ class SubmitScoreAPIView(APIView):
             score = int(score)
             if score < 0:
                 return Response({'error': 'Score cannot be negative'}, status=status.HTTP_400_BAD_REQUEST)
-            user = request.user  # JWT provides authenticated user
-            game = Games.objects.get(title=game_title)
-            # Save or update the user’s score
+            user = request.user
+            game = Games.objects.get(title=game_title)  
             entry, created = Leaderboards.objects.update_or_create(
-                    user=user,
-                    game=game,
-                    defaults={
+                user=user,
+                game=game,
+                defaults={
                     'score': score,
-                    'ranking': 0, 
+                    'ranking': 0,
                     'last_updated': timezone.now()
-                    }
-                    )
-
-            # Recalculate rankings for this game
+                }
+            )
             all_entries = Leaderboards.objects.filter(game=game).order_by('-score', 'last_updated')
-
             for idx, entry in enumerate(all_entries, start=1):
                 entry.ranking = idx
                 entry.save()
-
             logger.info("Score saved for user=%s, game=%s, score=%d", user.username, game_title, score)
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
         except Games.DoesNotExist:
@@ -82,17 +83,46 @@ def signup(request):
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password=password  # Automatically hashes password
+                password=password
             )
             user.save()
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
-            response = response = redirect('login')
-            response.set_cookie('access_token', access_token, httponly=True)
-            response.set_cookie('refresh_token', refresh_token, httponly=True)
-            logger.info("User %s signed up, sessionid=%s", username, request.session.session_key)
+            response = redirect('home')  
+            response.set_cookie(
+                'access_token',
+                access_token,
+                max_age=3600,
+                httponly=False,
+                domain='localhost',
+                path='/',
+                secure=False,
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'refresh_token',
+                refresh_token,
+                max_age=86400,
+                httponly=True,
+                domain='localhost',
+                path='/',
+                secure=False,
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'csrftoken',
+                request.COOKIES.get('csrftoken', ''),
+                max_age=31449600,
+                httponly=False,
+                domain='localhost',
+                path='/',
+                secure=False,
+                samesite='Lax'
+            )
+            logger.info("User %s signed up successfully, access_token set: %s, httponly=False", username, access_token[:10] + '...')
+            messages.success(request, f"Successfully signed up as {username}.")
             return response
         except Exception as e:
             logger.error("Signup error: %s", str(e))
@@ -100,6 +130,7 @@ def signup(request):
             return render(request, 'cv_games_app/signup.html')
     return render(request, 'cv_games_app/signup.html')
 
+@ensure_csrf_cookie
 def signin(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -107,13 +138,46 @@ def signin(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+
+            request.session['login_time'] = int(time.time())  # or use timezone.now().isoformat() for readable time
+            request.session['username'] = username
+
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
             response = redirect('home')
-            response.set_cookie('access_token', access_token, httponly=True)
-            response.set_cookie('refresh_token', refresh_token, httponly=True)
-            logger.info("User %s logged in successfully", username)
+            response.set_cookie(
+                'access_token',
+                access_token,
+                max_age=3600,
+                httponly=False,
+                domain='localhost',
+                path='/',
+                secure=False,
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'refresh_token',
+                refresh_token,
+                max_age=86400,
+                httponly=True,
+                domain='localhost',
+                path='/',
+                secure=False,
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'csrftoken',
+                request.COOKIES.get('csrftoken', ''),
+                max_age=31449600,
+                httponly=False,
+                domain='localhost',
+                path='/',
+                secure=False,
+                samesite='Lax'
+            )
+            logger.info("User %s logged in successfully, access_token set: %s, httponly=False", username, access_token[:10] + '...')
+            messages.success(request, f"Successfully signed in as {username}.")
             return response
         else:
             logger.warning("Invalid login attempt for username: %s", username)
@@ -127,6 +191,18 @@ def signout(request):
     messages.success(request, 'You have been logged out.')
     return redirect('login')
 
+def home(request):
+    username = request.session.get('username')
+    login_time = request.session.get('login_time')
+    now = int(time.time())
+    time_left = 0
+    if login_time:
+        elapsed = now - login_time
+        time_left = max(0, 600 - elapsed)
+    if not username:
+        username = 'Guest'
+    return render(request, 'index.html', {'username': username, 'time_left': time_left})
+
 def leaderboard(request):
     games = Games.objects.all()
     leaderboard_data = []
@@ -134,3 +210,7 @@ def leaderboard(request):
         entries = Leaderboards.objects.filter(game=game).order_by('ranking')
         leaderboard_data.append({'game': game, 'entries': entries})
     return render(request, 'cv_games_app/leaderboard.html', {'leaderboard_data': leaderboard_data})
+
+def keep_session_alive(request):
+    request.session.modified = True  # refresh session expiry
+    return JsonResponse({'status': 'alive'})

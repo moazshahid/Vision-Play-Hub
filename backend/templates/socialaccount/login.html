@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting to Google...</title>
+    <script>
+        window.onload = function() {
+            document.forms[0].submit();
+        };
+    </script>
+</head>
+<body>
+    <form method="post" action="{% provider_login_url 'google' process='login' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ redirect_field_value }}" />
+    </form>
+</body>
+</html>
