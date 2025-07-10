@@ -362,10 +362,10 @@ const WhackAMole = () => {
         if (this.hammerImage && this.hammerImage.complete) {
           ctx.drawImage(
             this.hammerImage,
-            this.cursorPosition[0] - 30,
-            this.cursorPosition[1] - 30,
-            60,
-            60
+            this.cursorPosition[0] - 40,
+            this.cursorPosition[1] - 40,
+            90,
+            90
           );
         } else {
           ctx.fillStyle = '#808080';
