@@ -143,7 +143,6 @@ const WhackAMole = () => {
       ctx.font = '40px Arial';
       ctx.fillText('Press "R" to Restart', 640, 500); // Adjusted to 500
       finalScore.textContent = score;
-      over.style.display = 'block';
       if (!gameObjectRef.current.scoreSubmitted) {
         gameObjectRef.current.scoreSubmitted = true;
         console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));

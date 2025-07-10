@@ -932,7 +932,6 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.font = '40px Arial';
     ctx.fillText('Press "R" to Restart', 640, 500);
     finalScore.textContent = score;
-    over.style.display = 'block';
   };
 
   // Restarts the game

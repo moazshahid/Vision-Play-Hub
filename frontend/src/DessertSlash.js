@@ -271,7 +271,6 @@ const DessertSlash = () => {
       ctx.font = '40px Arial';
       ctx.fillText('Press "R" to Restart', 640, 500); // Display restart instructions
       finalScore.textContent = score; // Update the final score in the DOM
-      over.style.display = 'block'; // Show the game over screen in the DOM
       if (!gameObjectRef.current.scoreSubmitted) {
         gameObjectRef.current.scoreSubmitted = true;
         console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
