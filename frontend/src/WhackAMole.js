@@ -312,16 +312,16 @@ const WhackAMole = () => {
 
         // Draw lives bar (rectangle with "Lives" text and hearts)
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(10, 20, 260, 60);
+        ctx.fillRect(1280 - 270, 20, 260, 60);
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 24px Poppins';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Lives:', 20, 50); // Removed extra spaces after colon
+        ctx.fillText('Lives:', 1280 - 260, 50); // Removed extra spaces after colon
 
         // Draw hearts with adjusted spacing
         for (let i = 0; i < 3; i++) {
-          const x = 120 + i * 50; // Shifted to 120 to avoid colon overlap
+          const x = 1280 - 30 - i * 60; // Position from right side
           const y = 50;
           if (i < this.lives) {
             if (this.heartImage && this.heartImage.complete) {
