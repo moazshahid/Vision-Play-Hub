@@ -230,6 +230,8 @@ const DessertSlash = () => {
       ctx.drawImage(results.image, 0, 0, 1280, 720); // Draw the video frame
       ctx.restore();
 
+      const debug = debugRef.current; // Reference to debug element
+
       // If the game is started and a game object exists, process hand tracking
       if (started && gameObj) {
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && !gameObj.gameOver) {
@@ -242,6 +244,10 @@ const DessertSlash = () => {
           const baseY = Math.floor(fingerBase.y * 720);
           // Update the game cursor position based on finger coordinates
           gameObj.updateFingerPosition(fingerX, fingerY, baseX, baseY);
+          debug.innerHTML = ''; // Clear debug message when hand is detected
+        } else {
+          console.log('No hands detected in this frame');
+          debug.innerHTML = `<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam.</p>`;
         }
         gameObj.render(ctx); // Render the game objects (desserts, bombs, etc.)
         if (gameStartedRef.current && !gameObj.gameOver) {
