@@ -897,6 +897,9 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.scale(-1, 1); // Mirror video feed
     ctx.drawImage(results.image, 0, 0, 1280, 720);
     ctx.restore();
+
+    const debug = debugRef.current; // Reference to debug element
+
     if (started && gameObj) {
       if (!gameObj.gameOver || gameObj.deathAnimation) {
         // Update runner position based on hand tracking
@@ -905,6 +908,10 @@ const SurfDash = ({ setSelectedGame }) => {
           const fingerX = Math.floor(1280 - indexFinger.x * 1280); // Mirror X-coordinate
           const fingerY = Math.floor(indexFinger.y * 720);
           gameObj.updateFingerPosition(fingerX, fingerY);
+          debug.innerHTML = ''; // Clear debug message when hand is detected
+        } else {
+          console.log('No hands detected in this frame');
+          debug.innerHTML = `<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam.</p>`;
         }
         gameObj.render(ctx); // Render game
       }
