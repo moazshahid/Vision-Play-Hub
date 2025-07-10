@@ -304,7 +304,7 @@ const DessertSlash = () => {
         this.bombImage = bombImage; // Loaded bomb image
         this.powerUpImages = powerUpImages; // Loaded power-up images
         this.swordImage = swordImage; // Loaded sword image for the cursor
-        this.objectSize = 60; // Size of game objects (pixels)
+        this.objectSize = 90; // Size of game objects (pixels)
         this.gameDuration = 60000; // Game duration in milliseconds (60 seconds)
         this.startTime = performance.now(); // Time when the game starts
         this.lastSpawnTime = 0; // Time of the last object spawn
@@ -584,14 +584,14 @@ const DessertSlash = () => {
 
         // Draw lives (bombs) in the top-right corner
         for (let i = 0; i < 3; i++) {
-          const x = 1280 - 20 - i * 40; // Position from right side
+          const x = 1280 - 30 - i * 60; // Position from right side
           const y = 50;
           if (i < this.lives && this.bombImage && this.bombImage.complete) {
-            ctx.drawImage(this.bombImage, x - 15, y - 15, 30, 30); // Draw bomb image for remaining lives
+            ctx.drawImage(this.bombImage, x - 22.5, y - 22.5, 45, 45); // Draw bomb image for remaining lives
           } else {
             // Draw an empty circle for lost lives
             ctx.beginPath();
-            ctx.arc(x, y, 15, 0, 2 * Math.PI);
+            ctx.arc(x, y, 22.5, 0, 2 * Math.PI);
             ctx.fillStyle = '#000000';
             ctx.fill();
             ctx.strokeStyle = '#FFFFFF';
@@ -614,11 +614,11 @@ const DessertSlash = () => {
 
         // Draw the cursor (sword)
         if (this.swordImage && this.swordImage.complete) {
-          ctx.drawImage(this.swordImage, this.cursorPosition[0] - 25, this.cursorPosition[1] - 25, 50, 50);
+          ctx.drawImage(this.swordImage, this.cursorPosition[0] - 50, this.cursorPosition[1] - 50, 100, 100);
         } else {
           // Draw a fallback circle if the sword image isn't available
           ctx.beginPath();
-          ctx.arc(this.cursorPosition[0], this.cursorPosition[1], 10, 0, 2 * Math.PI);
+          ctx.arc(this.cursorPosition[0], this.cursorPosition[1], 20, 0, 2 * Math.PI);
           ctx.fillStyle = this.swordImage?.fallbackColor || '#FFFFFF';
           ctx.fill();
         }
