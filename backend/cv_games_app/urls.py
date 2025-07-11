@@ -8,5 +8,5 @@ urlpatterns = [
     path('auth/logout/', views.signout, name='logout'),
     path('auth/leaderboard/', views.leaderboard, name='leaderboard'),
     path('auth/api/submit-score/', views.SubmitScoreAPIView.as_view(), name='api_submit_score'),
-    path('ping/', views.keep_session_alive, name='keep_alive'),
+    path('ping/', views.ping, name='keep_alive'),
 ]

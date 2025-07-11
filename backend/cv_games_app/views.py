@@ -12,14 +12,23 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 import logging
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
 import time
 import json
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 def csrf(request):
     return JsonResponse({'message': 'CSRF cookie set'})
+
+
+
+@require_POST
+def ping(request):
+    request.session.modified = True  # extend session expiry
+    return JsonResponse({'status': 'pong', 'new_expiry': request.session.get_expiry_age()})
 
 
 class SubmitScoreAPIView(APIView):
@@ -210,7 +219,3 @@ def leaderboard(request):
         entries = Leaderboards.objects.filter(game=game).order_by('ranking')
         leaderboard_data.append({'game': game, 'entries': entries})
     return render(request, 'cv_games_app/leaderboard.html', {'leaderboard_data': leaderboard_data})
-
-def keep_session_alive(request):
-    request.session.modified = True  # refresh session expiry
-    return JsonResponse({'status': 'alive'})
