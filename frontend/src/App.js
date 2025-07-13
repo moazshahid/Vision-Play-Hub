@@ -7,6 +7,7 @@ import AirHockey from './AirHockey';
 import SurfDash from './SurfDash';
 import { login } from './utils/api';
 import TetrisGame from './TetrisGame';
+import Bg from './Background';
 
 // --- NEW: GameCarousel Component ---
 const GameCarousel = ({ games, onSelectGame }) => {
@@ -363,24 +364,7 @@ const App = () => {
   };
   return (
     <div className="App">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: -2,
-        }}
-      >
-        <source src="http://localhost:8000/static/videos/BGV.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      
 
       {/* Optional overlay for better text visibility */}
       <div
@@ -396,6 +380,7 @@ const App = () => {
       ></div>
 
       <header></header>
+      <Bg />
 
       {(timeLeft <= 10 && timeLeft > 0) && (
         <div style={{position: "absolute", top: 0, right: "50%", transform: "translate(50%, 0%)", borderRadius: "0 0 500% 500%", backgroundColor: 'white', justifyContent: "center", alignItems: "center", padding: "1em", zIndex: 10, width: "10em", height: "10em", textAlign: "center"}}>
