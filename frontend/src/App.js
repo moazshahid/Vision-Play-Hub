@@ -184,6 +184,14 @@ const GameCarousel = ({ games, onSelectGame }) => {
   );
 };
 
+function getCookie(name) {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(name + '='))
+    ?.split('=')[1];
+  return cookieValue || '';
+}
+
 
 const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -201,7 +209,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (username === "Guest" || !username) {
+    if (username === "Guest" || !username || timeLeft <= 0) {
       // Don't start countdown if username is "Guest" or empty
       return;
     }
@@ -220,35 +228,75 @@ const App = () => {
     return () => clearInterval(countdown);
   }, [username]);
 
+  
   useEffect(() => {
     let lastPing = 0;
-    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const PING_INTERVAL = 60 * 1000; // 1 minute
 
     const pingServerIfDue = () => {
       const now = Date.now();
       if (now - lastPing >= PING_INTERVAL) {
         lastPing = now;
+
         fetch('/ping/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
           },
+          credentials: 'include',
+          body: JSON.stringify({ ping: true }),
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.new_expiry) {
+            setTimeLeft(data.new_expiry); // if you show countdown
+          }
         });
       }
     };
 
-    // Attach event listeners
     document.addEventListener('click', pingServerIfDue);
     document.addEventListener('keydown', pingServerIfDue);
     document.addEventListener('mousemove', pingServerIfDue);
 
-    // Cleanup listeners on unmount
     return () => {
       document.removeEventListener('click', pingServerIfDue);
       document.removeEventListener('keydown', pingServerIfDue);
       document.removeEventListener('mousemove', pingServerIfDue);
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedGame) {
+      return; // no game selected, don't ping
+    }
+
+    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    const pingServer = () => {
+      fetch('/ping/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ ping: true }),
+      });
+    };
+
+    // Immediately ping once when game selected
+    pingServer();
+
+    // Then set interval to keep pinging every 5 minutes
+    const intervalId = setInterval(pingServer, PING_INTERVAL);
+
+    // Cleanup interval on unmount or when selectedGame changes
+    return () => clearInterval(intervalId);
+
+  }, [selectedGame]);
+
 
   function genHexColorPair() {
     let r, g, b, avg;
