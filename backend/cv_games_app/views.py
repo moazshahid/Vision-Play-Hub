@@ -16,6 +16,8 @@ from django.views.decorators.http import require_POST
 import time
 import json
 from django.http import JsonResponse
+from django.utils.dateparse import parse_datetime
+from .models import Games, Sessions
 
 logger = logging.getLogger(__name__)
 
@@ -219,3 +221,52 @@ def leaderboard(request):
         entries = Leaderboards.objects.filter(game=game).order_by('ranking')
         leaderboard_data.append({'game': game, 'entries': entries})
     return render(request, 'cv_games_app/leaderboard.html', {'leaderboard_data': leaderboard_data})
+
+def record_game_session(request):
+    try:
+
+        # Extract required values
+        username = request.POST.get('username')
+        game_name = request.POST.get('game_name')
+        score = request.POST.get('score')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+
+        # Validation
+        if not all([username, game_name, score, start_time, end_time]):
+            return JsonResponse({'error': 'All fields are required.'}, status=400)
+
+        # Convert score to int
+        try:
+            score = int(score)
+        except ValueError:
+            return JsonResponse({'error': 'Score must be an integer.'}, status=400)
+
+        # Parse times
+        start_time = parse_datetime(start_time)
+        end_time = parse_datetime(end_time)
+
+        if not start_time or not end_time:
+            return JsonResponse({'error': 'Invalid datetime format.'}, status=400)
+
+        # Get user and game objects
+        user = User.objects.get(username=username)
+        game = Games.objects.get(title=game_name)
+
+        # Create session entry
+        Sessions.objects.create(
+            user_id=user.id,
+            game_id=game.game_id,
+            start_time=start_time,
+            end_time=end_time,
+            score=score
+        ).save()
+
+        return JsonResponse({'status': 'session saved'})
+
+    except Users.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    except Games.DoesNotExist:
+        return JsonResponse({'error': 'Game not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
