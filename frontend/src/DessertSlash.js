@@ -713,8 +713,17 @@ const DessertSlash = () => {
       gameStartedRef.current = false; // Mark the game as stopped
       canvas.clearRect(0, 0, 1280, 720); // Clear the canvas
       canvas.fillStyle = 'black'; // Fill with black
-      canvas.fillRect(0, 0, 1280, 720);
+      canvas.fillRect(0, 0, 1280, 720); // Cover the entire canvas
+      canvas.fillStyle = '#FFFFFF'; // White text for the message
+      canvas.font = 'bold 48px Arial';
+      canvas.textAlign = 'center';
+      canvas.textBaseline = 'middle';
+      canvas.fillText('Game Quit', 640, 300); // Display "Game Quit" in the center
+      canvas.font = '24px Arial';
+      canvas.fillText('Refresh the page to play again', 640, 360); // Display instructions to refresh
       gameOver.style.display = 'none'; // Hide the game over screen
+      gameStats.style.display = 'none'; // Hide the stats display
+      console.log('Game quit via Q key');
     };
 
     // Function to handle keyboard input
