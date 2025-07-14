@@ -31,10 +31,21 @@ const SnakeGame = () => {
     // Hide the game over screen initially
     gameOver.style.display = 'none';
 
-    // Load the apple image for food rendering
+    // Load images for apples, power-downs, obstacles, and background
     const appleImage = new Image();
     appleImage.src = '/static/images/apple.png';
-    appleImage.onload = () => console.log('Apple image loaded successfully');
+    const greenAppleImage = new Image();
+    greenAppleImage.src = '/static/images/green_apple.png';
+    const blueAppleImage = new Image();
+    blueAppleImage.src = '/static/images/blue_apple.png';
+    const goldenAppleImage = new Image();
+    goldenAppleImage.src = '/static/images/golden_apple.png';
+    const skullImage = new Image();
+    skullImage.src = '/static/images/skull.png';
+    const obstacleImage = new Image();
+    obstacleImage.src = '/static/images/obstacle.png';
+    const bgImage = new Image();
+    bgImage.src = '/static/images/pages/snake-bg2.svg';
 
     // Initialize MediaPipe Hands for hand tracking
     const initHandDetection = () => {
