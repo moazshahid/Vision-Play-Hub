@@ -228,7 +228,7 @@ const SnakeGame = () => {
 
     // Define the GameLogic class to manage game logic (renamed to avoid conflict with component name)
     class GameLogic {
-      constructor(ctx, stats) {
+      constructor(ctx, stats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage) {
         // Initialize snake body points and lengths
         this.points = [];
         this.lengths = [];
@@ -243,7 +243,29 @@ const SnakeGame = () => {
         this.foodHeight = 60;
         this.foodWidth = 60;
         this.foodLocation = [0, 0];
+        this.obstacles = []; // Array to store obstacles
+        this.apples = []; // Array to store multiple apples
+        this.powerDowns = []; // Array to store power-downs (skulls)
+        this.moveSpeed = 300; // Base movement speed
+        this.appleImage = appleImage;
+        this.greenAppleImage = greenAppleImage;
+        this.blueAppleImage = blueAppleImage;
+        this.goldenAppleImage = goldenAppleImage;
+        this.skullImage = skullImage;
+        this.obstacleImage = obstacleImage;
+        this.bgImage = bgImage;
+        this.collisionWarnings = new Map(); // Store collision warnings
+        this.warningDistance = 100; // Distance threshold for warnings
+        this.eatSound = new Audio('/static/sounds/eat.mp3'); // Load eating sound effect
         this.setRandomFoodLocation(); // Place food at a random location
+        for (let i = 0; i < 3; i++) { // Spawn three obstacles
+          this.spawnObstacle();
+        }
+        // Spawn four apples initially, prioritizing red
+        for (let i = 0; i < 4; i++) {
+          this.spawnApple();
+        }
+        this.spawnPowerDown(); // Spawn initial power-down
         // Initialize game state
         this.score = 0;
         this.gameOver = false;
@@ -272,12 +294,164 @@ const SnakeGame = () => {
       // Place food at a random location within canvas bounds
       setRandomFoodLocation() {
         const margin = this.foodWidth * 2; // Ensure food stays within bounds
-        this.foodLocation = [
-          Math.floor(Math.random() * (1280 - margin * 2)) + margin,
-          Math.floor(Math.random() * (720 - margin * 2)) + margin,
-        ];
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for food');
+            return;
+          }
+        } while (this.checkOverlap(x, y, this.foodWidth, this.foodHeight));
+        this.foodLocation = [x, y];
       }
 
+      // Check if a new position overlaps with existing objects
+      checkOverlap(x, y, width, height, excludeIndex = -1) {
+        const buffer = 20; // Additional buffer to prevent objects from being too close
+        // Check apples (excluding the one at excludeIndex, if any)
+        for (let i = 0; i < this.apples.length; i++) {
+          if (i === excludeIndex) continue;
+          const apple = this.apples[i];
+          const dist = Math.hypot(x - apple.x, y - apple.y);
+          // Use the larger of the two widths/heights for collision check
+          const effectiveWidth = Math.max(width, apple.width) / 2;
+          const effectiveHeight = Math.max(height, apple.height) / 2;
+          if (dist < (effectiveWidth + effectiveHeight + buffer)) {
+            return true;
+          }
+        }
+        // Check obstacles
+        for (const obstacle of this.obstacles) {
+          const dist = Math.hypot(x - obstacle.x, y - obstacle.y);
+          if (dist < (width / 2 + obstacle.width / 2 + buffer)) {
+            return true;
+          }
+        }
+        // Check power-downs
+        for (const powerDown of this.powerDowns) {
+          const dist = Math.hypot(x - powerDown.x, y - powerDown.y);
+          if (dist < (width / 2 + powerDown.width / 2 + buffer)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Spawn a random obstacle across the entire game screen
+      spawnObstacle() {
+        const margin = 60;
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for obstacle');
+            return;
+          }
+        } while (this.checkOverlap(x, y, 60, 60));
+        const obstacle = {
+          x,
+          y,
+          width: 60,
+          height: 60,
+        };
+        this.obstacles.push(obstacle);
+      }
+
+      // Spawn a random apple with a type across the entire game screen
+      spawnApple() {
+        const margin = this.foodWidth * 2;
+        // Determine available apple types based on existing apples
+        const existingTypes = this.apples.map(apple => apple.type);
+        const allTypes = ['red', 'red', 'red', 'blue', 'green', 'golden']; // Bias towards red
+        // Allow multiple red apples, but only one of each other type
+        const availableTypes = allTypes.filter(type => type === 'red' || !existingTypes.includes(type));
+        if (availableTypes.length === 0) {
+          console.warn('No available apple types to spawn');
+          return;
+        }
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        const appleType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        const appleSize = appleType === 'golden' ? 80 : 60; // Golden apple is larger
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for apple');
+            return;
+          }
+        } while (this.checkOverlap(x, y, appleSize, appleSize));
+        const apple = {
+          x,
+          y,
+          width: appleSize,
+          height: appleSize,
+          type: appleType,
+        };
+        this.apples.push(apple);
+      }
+
+      // Spawn a random power-down (skull) across the entire game screen
+      spawnPowerDown() {
+        const margin = 60;
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for power-down');
+            return;
+          }
+        } while (this.checkOverlap(x, y, 60, 60));
+        const powerDown = {
+          x,
+          y,
+          width: 60,
+          height: 60,
+        };
+        this.powerDowns.push(powerDown);
+      }
+
+      // Update collision warnings for obstacles and skulls
+      updateCollisionWarnings() {
+        this.collisionWarnings.clear();
+        // Check obstacles
+        this.obstacles.forEach((obstacle, index) => {
+          const distToObstacle = Math.hypot(this.headPosition[0] - obstacle.x, this.headPosition[1] - obstacle.y);
+          if (distToObstacle < this.warningDistance && distToObstacle > (obstacle.width / 2) + 10) {
+            this.collisionWarnings.set(`obstacle_${index}`, {
+              type: 'obstacle',
+              object: obstacle,
+              intensity: Math.max(0, 1 - (distToObstacle - ((obstacle.width / 2) + 10)) / (this.warningDistance - ((obstacle.width / 2) + 10)))
+            });
+          }
+        });
+        // Check power-downs (skulls)
+        this.powerDowns.forEach((powerDown, index) => {
+          const distToPowerDown = Math.hypot(this.headPosition[0] - powerDown.x, this.headPosition[1] - powerDown.y);
+          if (distToPowerDown < this.warningDistance && distToPowerDown > (powerDown.width / 2) + 10) {
+            this.collisionWarnings.set(`powerDown_${index}`, {
+              type: 'powerDown',
+              object: powerDown,
+              intensity: Math.max(0, 1 - (distToPowerDown - ((powerDown.width / 2) + 10)) / (this.warningDistance - ((powerDown.width / 2) + 10)))
+            });
+          }
+        });
+      }
+        
       // Update snake direction based on finger position
       updateFingerPosition(fingerX, fingerY, baseX, baseY) {
         if (!this.gameOver) {
