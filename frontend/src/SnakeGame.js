@@ -139,7 +139,7 @@ const SnakeGame = () => {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
         // Restart game with 'R' key
-        gameObjectRef.current = new GameLogic(canvas, gameStats);
+        gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage)
         gameOver.style.display = 'none';
         gameStartedRef.current = true;
         lastRenderTimeRef.current = performance.now();
@@ -704,15 +704,16 @@ const SnakeGame = () => {
   // Render the game UI
   return (
     <div className='inter'> 
-      <div style={{Width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/snake-bg.svg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
-        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+      <div style={{width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/snake-bg.svg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
+        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0' }}>
           <div className="instructions inter" style={{ color: "#fff" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Snake</h2>
             <ul>
               <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
               <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
-              <li><strong>Collect apples:</strong> Guide the snake to eat apples and grow longer.</li>
-              <li><strong>Don't hit yourself:</strong> Avoid collisions with your own snake body!</li>
+              <li><strong>Collect apples:</strong> Eat red to grow, blue for speed, green to slow down, golden for bonus points.</li>
+              <li><strong>Avoid obstacles:</strong> Steer clear of obstacles.</li>
+              <li><strong>Avoid skulls:</strong> Touching skull reduces score or shrinks the snake.</li>
               <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
             </ul>
           </div>
@@ -729,22 +730,22 @@ const SnakeGame = () => {
           </div>
         </div>
       </div>
-      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+      <div style={{width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative'}}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', width: '100%' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'center', marginBottom: '20px' }}>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', margin: '0 10px' }}>
               <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
             </button>
-            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', margin: '0 10px' }}>
               <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
             </button>
-            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', margin: '0 10px' }}>
               <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
             </button>
           </div>
         </div>
         <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
-        <div className="game-container inter">
+        <div className="game-container inter" style={{ position: 'relative' }}>
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
           <div ref={gameStatsRef} className="game-stats">Score: 0</div>
@@ -752,6 +753,60 @@ const SnakeGame = () => {
             <h2>Game Over!</h2>
             <p>Your Score: <span ref={finalScoreRef}>0</span></p>
             <button id="play-again-btn">Play Again</button>
+          </div>
+          <div
+            className="instructions-box inter"
+            style={{
+              position: 'absolute',
+              left: '1300px',
+              top: '160px',
+              width: '220px',
+              height: '400px',
+              background: 'linear-gradient(to bottom, #2a2a2a, #1a1a1a)',
+              border: '3px solid #1E90FF',
+              boxShadow: '0 0 15px #1E90FF',
+              padding: '5px',
+              boxSizing: 'border-box'
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#1E90FF',
+                width: '100%',
+                height: '35px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '10px'
+              }}
+            >
+              <span style={{ color: '#FFFFFF', font: 'bold 18px Arial', textAlign: 'center' }}>
+                HOW TO PLAY
+              </span>
+            </div>
+            <div style={{ paddingLeft: '5px' }}>
+              {[
+                { icon: '👆', text: 'Move finger', subtext: 'to control snake direction' },
+                { icon: '🍎', text: 'Collect red apple', subtext: 'to grow snake' },
+                { icon: '🔵', text: 'Collect blue apple', subtext: 'for speed boost (5s)' },
+                { icon: '🟢', text: 'Collect green apple', subtext: 'to slow down (5s)' },
+                { icon: '💰', text: 'Collect golden apple', subtext: 'for bonus points' },
+                { icon: '💀', text: 'Avoid skull', subtext: 'reduces score/shrinks snake' },
+                { icon: '🛑', text: 'Avoid obstacle', subtext: 'causes game over' },
+                { icon: '⌨️', text: 'Press R to restart', subtext: 'Press Q to quit' }
+              ].map((item, index) => (
+                <div key={index} style={{ marginBottom: item.subtext ? '15px' : '5px' }}>
+                  <span style={{ font: '19px Arial', color: '#FFD700', marginRight: '5px' }}>{item.icon}</span>
+                  <div style={{ display: 'inline-block', verticalAlign: 'top' }}>
+                    <div style={{ font: 'bold 12px Arial', color: '#FFFFFF' }}>{item.text}</div>
+                    {item.subtext && (
+                      <div style={{ font: '11px Arial', color: '#CCCCCC', marginTop: '2px' }}>{item.subtext}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ position: 'absolute', bottom: '15px', left: '10px', right: '10px', height: '2px', backgroundColor: '#1E90FF' }}></div>
           </div>
         </div>
       </div>
