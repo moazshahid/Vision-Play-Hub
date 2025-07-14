@@ -968,7 +968,7 @@ const SurfDash = ({ setSelectedGame }) => {
     }
   };
 
-  // Quits the game and returns to the main menu
+  // Updated quitGame function to render quit message directly
   const quitGame = () => {
     console.log('Quitting game...');
     if (cameraRef.current) cameraRef.current.stop();
@@ -983,9 +983,32 @@ const SurfDash = ({ setSelectedGame }) => {
     immunitySoundRef.current.currentTime = 0;
     setImmunityMessage(false);
     setSkateMessage(false);
-    setShowGame(false);
-    setSelectedGame(null); // Return to game selection
+    setShowGame(true);
+    setSelectedGame(null);
+    // Render quit message directly on canvas
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, 1280, 720);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, 0, 1280, 720);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Game Quit', 640, 300);
+        ctx.font = '24px Arial';
+        ctx.fillText('Refresh the page to play again', 640, 360);
+        console.log('Quit message rendered on canvas');
+      } else {
+        console.error('Canvas context not available');
+      }
+    } else {
+      console.error('Canvas reference not available');
+    }
+    console.log('Game quit via Q key');
   };
+
 
   // useEffect hook for initialization and cleanup
   useEffect(() => {
