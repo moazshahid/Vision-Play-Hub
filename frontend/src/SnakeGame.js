@@ -149,6 +149,33 @@ const SnakeGame = () => {
         // Quit game with 'Q' key
         if (cameraRef.current) cameraRef.current.stop();
         gameStartedRef.current = false;
+        gameObjectRef.current = null;
+        // Stop camera and cleanup
+        if (cameraRef.current) {
+          cameraRef.current.stop();
+          cameraRef.current = null;
+        }
+        if (handsRef.current) {
+          handsRef.current.close();
+          handsRef.current = null;
+        }
+        if (video.srcObject) {
+          const tracks = video.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+          video.srcObject = null;
+        }
+        // Draw quit message on canvas
+        canvas.clearRect(0, 0, 1280, 720);
+        canvas.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        canvas.fillRect(0, 0, 1280, 720);
+        canvas.fillStyle = '#FFFFFF';
+        canvas.font = 'bold 48px Arial';
+        canvas.textAlign = 'center';
+        canvas.textBaseline = 'middle';
+        canvas.fillText('Game Quit', 640, 300);
+        canvas.font = '24px Arial';
+        canvas.fillText('Refresh the page to play again', 640, 360);
+        console.log('Game quit via Q key');
       }
     });
 
