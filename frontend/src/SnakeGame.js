@@ -95,7 +95,7 @@ const SnakeGame = () => {
         startCamera()
           .then(() => {
             // Initialize a new GameLogic instance
-            gameObjectRef.current = new GameLogic(canvas, gameStats);
+            gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage);
             gameStartedRef.current = true; // Mark the game as started
             lastRenderTimeRef.current = performance.now(); // Set initial timestamp
             gameOver.style.display = 'none'; // Hide game over screen
@@ -121,7 +121,7 @@ const SnakeGame = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', () => {
       // Restart the game when the restart button is clicked
-      gameObjectRef.current = new GameLogic(canvas, gameStats); // Create a new game instance
+      gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage); // Create a new game instance
       gameOver.style.display = 'none'; // Hide game over screen
       gameStartedRef.current = true; // Mark game as started
       lastRenderTimeRef.current = performance.now(); // Reset timestamp
@@ -130,7 +130,7 @@ const SnakeGame = () => {
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
       // Restart the game when the play again button is clicked
-      gameObjectRef.current = new GameLogic(canvas, gameStats);
+      gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage);
       gameOver.style.display = 'none';
       gameStartedRef.current = true;
       lastRenderTimeRef.current = performance.now();
@@ -470,7 +470,7 @@ const SnakeGame = () => {
         if (this.gameOver) return; // Exit if game is over
         const deltaSeconds = deltaTime / 1000; // Convert deltaTime to seconds
         if (this.fingerDetected) {
-          const moveSpeed = 300 * deltaSeconds; // Movement speed scaled by time
+          const moveSpeed = this.moveSpeed * deltaSeconds; // Movement speed scaled by time
           const dx = this.targetPosition[0] - this.headPosition[0]; // X distance to target
           const dy = this.targetPosition[1] - this.headPosition[1]; // Y distance to target
           const dist = Math.sqrt(dx * dx + dy * dy); // Total distance to target
@@ -493,24 +493,59 @@ const SnakeGame = () => {
                 this.currentLength -= removedLength;
                 this.points.shift();
               }
-              // Check if snake ate the food
-              const [foodX, foodY] = this.foodLocation;
+              
+              // Check collisions with apples
               const [headX, headY] = this.headPosition;
-              const distToFood = Math.hypot(headX - foodX, headY - foodY);
-              if (distToFood < (this.foodWidth / 2) + 10) { // Collision with food
-                this.setRandomFoodLocation(); // Move food to new location
-                this.totalAllowedLength += 50; // Increase snake length
-                this.score += 1; // Increment score
-                this.stats.textContent = `Score: ${this.score}`; // Update score display
-                // Play eat sound effect
-                try {
-                  const eatSound = new Audio('/static/sounds/eat.mp3');
-                  eatSound.volume = 0.5;
-                  eatSound.play().catch((e) => console.log('Error playing sound:', e));
-                } catch (e) {
-                  console.log('Could not load or play sound:', e);
+              for (let i = this.apples.length - 1; i >= 0; i--) {
+                const apple = this.apples[i];
+                const distToApple = Math.hypot(headX - apple.x, headY - apple.y);
+                if (distToApple < (apple.width / 2) + 10) {
+                  this.apples.splice(i, 1);
+                  this.eatSound.play().catch((error) => {
+                    console.warn('Failed to play eat sound:', error.message);
+                  });
+                  switch (apple.type) {
+                    case 'red':
+                      this.totalAllowedLength += 50;
+                      this.score += 1;
+                      break;
+                    case 'blue':
+                      this.moveSpeed *= 1.5; // Speed boost
+                      setTimeout(() => { this.moveSpeed /= 1.5; }, 5000); // Reset after 5 seconds
+                      break;
+                    case 'green':
+                      this.moveSpeed *= 0.5; // Slow down
+                      setTimeout(() => { this.moveSpeed /= 0.5; }, 5000); // Reset after 5 seconds
+                      break;
+                    case 'golden':
+                      this.score += 5; // Bonus points
+                      break;
+                  }
+                  this.stats.textContent = `Score: ${this.score}`;
+                  this.spawnApple(); // Spawn new apple
                 }
               }
+              // Check collisions with power-downs
+              for (let i = this.powerDowns.length - 1; i >= 0; i--) {
+                const powerDown = this.powerDowns[i];
+                const distToPowerDown = Math.hypot(headX - powerDown.x, headY - powerDown.y);
+                if (distToPowerDown < (powerDown.width / 2) + 10) {
+                  this.powerDowns.splice(i, 1);
+                  if (this.score > 0) {
+                    this.score -= 2; // Reduce score only if greater than 0
+                  } else {
+                    this.gameOver = true; // End game if score is 0
+                  }
+                  if (this.points.length > 4) {
+                    this.points.splice(1, 2); // Shrink snake by removing 2 points
+                    this.lengths.splice(0, 1); // Adjust lengths
+                    this.currentLength -= this.lengths[0];
+                  }
+                  this.stats.textContent = `Score: ${this.score}`;
+                  this.spawnPowerDown(); // Spawn new power-down
+                }
+              }
+
               // Check for self-collision with body
               if (this.points.length > 10) {
                 const bodyPoints = this.points.slice(0, -10); // Exclude last 10 points to avoid head collision
@@ -524,6 +559,17 @@ const SnakeGame = () => {
                   }
                 }
               }
+              // Check collision with obstacles
+              for (let i = 0; i < this.obstacles.length; i++) {
+                const obstacle = this.obstacles[i];
+                const distToObstacle = Math.hypot(headX - obstacle.x, headY - obstacle.y);
+                if (distToObstacle < (obstacle.width / 2) + 10) {
+                  this.gameOver = true;
+                  return;
+                }
+              }
+              // Update collision warnings
+              this.updateCollisionWarnings();
             }
           }
         }
@@ -531,6 +577,10 @@ const SnakeGame = () => {
 
       // Render the game state on the canvas
       render(ctx) {
+        // Draw background image
+        if (this.bgImage.complete) {
+          ctx.drawImage(this.bgImage, 0, 0, 1280, 720);
+        }
         // Set line properties for smooth rendering
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -575,17 +625,48 @@ const SnakeGame = () => {
             ctx.fill();
           }
         }
-        // Draw the apple using the loaded image or a fallback
-        if (appleImage.complete) {
-          ctx.drawImage(appleImage, this.foodLocation[0] - 30, this.foodLocation[1] - 30, 60, 60);
-        } else {
-          ctx.beginPath();
-          ctx.arc(this.foodLocation[0], this.foodLocation[1], 30, 0, 2 * Math.PI);
-          ctx.fillStyle = '#FF0000';
-          ctx.fill();
-        }
-        this.stats.textContent = `Score: ${this.score}`; // Update score display
+        // Draw apples using images
+        this.apples.forEach(apple => {
+          const img = apple.type === 'red' ? this.appleImage :
+                     apple.type === 'blue' ? this.blueAppleImage :
+                     apple.type === 'green' ? this.greenAppleImage :
+                     this.goldenAppleImage;
+          if (img.complete) {
+            ctx.drawImage(img, apple.x - apple.width / 2, apple.y - apple.height / 2, apple.width, apple.height);
+          }
+        });
+        // Draw obstacles using image with collision warnings
+        this.obstacles.forEach(obstacle => {
+          if (this.obstacleImage.complete) {
+            ctx.drawImage(this.obstacleImage, obstacle.x - obstacle.width / 2, obstacle.y - obstacle.height / 2, obstacle.width, obstacle.height);
+          }
+          // Draw collision warning if present
+          const warning = this.collisionWarnings.get(`obstacle_${this.obstacles.indexOf(obstacle)}`);
+          if (warning) {
+            ctx.beginPath();
+            ctx.arc(obstacle.x, obstacle.y, obstacle.width / 2 + 40, 0, 2 * Math.PI); // Increased warning size
+            ctx.fillStyle = `rgba(255, 0, 0, ${warning.intensity * 0.5})`; // Red warning with variable opacity
+            ctx.fill();
+          }
+        });
+        // Draw power-downs (skulls) using image with collision warnings
+        this.powerDowns.forEach(powerDown => {
+          if (this.skullImage.complete) {
+            ctx.drawImage(this.skullImage, powerDown.x - powerDown.width / 2, powerDown.y - powerDown.height / 2, powerDown.width, powerDown.height);
+          }
+          // Draw collision warning if present
+          const warning = this.collisionWarnings.get(`powerDown_${this.powerDowns.indexOf(powerDown)}`);
+          if (warning) {
+            ctx.beginPath();
+            ctx.arc(powerDown.x, powerDown.y, powerDown.width / 2 + 40, 0, 2 * Math.PI); // Increased warning size
+            ctx.fillStyle = `rgba(255, 0, 0, ${warning.intensity * 0.5})`; // Red warning with variable opacity
+            ctx.fill();
+          }
+        });
+
+        this.stats.textContent = `Score: ${this.score}`;
       }
+
 
       // Calculate distance from a point to a line segment (for collision detection)
       distanceToLineSegment(point, lineStart, lineEnd) {
