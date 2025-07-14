@@ -303,19 +303,28 @@ const SnakeGame = () => {
 
       // Initialize the snake with starting points
       initializeSnake() {
+        let headX = 640;
+        let headY = 360;
+        let attempts = 0;
+        const maxAttempts = 20; // Reduced attempts to prevent performance issues
+        const margin = 100; // Larger margin for safer positioning
+        // Ensure initial snake position does not overlap with obstacles or power-downs
+        this.points = [];
+        this.lengths = [];
+        this.currentLength = 0;
         // Add initial points to form a short vertical snake
-        this.points.push([640, 420]);
-        this.points.push([640, 400]);
-        this.points.push([640, 380]);
-        this.points.push([640, 360]); // Head position
+        this.points.push([headX, headY + 60]);
+        this.points.push([headX, headY + 40]);
+        this.points.push([headX, headY + 20]);
+        this.points.push([headX, headY]); // Head position
         // Calculate distances between points and total length
         for (let i = 1; i < this.points.length; i++) {
           const dist = Math.hypot(this.points[i - 1][0] - this.points[i][0], this.points[i - 1][1] - this.points[i][1]);
           this.lengths.push(dist);
           this.currentLength += dist;
         }
-        this.headPosition = [...this.points[3]]; // Set head position
-        this.targetPosition = [...this.headPosition]; // Set initial target
+        this.headPosition = [headX, headY]; // Set head position
+        this.targetPosition = [headX, headY]; // Set initial target
       }
 
       // Place food at a random location within canvas bounds
@@ -558,15 +567,17 @@ const SnakeGame = () => {
                 const distToPowerDown = Math.hypot(headX - powerDown.x, headY - powerDown.y);
                 if (distToPowerDown < (powerDown.width / 2) + 10) {
                   this.powerDowns.splice(i, 1);
-                  if (this.score > 0) {
-                    this.score -= 2; // Reduce score only if greater than 0
+                  if (this.score <= 2) {
+                    this.score = 0; // Set score to 0
+                    this.stats.textContent = `Score: ${this.score}`; // Update UI immediately
+                    this.gameOver = true; // End game
                   } else {
-                    this.gameOver = true; // End game if score is 0
-                  }
-                  if (this.points.length > 4) {
-                    this.points.splice(1, 2); // Shrink snake by removing 2 points
-                    this.lengths.splice(0, 1); // Adjust lengths
-                    this.currentLength -= this.lengths[0];
+                    this.score -= 2; // Reduce score
+                    if (this.points.length > 4) {
+                      this.points.splice(1, 2); // Shrink snake by removing 2 points
+                      this.lengths.splice(0, 1); // Adjust lengths
+                      this.currentLength -= this.lengths[0];
+                    }
                   }
                   this.stats.textContent = `Score: ${this.score}`;
                   this.spawnPowerDown(); // Spawn new power-down
