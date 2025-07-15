@@ -24,6 +24,8 @@ const AirHockey = () => {
   const [gameMode, setGameMode] = useState(null); // null, 'single', or 'two'
   const [difficulty, setDifficulty] = useState(null); // null means not selected yet
   const [modeSelected, setModeSelected] = useState(false);
+  const [showModeOverlay, setShowModeOverlay] = useState(true); // Controls mode selection overlay
+  const [showDifficultyOverlay, setShowDifficultyOverlay] = useState(false); // Controls difficulty selection overlay
   const [confirmationMessage, setConfirmationMessage] = useState(''); // Confirmation message after selection
   const [showModeSelection, setShowModeSelection] = useState(false);
   const [showDifficultySelection, setShowDifficultySelection] = useState(false);
@@ -44,7 +46,11 @@ const AirHockey = () => {
     script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
     script.async = true;
     script.onload = () => console.log('MediaPipe Hands script preloaded');
-    document.head.appendChild(script);
+    
+    // Check if script is already loaded to avoid duplicates
+    if (!document.querySelector(`script[src="${script.src}"]`)) {
+      document.head.appendChild(script);
+    }
 
     const hitSound = new Audio('/static/sounds/airhockey/hit.mp3');
     const goalSound = new Audio('/static/sounds/airhockey/goal.mp3');
@@ -52,7 +58,6 @@ const AirHockey = () => {
     goalSound.preload = 'auto';
 
     return () => {
-      document.head.removeChild(script);
     };
   }, []);
 
@@ -111,16 +116,19 @@ const AirHockey = () => {
         }
         
         // Add a small delay to ensure cleanup is complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
+        if (!window.Hands) {
+          throw new Error('MediaPipe Hands not loaded');
+        }
         handsRef.current = new window.Hands({
           locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
         });
         handsRef.current.setOptions({
           maxNumHands: gameMode === 'two' ? 2 : 1,
           modelComplexity: 0,
-          minDetectionConfidence: 0.6,
-          minTrackingConfidence: 0.6,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
         });
         handsRef.current.onResults((results) => onHandResults(results, gameObjectRef.current, gameStartedRef.current));
         await handsRef.current.initialize();
@@ -163,7 +171,6 @@ const AirHockey = () => {
                 await handsRef.current.send({ image: video });
               } catch (error) {
                 console.error('Error processing video frame:', error);
-                debug.innerHTML = `<p class="warning">❌ Frame processing error: ${error.message}</p>`;
               }
             }
           },
@@ -172,6 +179,11 @@ const AirHockey = () => {
         });
         await cameraRef.current.start();
         console.log('Camera started successfully');
+        
+        // Initialize hand detection for camera testing
+        if (!handsRef.current) {
+          await initHandDetection();
+        }
       } catch (error) {
         debug.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
         console.error('Camera initialization failed:', error);
@@ -179,37 +191,47 @@ const AirHockey = () => {
     };
 
     const startGame = async () => {
-      if (!gameStartedRef.current && (modeSelected || (gameMode && (gameMode === 'two' || difficulty)))) {
-        setShowModeOverlay(false);
-        setShowDifficultyOverlay(false);
+      if (!gameStartedRef.current && hasSelectedMode && gameMode) {
+        if (gameMode === 'single' && !difficulty) {
+          setShowDifficultySelection(true);
+          debug.innerHTML = `<p>Please select a difficulty.</p>`;
+          return;
+        }
+        setShowModeSelection(false);
+        setShowDifficultySelection(false);
         debug.innerHTML = `<p>Loading game, please wait...</p>`;
         
         // Clean up any existing instances first
         if (cameraRef.current) {
-          cameraRef.current.stop();
+          await cameraRef.current.stop();
           cameraRef.current = null;
         }
         if (handsRef.current) {
+          await handsRef.current.close();
           handsRef.current = null;
         }
+        // Add delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         await Promise.all([initHandDetection(), startCamera()])
           .then(() => {
+            setShowCameraPreview(false);
             gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
-            requestAnimationFrame(gameLoop);
             debug.innerHTML = `<p>Game started! Mode: ${gameMode === 'two' ? 'Two Player' : 'Single Player'}${gameMode === 'single' ? `, Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` : ''}</p>`;
             console.log('Game started');
+            requestAnimationFrame(gameLoop);
           })
           .catch((error) => {
             alert('Camera access error: ' + error.message);
             console.error('Start game failed:', error);
+            debug.innerHTML = `<p class="warning">❌ Start game failed: ${error.message}</p>`;
           });
-      } else if (!modeSelected) {
-        setShowModeOverlay(true);
-        debug.innerHTML = `<p>Please select a game mode (1 or 2).</p>`;
+      } else {
+        setShowModeSelection(true);
+        debug.innerHTML = `<p>Please select a game mode.</p>`;
       }
     };
 
@@ -819,7 +841,7 @@ const AirHockey = () => {
       gameObjectRef.current = null;
       console.log('Component unmounted, all resources cleaned up');
     };
-  }, [difficulty, gameMode, modeSelected]);
+  }, [difficulty, gameMode]);
 
   // Handle mode button clicks
   const handleModeSelect = (selectedMode) => {
