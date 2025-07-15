@@ -181,7 +181,9 @@ const TetrisGame = () => {
           lastFistDetectedRef.current = isFist;
 
           gameObj.updateFingerPosition(fingerX, fingerY, isFist && !wasFist);
+          debug.innerHTML = ''; // Clear warning when hand is detected
         } else {
+          debug.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
           lastFistDetectedRef.current = false;
         }
         gameObj.render(ctx);

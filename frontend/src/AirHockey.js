@@ -356,8 +356,8 @@ const AirHockey = () => {
       try {
         if (started && gameObj && !gameObj.gameOver) {
           if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            // In Single Player Mode, track the first detected hand for the blue paddle
             if (gameMode === 'single') {
+              // Single Player: Require at least one hand
               const playerFinger = results.multiHandLandmarks[0][8]; // Index finger of first hand
               const playerFingerX = (1 - playerFinger.x) * 960; // Invert x due to canvas mirroring
               const playerFingerY = playerFinger.y * 540;
@@ -370,18 +370,18 @@ const AirHockey = () => {
                 fingerPositionRef.current.player.y = fingerPositionRef.current.player.y * (1 - smoothing) + playerFingerY * smoothing;
               }
               console.log('Player hand detected (Single Player):', { fingerX: fingerPositionRef.current.player.x, fingerY: fingerPositionRef.current.player.y });
-            }
-            // In Two Player Mode, assign hands based on side of the table
-            else if (gameMode === 'two') {
+              // Clear warning when hand is detected
+              debug.innerHTML = '';
+            } else if (gameMode === 'two') {
               let leftHandAssigned = false;
               let rightHandAssigned = false;
-
+    
               // Iterate through all detected hands
               for (const landmarks of results.multiHandLandmarks) {
                 const finger = landmarks[8]; // Index finger
                 const fingerX = (1 - finger.x) * 960; // Invert x due to canvas mirroring
                 const fingerY = finger.y * 540;
-
+    
                 // Hand on left side (x < 480) controls red paddle (opponent)
                 if (fingerX < 480) {
                   const opponentDx = fingerX - fingerPositionRef.current.opponent.x;
@@ -409,17 +409,26 @@ const AirHockey = () => {
                   rightHandAssigned = true;
                 }
               }
-
-              // Show debug warning if either hand is missing
-              if (!leftHandAssigned || !rightHandAssigned) {
-                debug.innerHTML = `<p class="warning">Please ensure one hand is visible on each side of the screen.</p>`;
-              } else {
-                debug.innerHTML = `<p>Both hands detected!</p>`;
+    
+              // Set appropriate message based on hand detection
+              if (leftHandAssigned && rightHandAssigned) {
+                debug.innerHTML = ''; // Clear warning when both hands are detected
+              } else if (!leftHandAssigned && !rightHandAssigned) {
+                debug.innerHTML = `<p class="warning">No hands detected - please ensure one hand is visible on each side of the screen.</p>`;
+              } else if (!leftHandAssigned) {
+                debug.innerHTML = `<p class="warning">Left hand (red paddle) not detected - please place a hand on the left side of the screen.</p>`;
+              } else if (!rightHandAssigned) {
+                debug.innerHTML = `<p class="warning">Right hand (blue paddle) not detected - please place a hand on the right side of the screen.</p>`;
               }
             }
           } else {
+            // No hands detected at all
             console.log('No hands detected in this frame');
-            debug.innerHTML = `<p class="warning">No hands detected - please ensure at least one hand is visible to the webcam.</p>`;
+            debug.innerHTML = `<p class="warning">${
+              gameMode === 'single'
+                ? 'No hand detected - please ensure one hand is visible to the webcam.'
+                : 'No hands detected - please ensure one hand is visible on each side of the screen.'
+            }</p>`;
           }
         }
       } catch (error) {
