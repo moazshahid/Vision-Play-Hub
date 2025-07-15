@@ -222,7 +222,7 @@ const TetrisGame = () => {
       ctx.font = '40px Arial';
       ctx.fillText('Press "R" to Restart', 640, 500);
       finalScore.textContent = score;
-      over.style.display = 'block';
+      // over.style.display = 'block'; (commented out to avoid showing green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
         submitScore('Tetris Game', score)
           .then(() => {

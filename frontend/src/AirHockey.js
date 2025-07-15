@@ -456,7 +456,7 @@ const AirHockey = () => {
       ctx.fillStyle = '#4CAF50';
       ctx.font = '30px Arial';
       ctx.fillText('Press "R" to Restart', 480, 420);
-      over.style.display = 'block';
+      // over.style.display = 'block'; (commented out to avoid showing green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
         gameObjectRef.current.scoreSubmitted = true;
         const scoreToSubmit = gameObjectRef.current.gameMode === 'two' ? Math.max(playerScore, opponentScore) : playerScore;

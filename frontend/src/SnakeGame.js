@@ -238,7 +238,7 @@ const SnakeGame = () => {
       ctx.fillText('Press "R" to Restart', 640, 500);
       // Update the DOM game over overlay
       finalScore.textContent = score;
-      over.style.display = 'block';
+      // over.style.display = 'block'; (commented out to avoid showing green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
           gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
           console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
