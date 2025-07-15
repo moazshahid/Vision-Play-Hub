@@ -18,14 +18,25 @@ const AirHockey = () => {
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(0);
   const fingerPositionRef = useRef({ player: { x: 0, y: 0 }, opponent: { x: 0, y: 0 } });
+  const frameCountRef = useRef(0);
 
   // State to manage game mode, difficulty, UI, and confirmation message
   const [gameMode, setGameMode] = useState(null); // null, 'single', or 'two'
   const [difficulty, setDifficulty] = useState(null); // null means not selected yet
   const [modeSelected, setModeSelected] = useState(false);
-  const [showModeOverlay, setShowModeOverlay] = useState(true); // Controls mode selection overlay
-  const [showDifficultyOverlay, setShowDifficultyOverlay] = useState(false); // Controls difficulty selection overlay
   const [confirmationMessage, setConfirmationMessage] = useState(''); // Confirmation message after selection
+  const [showModeSelection, setShowModeSelection] = useState(false);
+  const [showDifficultySelection, setShowDifficultySelection] = useState(false);
+  const [hasSelectedMode, setHasSelectedMode] = useState(false);
+  const [hoveredMode, setHoveredMode] = useState(null); // For mode button hover effect
+  const [hoveredDifficulty, setHoveredDifficulty] = useState(null); // For difficulty button hover effect
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
+
+  const handleStartGame = () => {
+    setShowGame(true);
+    setShowModeSelection(true);
+    setHasSelectedMode(false); // Reset mode selection to allow new choices
+  };
 
   // Preload MediaPipe Hands script and sound files to reduce initialization lag
   useEffect(() => {
@@ -46,50 +57,36 @@ const AirHockey = () => {
   }, []);
 
   // Helper function to handle game mode selection
-  const selectGameMode = (selectedMode) => {
-    if (!gameStartedRef.current) { // Remove modeSelected check
-      setGameMode(selectedMode);
-      setShowModeOverlay(false);
-      if (selectedMode === 'single') {
-        setShowDifficultyOverlay(true);
-        setConfirmationMessage('Mode selected: Single Player');
-        setTimeout(() => {
-          setConfirmationMessage('');
-        }, 2000);
-      } else {
-        setDifficulty(null);
-        setShowDifficultyOverlay(false);
-        setConfirmationMessage('Mode selected: Two Player');
-        console.log('Mode selected: Two Player');
-        setTimeout(() => {
-          setConfirmationMessage('');
-          setModeSelected(true);
-          // Auto-start the game after two player selection
-          setTimeout(() => {
-            document.getElementById('start-btn').click();
-          }, 500);
-        }, 2000);
-      }
-      console.log(`Mode selected: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Player`);
+  const selectGameMode = (mode) => {
+    setGameMode(mode);
+    setConfirmationMessage(`Mode selected: ${mode === 'single' ? 'Single Player' : 'Two Player'}`);
+    setHoveredMode(mode);
+    if (mode === 'two') {
+      setHasSelectedMode(true); // Set immediately for two-player mode
     }
+    setTimeout(() => {
+      setShowModeSelection(false);
+      setConfirmationMessage('');
+      setHoveredMode(null);
+      if (mode === 'single') {
+        setShowDifficultySelection(true);
+      }
+    }, 2000);
+    console.log(`Selected mode: ${mode}`);
   };
 
   // Helper function to handle difficulty selection
   const selectDifficulty = (selectedDifficulty) => {
-    if (gameMode === 'single' && !gameStartedRef.current) {
-      setDifficulty(selectedDifficulty);
-      setShowDifficultyOverlay(false);
-      setConfirmationMessage(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
-      console.log(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
-      setTimeout(() => {
-        setConfirmationMessage('');
-        setModeSelected(true);
-        // Auto-start the game after difficulty selection
-        setTimeout(() => {
-          document.getElementById('start-btn').click();
-        }, 500);
-      }, 2000);
-    }
+    setDifficulty(selectedDifficulty);
+    setConfirmationMessage(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
+    setHoveredDifficulty(selectedDifficulty);
+    setHasSelectedMode(true); // Set immediately after difficulty selection
+    setTimeout(() => {
+      setShowDifficultySelection(false);
+      setConfirmationMessage('');
+      setHoveredDifficulty(null);
+    }, 2000);
+    console.log(`Selected difficulty: ${selectedDifficulty}`);
   };
 
   // Use effect to set up the game environment when the component mounts
