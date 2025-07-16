@@ -14,6 +14,18 @@ class Games(models.Model):
 
     def __str__(self):
         return self.title
+    
+class UserProfiles(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    is_dark_mode = models.BooleanField(default=False)
+    is_colorblind_mode = models.BooleanField(default=False)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+
+    class Meta:
+        db_table = 'user_profiles'
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
 
 class Sessions(models.Model):
     session_id = models.AutoField(primary_key=True)
