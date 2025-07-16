@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Game.css';
 
 const SpaceWars = () => {
@@ -7,6 +7,53 @@ const SpaceWars = () => {
   const videoRef = useRef(null);
   const gameOverRef = useRef(null);
   const finalScoreRef = useRef(null);
+  const handsRef = useRef(null);
+  const cameraRef = useRef(null);
+  const debugRef = useRef(null);
+
+  useEffect(() => {
+    const initHandDetection = () => {
+      handsRef.current = new window.Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+      handsRef.current.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7,
+      });
+      handsRef.current.onResults((results) => {
+        console.log('Hand detection results:', results);
+      });
+    };
+
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720, facingMode: 'user', frameRate: 60 },
+        });
+        videoRef.current.srcObject = stream;
+        await new Promise((resolve) => (videoRef.current.onloadedmetadata = resolve));
+        videoRef.current.play();
+        cameraRef.current = new window.Camera(videoRef.current, {
+          onFrame: async () => await handsRef.current.send({ image: videoRef.current }),
+          width: 1280,
+          height: 720,
+        });
+        await cameraRef.current.start();
+        console.log('Camera started successfully');
+      } catch (error) {
+        debugRef.current.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
+      }
+    };
+
+    initHandDetection();
+    startCamera();
+
+    return () => {
+      if (cameraRef.current) cameraRef.current.stop();
+    };
+  }, []);
 
   return (
     <div className='inter'>
@@ -78,6 +125,7 @@ const SpaceWars = () => {
             </button>
           </div>
         </div>
+        <div ref={debugRef} className="debug-box" style={{ backgroundColor: "transparent" }}></div>
         <div className="game-container inter">
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
