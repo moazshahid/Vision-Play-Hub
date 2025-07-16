@@ -1,23 +1,25 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Games, Leaderboards
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils import timezone
 import logging
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
 import time
 import json
-from django.http import JsonResponse
-from django.utils.dateparse import parse_datetime
-from .models import Games, Sessions
+
+from .models import Games, Sessions, Leaderboards, UserProfiles
+from .serializers import UserProfileSerializer
+
 
 logger = logging.getLogger(__name__)
 
@@ -264,9 +266,34 @@ def record_game_session(request):
 
         return JsonResponse({'status': 'session saved'})
 
-    except Users.DoesNotExist:
+    except User.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
     except Games.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+class UserProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            profile = request.user.profile
+            serializer = UserProfileSerializer(profile, context={'request': request})
+            return Response(serializer.data)
+        except UserProfiles.DoesNotExist:
+            return Response({'error': 'Profile not found'}, status=404)
+
+class UserProfileImageUploadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        try:
+            profile = request.user.profile
+            profile.profile_image = request.FILES.get('profile_image')
+            profile.save()
+            serializer = UserProfileSerializer(profile, context={'request': request})
+            return Response(serializer.data)
+        except UserProfiles.DoesNotExist:
+            return Response({'error': 'Profile not found'}, status=404)

@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path
 from . import views
 
@@ -9,4 +11,7 @@ urlpatterns = [
     path('auth/leaderboard/', views.leaderboard, name='leaderboard'),
     path('auth/api/submit-score/', views.SubmitScoreAPIView.as_view(), name='api_submit_score'),
     path('ping/', views.ping, name='keep_alive'),
-]
+    path('record-session/', views.record_game_session, name='record_session'),
+    path('api/user-profile/', views.UserProfileAPIView.as_view(), name='user_profile'),
+    path('api/user-profile/upload/', views.UserProfileImageUploadAPIView.as_view(), name='user_profile_upload'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
