@@ -10,6 +10,8 @@ const SpaceWars = () => {
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const debugRef = useRef(null);
+  const gameStartedRef = useRef(false);
+  const animationFrameIdRef = useRef(null);
 
   useEffect(() => {
     const initHandDetection = () => {
@@ -47,11 +49,44 @@ const SpaceWars = () => {
       }
     };
 
+    const testCamera = async () => {
+      try {
+        await startCamera();
+        gameStartedRef.current = false;
+        if (animationFrameIdRef.current) {
+          cancelAnimationFrame(animationFrameIdRef.current);
+          animationFrameIdRef.current = null;
+        }
+        const ctx = canvasRef.current.getContext('2d');
+        const renderCameraPreview = () => {
+          if (!gameStartedRef.current && videoRef.current.srcObject) {
+            ctx.save();
+            ctx.clearRect(0, 0, 1280, 720);
+            ctx.translate(1280, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
+            ctx.restore();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Camera Test - Press Start to Play', 640, 360);
+            animationFrameIdRef.current = requestAnimationFrame(renderCameraPreview);
+          }
+        };
+        renderCameraPreview();
+      } catch (error) {
+        debugRef.current.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
+      }
+    };
+
+    document.getElementById('test-camera-btn').addEventListener('click', testCamera);
+
     initHandDetection();
-    startCamera();
 
     return () => {
       if (cameraRef.current) cameraRef.current.stop();
+      if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
     };
   }, []);
 
