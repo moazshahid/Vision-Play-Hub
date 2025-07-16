@@ -24,8 +24,6 @@ const AirHockey = () => {
   const [gameMode, setGameMode] = useState(null); // null, 'single', or 'two'
   const [difficulty, setDifficulty] = useState(null); // null means not selected yet
   const [modeSelected, setModeSelected] = useState(false);
-  const [showModeOverlay, setShowModeOverlay] = useState(true); // Controls mode selection overlay
-  const [showDifficultyOverlay, setShowDifficultyOverlay] = useState(false); // Controls difficulty selection overlay
   const [confirmationMessage, setConfirmationMessage] = useState(''); // Confirmation message after selection
   const [showModeSelection, setShowModeSelection] = useState(false);
   const [showDifficultySelection, setShowDifficultySelection] = useState(false);
@@ -51,12 +49,12 @@ const AirHockey = () => {
     if (!document.querySelector(`script[src="${script.src}"]`)) {
       document.head.appendChild(script);
     }
-
+  
     const hitSound = new Audio('/static/sounds/airhockey/hit.mp3');
     const goalSound = new Audio('/static/sounds/airhockey/goal.mp3');
     hitSound.preload = 'auto';
     goalSound.preload = 'auto';
-
+    
     return () => {
     };
   }, []);
@@ -166,7 +164,8 @@ const AirHockey = () => {
         
         cameraRef.current = new window.Camera(video, {
           onFrame: async () => {
-            if (handsRef.current && gameStartedRef.current) {
+            frameCountRef.current++;
+            if (handsRef.current && gameStartedRef.current && !gameObjectRef.current?.gameOver && frameCountRef.current % 2 === 0) {
               try {
                 await handsRef.current.send({ image: video });
               } catch (error) {
@@ -188,6 +187,42 @@ const AirHockey = () => {
         debug.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
         console.error('Camera initialization failed:', error);
       }
+    };
+
+    const restartGame = async () => {
+      console.log('Restarting game with same mode and difficulty...');
+      gameStartedRef.current = false;
+    
+      // Clean up existing resources
+      if (cameraRef.current) {
+        await cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+      if (handsRef.current) {
+        await handsRef.current.close();
+        handsRef.current = null;
+      }
+      if (video.srcObject) {
+        const tracks = video.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      gameObjectRef.current = null;
+      gameOver.style.display = 'none';
+      debug.innerHTML = '';
+      canvas.clearRect(0, 0, 960, 540);
+    
+      // Reset paddle positions
+      fingerPositionRef.current = { player: { x: 0, y: 0 }, opponent: { x: 0, y: 0 } };
+    
+      // Add delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+    
+      // Restart game
+      setShowCameraPreview(false);
+      setShowModeSelection(false);
+      setShowDifficultySelection(false);
+      await startGame();
     };
 
     const startGame = async () => {
@@ -260,43 +295,19 @@ const AirHockey = () => {
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('restart-btn').addEventListener('click', async () => {
-      // Stop camera and reset everything
-      gameStartedRef.current = false;
-      
-      if (cameraRef.current) {
-        await cameraRef.current.stop();
-        cameraRef.current = null;
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
+    document.getElementById('test-camera-btn').addEventListener('click', () => {
+      if (hasSelectedMode && gameMode) {
+        if (gameMode === 'single' && !difficulty) {
+          debug.innerHTML = `<p>Please select a difficulty before testing the camera.</p>`;
+          return;
+        }
+        setShowCameraPreview(true);
+        startCamera();
+      } else {
+        debug.innerHTML = `<p>Please select a game mode before testing the camera.</p>`;
       }
-      if (handsRef.current) {
-        handsRef.current.close();
-        handsRef.current = null;
-      }
-      
-      // Stop video stream
-      if (video.srcObject) {
-        const tracks = video.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
-        video.srcObject = null;
-      }
-      
-      gameObjectRef.current = null;
-      
-      // Reset all state
-      setGameMode(null);
-      setDifficulty(null);
-      setModeSelected(false);
-      setShowModeOverlay(true);
-      setShowDifficultyOverlay(false);
-      setConfirmationMessage('');
-      gameOver.style.display = 'none';
-      
-      // Clear debug messages
-      debug.innerHTML = '';
-      
-      console.log('Game reset to mode selection via restart button');
     });
-    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
       gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
       gameOver.style.display = 'none';
@@ -307,66 +318,40 @@ const AirHockey = () => {
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
-        // Stop camera and reset everything
-        gameStartedRef.current = false;
-        
-        if (cameraRef.current) {
-          cameraRef.current.stop().then(() => {
-            cameraRef.current = null;
-          });
-        }
-        if (handsRef.current) {
-          handsRef.current.close();
-          handsRef.current = null;
-        }
-        
-        // Stop video stream
-        if (video.srcObject) {
-          const tracks = video.srcObject.getTracks();
-          tracks.forEach(track => track.stop());
-          video.srcObject = null;
-        }
-        
-        gameObjectRef.current = null;
-        
-        // Reset all state
-        setGameMode(null);
-        setDifficulty(null);
-        setModeSelected(false);
-        setShowModeOverlay(true);
-        setShowDifficultyOverlay(false);
-        setConfirmationMessage('');
-        gameOver.style.display = 'none';
-        
-        // Clear debug messages
-        debug.innerHTML = '';
-        
-        console.log('Game reset to mode selection via R key');
+        restartGame();
       }
       if (e.key === 'q' || e.key === 'Q') {
-        // Stop camera completely
+        gameStartedRef.current = false;
+        gameObjectRef.current = null;
+        
+        // Stop camera and cleanup
         if (cameraRef.current) {
           cameraRef.current.stop();
           cameraRef.current = null;
         }
         if (handsRef.current) {
+          handsRef.current.close();
           handsRef.current = null;
         }
-        
-        // Stop video stream
         if (video.srcObject) {
           const tracks = video.srcObject.getTracks();
           tracks.forEach(track => track.stop());
           video.srcObject = null;
         }
         
-        gameStartedRef.current = false;
-        gameObjectRef.current = null;
-        
-        // Clear canvas
         canvas.clearRect(0, 0, 960, 540);
         
-        debug.innerHTML = '<p>Game quit. Refresh page to restart.</p>';
+        // Show quit message
+        canvas.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        canvas.fillRect(0, 0, 960, 540);
+        canvas.fillStyle = '#FFFFFF';
+        canvas.font = 'bold 48px Arial';
+        canvas.textAlign = 'center';
+        canvas.textBaseline = 'middle';
+        canvas.fillText('Game Quit', 480, 220);
+        canvas.font = '24px Arial';
+        canvas.fillText('Refresh the page to play again', 480, 280);
+        
         console.log('Game quit via Q key');
       }
     });
@@ -484,7 +469,7 @@ const AirHockey = () => {
       ctx.fillStyle = '#4CAF50';
       ctx.font = '30px Arial';
       ctx.fillText('Press "R" to Restart', 480, 420);
-      // over.style.display = 'block'; (commented out to avoid showing green overlay)
+      // over.style.display = 'block'; (commented out this line to remove the green game over screen)
       if (!gameObjectRef.current.scoreSubmitted) {
         gameObjectRef.current.scoreSubmitted = true;
         const scoreToSubmit = gameObjectRef.current.gameMode === 'two' ? Math.max(playerScore, opponentScore) : playerScore;
@@ -830,6 +815,7 @@ const AirHockey = () => {
         cameraRef.current = null;
       }
       if (handsRef.current) {
+        handsRef.current.close();
         handsRef.current = null;
       }
       if (videoRef.current && videoRef.current.srcObject) {
@@ -855,189 +841,216 @@ const AirHockey = () => {
 
   return (
     <div className='inter'> 
-      <div style={{Width: "100vw", minHeight: "95vh", padding: "5vw", backgroundImage: "url(static/images/pages/hockey-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
-        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+      {/* Initial screen with instructions and start button */}
+      <div style={{
+        width: "100vw",
+        minHeight: "95vh",
+        backgroundImage: "url(static/images/pages/hockey-bg.png)",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center center",
+        backgroundSize: "contain",
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        display: !showGame ? 'flex' : 'none'
+      }}>
+        <div style={{
+          maxWidth: "50vw",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px'
+        }}>
           <div className="instructions inter" style={{ color: "#fff" }}>
-            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Air Hockey</h2>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Air Hockey</h2>
             <ul>
-              <li><strong>Select Mode:</strong> Click Single Player or Two Player.</li>
-              <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, or Hard) and play against AI.</li>
-              <li><strong>Two Player:</strong> Any hand on the left side controls the red paddle; any hand on the right side controls the blue paddle.</li>
-              <li><strong>Show your hand(s):</strong> Ensure hand(s) are visible to the webcam.</li>
-              <li><strong>Move the paddle:</strong> Use index finger to control your paddle.</li>
-              <li><strong>Hit the puck:</strong> Strike the puck to score in the opponent's goal.</li>
-              <li><strong>Score points:</strong> Get the puck into the opponent's goal to score.</li>
-              <li><strong>Win the game:</strong> First to 5 points wins!</li>
-              <li><strong>Controls:</strong> Press 'R' to return to mode selection and 'Q' to quit.</li>
+              <li><strong>Choose Mode:</strong> Select Single Player or Two Player.</li>
+              <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, Hard) and play against AI.</li>
+              <li><strong>Two Player:</strong> Left hand controls red paddle, right hand controls blue paddle.</li>
+              <li><strong>Show Hand(s):</strong> Ensure hand(s) are visible to the webcam.</li>
+              <li><strong>Move Paddle:</strong> Use index finger to control your paddle.</li>
+              <li><strong>Hit Puck:</strong> Strike the puck to score in the opponent's goal.</li>
+              <li><strong>Score Points:</strong> Get the puck into the opponent's goal to score.</li>
+              <li><strong>Win Game:</strong> First to 5 points wins!</li>
+              <li><strong>Controls:</strong> Press 'R' to restart with same settings, 'Q' to quit.</li>
             </ul>
           </div>
         </div>
-        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div style={{maxWidth:"40%"}}>
-            <img src="static/images/pages/airhockey-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
+        <div style={{
+          maxWidth: "50vw",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px'
+        }}>
+          <div style={{ maxWidth: "40%" }}>
+            <img src="static/images/pages/airhockey-colour.svg" alt="Air Hockey" style={{ width: '100%', height: 'auto' }} />
           </div>
-          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
+          <div style={{
+            maxWidth: "20%",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: '5vh',
+            gap: '10px'
+          }}>
+            <button className="inter start-button" onClick={handleStartGame} style={{
+              backgroundColor: '#4CAF50',
+              border: 'none',
+              padding: '1em 1.5em',
+              borderRadius: '1em',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
         </div>
       </div>
-      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+      {/* Game screen with mode and difficulty selection modals */}
+      <div style={{
+        width: "100%",
+        minHeight: "95vh",
+        display: showGame ? 'flex' : 'none',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent'
+      }}>
+        {/* Mode selection modal */}
+        {showModeSelection && !hasSelectedMode && (
+          <div className="mode-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #2196F3'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Game Mode</h2>
+            <div className="mode-controls" style={{
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {['single', 'two'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => selectGameMode(mode)}
+                  onMouseEnter={() => setHoveredMode(mode)}
+                  onMouseLeave={() => setHoveredMode(null)}
+                  style={{
+                    backgroundColor: '#2196F3',
+                    border: hoveredMode === mode ? '3px solid #4CAF50' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px 30px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: '#fff',
+                    fontSize: '1.2em',
+                    fontWeight: 600
+                  }}
+                >
+                  {mode === 'single' ? 'Single Player' : 'Two Player'}
+                </button>
+              ))}
+            </div>
+            {confirmationMessage && (
+              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{confirmationMessage}</p>
+            )}
+          </div>
+        )}
+        {/* Difficulty selection modal */}
+        {showDifficultySelection && gameMode === 'single' && !hasSelectedMode && (
+          <div className="difficulty-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #4CAF50'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Difficulty</h2>
+            <div className="difficulty-controls" style={{
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {['easy', 'medium', 'hard'].map((diff) => (
+                <button
+                  key={diff}
+                  onClick={() => selectDifficulty(diff)}
+                  onMouseEnter={() => setHoveredDifficulty(diff)}
+                  onMouseLeave={() => setHoveredDifficulty(null)}
+                  style={{
+                    backgroundColor: diff === 'easy' ? '#4CAF50' : diff === 'medium' ? '#FFC107' : '#F44336',
+                    border: hoveredDifficulty === diff ? '3px solid #4CAF50' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px 30px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: '#fff',
+                    fontSize: '1.2em',
+                    fontWeight: 600
+                  }}
+                >
+                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                </button>
+              ))}
+            </div>
+            {confirmationMessage && (
+              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{confirmationMessage}</p>
+            )}
+          </div>
+        )}
+        {/* Game controls */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
-            </button>
             <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
             </button>
             <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
             </button>
           </div>
         </div>
-        <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
+        <div ref={debugRef} className="debug-box" style={{ backgroundColor: "transparent" }}></div>
         <div className="game-container inter">
           <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
-          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <video ref={videoRef} autoPlay playsInline style={{ 
+            display: showCameraPreview ? 'block' : 'none', 
+            width: '960px', 
+            height: '540px',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }}></video>
           <div ref={gameStatsRef} className="game-stats">Player: 0  Opponent: 0</div>
           <div ref={gameOverRef} className="game-over">
             <h2>Game Over!</h2>
             <p>Final Score: <span ref={finalScoreRef}>Player: 0  Opponent: 0</span></p>
             <button id="play-again-btn">Play Again</button>
           </div>
-          {showModeOverlay && (
-            <div className="mode-overlay" style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '960px',
-              height: '540px',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}>
-              <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Game Mode</h2>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <button
-                  onClick={() => handleModeSelect('single')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#4CAF50',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Single Player
-                </button>
-                <button
-                  onClick={() => handleModeSelect('two')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#2196F3',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Two Player
-                </button>
-              </div>
-              <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
-                Press 1 or 2 to select a game mode
-              </p>
-            </div>
-          )}
-          {showDifficultyOverlay && gameMode === 'single' && (
-            <div className="difficulty-overlay" style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '960px',
-              height: '540px',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}>
-              <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Difficulty</h2>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <button
-                  onClick={() => handleDifficultySelect('easy')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#4CAF50',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Easy
-                </button>
-                <button
-                  onClick={() => handleDifficultySelect('medium')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#FFC107',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Medium
-                </button>
-                <button
-                  onClick={() => handleDifficultySelect('hard')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#F44336',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Hard
-                </button>
-              </div>
-              <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
-                Press 1, 2, or 3 to select a difficulty
-              </p>
-            </div>
-          )}
-          {confirmationMessage && (
-            <div className="confirmation-message" style={{
-              position: 'absolute',
-              top: '50px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              color: '#FFFFFF',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              fontSize: '1.2em',
-              zIndex: 11
-            }}>
-              {confirmationMessage}
-            </div>
-          )}
         </div>
       </div>
     </div>
