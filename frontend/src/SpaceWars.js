@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Game.css';
+import { submitScore } from './utils/api';
 
 const SpaceWars = () => {
   const [showGame, setShowGame] = useState(false);
@@ -19,6 +20,7 @@ const SpaceWars = () => {
     const canvas = canvasRef.current.getContext('2d');
     const video = videoRef.current;
     const gameOver = gameOverRef.current;
+    const finalScore = finalScoreRef.current;
     const debug = debugRef.current;
 
     gameOver.style.display = 'none';
@@ -34,7 +36,7 @@ const SpaceWars = () => {
         minTrackingConfidence: 0.7,
       });
       handsRef.current.onResults((results) =>
-        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current)
+        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current, gameOver, finalScore)
       );
     };
 
@@ -79,7 +81,7 @@ const SpaceWars = () => {
     };
 
     const gameLoop = (timestamp) => {
-      if (gameStartedRef.current && gameObjectRef.current) {
+      if (gameStartedRef.current && gameObjectRef.current && !gameObjectRef.current.gameOver) {
         const deltaTime = timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;
         gameObjectRef.current.updateWithoutRender(deltaTime);
@@ -121,8 +123,57 @@ const SpaceWars = () => {
 
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('test-camera-btn').addEventListener('click', testCamera);
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      gameObjectRef.current = new GameLogic(canvas);
+      gameStartedRef.current = true;
+      lastRenderTimeRef.current = performance.now();
+      gameOver.style.display = 'none';
+      requestAnimationFrame(gameLoop);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        gameObjectRef.current = new GameLogic(canvas);
+        gameStartedRef.current = true;
+        lastRenderTimeRef.current = performance.now();
+        gameOver.style.display = 'none';
+        requestAnimationFrame(gameLoop);
+      }
+      if (e.key === 'q' || e.key === 'Q') {
+        gameStartedRef.current = false;
+        gameObjectRef.current = null;
+        if (cameraRef.current) {
+          cameraRef.current.stop();
+          cameraRef.current = null;
+        }
+        if (handsRef.current) {
+          handsRef.current.close();
+          handsRef.current = null;
+        }
+        if (videoRef.current.srcObject) {
+          const tracks = videoRef.current.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+          videoRef.current.srcObject = null;
+        }
+        if (animationFrameIdRef.current) {
+          cancelAnimationFrame(animationFrameIdRef.current);
+          animationFrameIdRef.current = null;
+        }
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, 1280, 720);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, 0, 1280, 720);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Game Quit', 640, 320);
+        ctx.font = '24px Arial';
+        ctx.fillText('Refresh the page to play again', 640, 380);
+        console.log('Game quit via Q key');
+      }
+    });
 
-    const onHandResults = (results, ctx, video, gameObj, started) => {
+    const onHandResults = (results, ctx, video, gameObj, started, over, score) => {
       ctx.save();
       ctx.clearRect(0, 0, 1280, 720);
       ctx.translate(1280, 0);
@@ -130,7 +181,7 @@ const SpaceWars = () => {
       ctx.drawImage(video, 0, 0, 1280, 720);
       ctx.restore();
 
-      if (started && gameObj) {
+      if (started && gameObj && !gameObj.gameOver) {
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
           const indexFinger = results.multiHandLandmarks[0][8];
           const fingerX = Math.floor(1280 - indexFinger.x * 1280);
@@ -142,6 +193,9 @@ const SpaceWars = () => {
           debug.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
         }
         gameObj.render(ctx);
+        if (gameObj.gameOver) {
+          drawGameOverOnCanvas(ctx, gameObj.score, over, score);
+        }
       } else {
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 30px Arial';
@@ -158,6 +212,34 @@ const SpaceWars = () => {
       return thumbTip.y < indexTip.y - 0.10 && indexTip.y < middleTip.y;
     };
 
+    const drawGameOverOnCanvas = (ctx, score, over, finalScore) => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, 1280, 720);
+      ctx.fillStyle = '#FF0000';
+      ctx.font = 'bold 100px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('GAME OVER', 640, 300);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 60px Arial';
+      ctx.fillText(`Final Score: ${score}`, 640, 400);
+      ctx.fillStyle = '#4CAF50';
+      ctx.font = '40px Arial';
+      ctx.fillText('Press "R" to Restart', 640, 500);
+      finalScore.textContent = score;
+      if (!gameObjectRef.current.scoreSubmitted) {
+        gameObjectRef.current.scoreSubmitted = true;
+        submitScore('SpaceWars', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+            alert('Failed to submit score. Please ensure you are logged in.');
+          });
+      }
+    };
+
     initHandDetection();
 
     class GameLogic {
@@ -169,6 +251,10 @@ const SpaceWars = () => {
         this.crosshairPosition = [640, 360];
         this.isShooting = false;
         this.lastShotTime = 0;
+        this.score = 0;
+        this.misses = 0;
+        this.gameOver = false;
+        this.scoreSubmitted = false;
       }
 
       spawnUfo() {
@@ -183,24 +269,26 @@ const SpaceWars = () => {
       }
 
       updateFingerPosition(fingerX, fingerY, isThumbsUp) {
-        this.crosshairPosition = [fingerX, fingerY];
-        const currentTime = Date.now();
-        if (isThumbsUp && !this.isShooting && (currentTime - this.lastShotTime > 200)) {
-          this.isShooting = true;
-          this.lastShotTime = currentTime;
-          this.checkHit();
-          try {
-            const shootSound = new Audio('/static/sounds/shoot2.mp3');
-            shootSound.volume = 0.5;
-            shootSound.play().catch((e) => console.log('Error playing shoot sound:', e));
-          } catch (e) {
-            console.log('Could not load or play shoot sound:', e);
-          }
-          setTimeout(() => {
+        if (!this.gameOver) {
+          this.crosshairPosition = [fingerX, fingerY];
+          const currentTime = Date.now();
+          if (isThumbsUp && !this.isShooting && (currentTime - this.lastShotTime > 200)) {
+            this.isShooting = true;
+            this.lastShotTime = currentTime;
+            this.checkHit();
+            try {
+              const shootSound = new Audio('/static/sounds/shoot2.mp3');
+              shootSound.volume = 0.5;
+              shootSound.play().catch((e) => console.log('Error playing shoot sound:', e));
+            } catch (e) {
+              console.log('Could not load or play shoot sound:', e);
+            }
+            setTimeout(() => {
+              this.isShooting = false;
+            }, 500);
+          } else if (!isThumbsUp && this.isShooting) {
             this.isShooting = false;
-          }, 500);
-        } else if (!isThumbsUp && this.isShooting) {
-          this.isShooting = false;
+          }
         }
       }
 
@@ -210,7 +298,9 @@ const SpaceWars = () => {
           const dx = this.crosshairPosition[0] - (ufo.x + ufo.width / 2);
           const dy = this.crosshairPosition[1] - (ufo.y + ufo.height / 2);
           const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance >= 50) {
+          if (distance < 50) {
+            this.score += 1;
+          } else {
             newUfos.push(ufo);
           }
         });
@@ -218,15 +308,27 @@ const SpaceWars = () => {
       }
 
       updateWithoutRender(deltaTime) {
+        if (this.gameOver) return;
+
         this.spawnTimer += deltaTime;
         if (this.spawnTimer >= this.spawnInterval) {
           this.spawnUfo();
           this.spawnTimer = 0;
         }
 
+        const newUfos = [];
         this.ufos.forEach((ufo) => {
           ufo.y += (ufo.speedY * deltaTime) / 1000;
+          if (ufo.y > 720) {
+            this.misses += 1;
+            if (this.misses >= 3) {
+              this.gameOver = true;
+            }
+          } else {
+            newUfos.push(ufo);
+          }
         });
+        this.ufos = newUfos;
       }
 
       render(ctx) {
