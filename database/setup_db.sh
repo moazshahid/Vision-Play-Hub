@@ -14,6 +14,35 @@ if ! pg_isready -q; then
     exit 1
 fi
 
+# Define .pgpass file location
+PGPASS_FILE="$HOME/.pgpass"
+
+# Function to set up .pgpass file
+setup_pgpass() {
+    # Check if .pgpass exists and has correct permissions
+    if [ ! -f "$PGPASS_FILE" ]; then
+        touch "$PGPASS_FILE"
+        chmod 600 "$PGPASS_FILE"
+    elif [ "$(stat -f %A "$PGPASS_FILE" 2>/dev/null || stat -c %a "$PGPASS_FILE")" != "600" ]; then
+        chmod 600 "$PGPASS_FILE"
+    fi
+
+    # Prompt for postgres password if not already in .pgpass
+    if ! grep -q "localhost:5432:*:postgres:" "$PGPASS_FILE"; then
+        read -s -p "Enter PostgreSQL 'postgres' user password: " POSTGRES_PASS
+        echo
+        echo "localhost:5432:*:postgres:$POSTGRES_PASS" >> "$PGPASS_FILE"
+    fi
+
+    # Ensure cv_games_user password is in .pgpass
+    if ! grep -q "localhost:5432:cv_games_db:cv_games_user:cv_games_pass" "$PGPASS_FILE"; then
+        echo "localhost:5432:cv_games_db:cv_games_user:cv_games_pass" >> "$PGPASS_FILE"
+    fi
+}
+
+# Set up .pgpass
+setup_pgpass
+
 # Check if cv_games_db database exists
 if psql -U postgres -t -c "SELECT 1 FROM pg_database WHERE datname = 'cv_games_db';" | grep -q 1; then
     echo "Database cv_games_db already exists, skipping creation."
@@ -80,7 +109,7 @@ psql -U postgres -d cv_games_db -c "ALTER SCHEMA public OWNER TO postgres;" || {
 if psql -U cv_games_user -d cv_games_db -h localhost -c "\q" >/dev/null 2>&1; then
     echo "Database connection successful for cv_games_user."
 else
-    echo "Connection test failed. Check credentials and PostgreSQL status."
+    echo "Connection test failed. Check credentials in .pgpass and PostgreSQL status."
     exit 1
 fi
 
@@ -98,23 +127,34 @@ else
     exit 1
 fi
 
-# Insert game data with ON CONFLICT DO NOTHING
+# Insert game data, checking for existence
 echo "Inserting game data..."
-psql -U cv_games_user -d cv_games_db -h localhost -c "
-INSERT INTO games (title, genre, release_date)
-VALUES
-    ('SnakeGame', 'Arcade', '2025-05-23'),
-    ('Whack-A-Mole', 'Casual', '2025-05-23'),
-    ('Dessert Slash', 'Action', '2025-06-02'),
-    ('Air Hockey', 'Sports', '2025-06-05'),
-    ('SurfDash', 'Action', '2025-07-06'),
-    ('Tetris', 'Puzzle', '2025-07-06'),
-    ('SpaceWars', 'Arcade', '2025-07-16')
-ON CONFLICT (title) DO NOTHING;
-" || {
-    echo "Failed to insert game data."
-    exit 1
-}
+# Define games as an array
+games=(
+    "SnakeGame|Arcade|2025-05-23"
+    "Whack-A-Mole|Casual|2025-05-23"
+    "Dessert Slash|Action|2025-06-02"
+    "Air Hockey|Sports|2025-06-05"
+    "SurfDash|Action|2025-07-06"
+    "Tetris|Puzzle|2025-07-06"
+    "SpaceWars|Arcade|2025-07-16"
+)
+
+for game in "${games[@]}"; do
+    # Split game data into title, genre, release_date
+    IFS='|' read -r title genre release_date <<< "$game"
+    # Check if title exists
+    if psql -U cv_games_user -d cv_games_db -h localhost -t -c "SELECT 1 FROM games WHERE title = '$title';" | grep -q 1; then
+        echo "Game '$title' already exists, skipping insertion."
+    else
+        # Insert game
+        psql -U cv_games_user -d cv_games_db -h localhost -c "INSERT INTO games (title, genre, release_date) VALUES ('$title', '$genre', '$release_date');" || {
+            echo "Failed to insert game '$title'."
+            exit 1
+        }
+        echo "Inserted game '$title'."
+    fi
+done
 echo "Game data insertion completed."
 
 echo "Database setup completed successfully. Run 'python manage.py migrate' to apply Django migrations."
