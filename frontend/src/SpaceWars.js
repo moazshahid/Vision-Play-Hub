@@ -82,6 +82,7 @@ const SpaceWars = () => {
       if (gameStartedRef.current && gameObjectRef.current) {
         const deltaTime = timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;
+        gameObjectRef.current.updateWithoutRender(deltaTime);
         gameObjectRef.current.render(canvas);
         animationFrameIdRef.current = requestAnimationFrame(gameLoop);
       }
@@ -126,6 +127,32 @@ const SpaceWars = () => {
     class GameLogic {
       constructor(ctx) {
         this.ctx = ctx;
+        this.ufos = [];
+        this.spawnTimer = 0;
+        this.spawnInterval = 2000;
+      }
+
+      spawnUfo() {
+        const x = Math.floor(Math.random() * (1280 - 100));
+        this.ufos.push({
+          x: x,
+          y: 0,
+          width: 100,
+          height: 100,
+          speedY: 100,
+        });
+      }
+
+      updateWithoutRender(deltaTime) {
+        this.spawnTimer += deltaTime;
+        if (this.spawnTimer >= this.spawnInterval) {
+          this.spawnUfo();
+          this.spawnTimer = 0;
+        }
+
+        this.ufos.forEach((ufo) => {
+          ufo.y += (ufo.speedY * deltaTime) / 1000;
+        });
       }
 
       render(ctx) {
@@ -135,6 +162,11 @@ const SpaceWars = () => {
         ctx.scale(-1, 1);
         ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
         ctx.restore();
+
+        this.ufos.forEach((ufo) => {
+          ctx.fillStyle = '#FFD700';
+          ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
+        });
       }
     }
 
