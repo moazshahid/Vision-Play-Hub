@@ -98,4 +98,23 @@ else
     exit 1
 fi
 
+# Insert game data with ON CONFLICT DO NOTHING
+echo "Inserting game data..."
+psql -U cv_games_user -d cv_games_db -h localhost -c "
+INSERT INTO games (title, genre, release_date)
+VALUES
+    ('SnakeGame', 'Arcade', '2025-05-23'),
+    ('Whack-A-Mole', 'Casual', '2025-05-23'),
+    ('Dessert Slash', 'Action', '2025-06-02'),
+    ('Air Hockey', 'Sports', '2025-06-05'),
+    ('SurfDash', 'Action', '2025-07-06'),
+    ('Tetris', 'Puzzle', '2025-07-06'),
+    ('SpaceWars', 'Arcade', '2025-07-16')
+ON CONFLICT (title) DO NOTHING;
+" || {
+    echo "Failed to insert game data."
+    exit 1
+}
+echo "Game data insertion completed."
+
 echo "Database setup completed successfully. Run 'python manage.py migrate' to apply Django migrations."
