@@ -10,10 +10,19 @@ const SpaceWars = () => {
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const debugRef = useRef(null);
+  const gameObjectRef = useRef(null);
   const gameStartedRef = useRef(false);
+  const lastRenderTimeRef = useRef(0);
   const animationFrameIdRef = useRef(null);
 
   useEffect(() => {
+    const canvas = canvasRef.current.getContext('2d');
+    const video = videoRef.current;
+    const gameOver = gameOverRef.current;
+    const debug = debugRef.current;
+
+    gameOver.style.display = 'none';
+
     const initHandDetection = () => {
       handsRef.current = new window.Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
@@ -34,18 +43,47 @@ const SpaceWars = () => {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 1280, height: 720, facingMode: 'user', frameRate: 60 },
         });
-        videoRef.current.srcObject = stream;
-        await new Promise((resolve) => (videoRef.current.onloadedmetadata = resolve));
-        videoRef.current.play();
-        cameraRef.current = new window.Camera(videoRef.current, {
-          onFrame: async () => await handsRef.current.send({ image: videoRef.current }),
+        video.srcObject = stream;
+        await new Promise((resolve) => (video.onloadedmetadata = resolve));
+        video.play();
+        cameraRef.current = new window.Camera(video, {
+          onFrame: async () => await handsRef.current.send({ image: video }),
           width: 1280,
           height: 720,
         });
         await cameraRef.current.start();
         console.log('Camera started successfully');
       } catch (error) {
-        debugRef.current.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
+        debug.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
+      }
+    };
+
+    const startGame = () => {
+      if (!gameStartedRef.current) {
+        startCamera()
+          .then(() => {
+            if (animationFrameIdRef.current) {
+              cancelAnimationFrame(animationFrameIdRef.current);
+              animationFrameIdRef.current = null;
+            }
+            gameObjectRef.current = new GameLogic(canvas);
+            gameStartedRef.current = true;
+            lastRenderTimeRef.current = performance.now();
+            gameOver.style.display = 'none';
+            requestAnimationFrame(gameLoop);
+          })
+          .catch((error) => {
+            alert('Camera access error: ' + error.message);
+          });
+      }
+    };
+
+    const gameLoop = (timestamp) => {
+      if (gameStartedRef.current && gameObjectRef.current) {
+        const deltaTime = timestamp - lastRenderTimeRef.current;
+        lastRenderTimeRef.current = timestamp;
+        gameObjectRef.current.render(canvas);
+        animationFrameIdRef.current = requestAnimationFrame(gameLoop);
       }
     };
 
@@ -80,9 +118,25 @@ const SpaceWars = () => {
       }
     };
 
+    document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('test-camera-btn').addEventListener('click', testCamera);
 
     initHandDetection();
+
+    class GameLogic {
+      constructor(ctx) {
+        this.ctx = ctx;
+      }
+
+      render(ctx) {
+        ctx.save();
+        ctx.clearRect(0, 0, 1280, 720);
+        ctx.translate(1280, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
+        ctx.restore();
+      }
+    }
 
     return () => {
       if (cameraRef.current) cameraRef.current.stop();
