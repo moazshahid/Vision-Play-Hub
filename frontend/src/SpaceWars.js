@@ -135,7 +135,8 @@ const SpaceWars = () => {
           const indexFinger = results.multiHandLandmarks[0][8];
           const fingerX = Math.floor(1280 - indexFinger.x * 1280);
           const fingerY = Math.floor(indexFinger.y * 720);
-          gameObj.updateFingerPosition(fingerX, fingerY);
+          const isThumbsUp = isThumbsUpGesture(results.multiHandLandmarks[0]);
+          gameObj.updateFingerPosition(fingerX, fingerY, isThumbsUp);
           debug.innerHTML = '';
         } else {
           debug.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
@@ -150,6 +151,13 @@ const SpaceWars = () => {
       }
     };
 
+    const isThumbsUpGesture = (landmarks) => {
+      const thumbTip = landmarks[4];
+      const indexTip = landmarks[8];
+      const middleTip = landmarks[12];
+      return thumbTip.y < indexTip.y - 0.10 && indexTip.y < middleTip.y;
+    };
+
     initHandDetection();
 
     class GameLogic {
@@ -159,6 +167,8 @@ const SpaceWars = () => {
         this.spawnTimer = 0;
         this.spawnInterval = 2000;
         this.crosshairPosition = [640, 360];
+        this.isShooting = false;
+        this.lastShotTime = 0;
       }
 
       spawnUfo() {
@@ -172,8 +182,39 @@ const SpaceWars = () => {
         });
       }
 
-      updateFingerPosition(fingerX, fingerY) {
+      updateFingerPosition(fingerX, fingerY, isThumbsUp) {
         this.crosshairPosition = [fingerX, fingerY];
+        const currentTime = Date.now();
+        if (isThumbsUp && !this.isShooting && (currentTime - this.lastShotTime > 200)) {
+          this.isShooting = true;
+          this.lastShotTime = currentTime;
+          this.checkHit();
+          try {
+            const shootSound = new Audio('/static/sounds/shoot2.mp3');
+            shootSound.volume = 0.5;
+            shootSound.play().catch((e) => console.log('Error playing shoot sound:', e));
+          } catch (e) {
+            console.log('Could not load or play shoot sound:', e);
+          }
+          setTimeout(() => {
+            this.isShooting = false;
+          }, 500);
+        } else if (!isThumbsUp && this.isShooting) {
+          this.isShooting = false;
+        }
+      }
+
+      checkHit() {
+        const newUfos = [];
+        this.ufos.forEach((ufo) => {
+          const dx = this.crosshairPosition[0] - (ufo.x + ufo.width / 2);
+          const dy = this.crosshairPosition[1] - (ufo.y + ufo.height / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance >= 50) {
+            newUfos.push(ufo);
+          }
+        });
+        this.ufos = newUfos;
       }
 
       updateWithoutRender(deltaTime) {
@@ -203,7 +244,7 @@ const SpaceWars = () => {
 
         ctx.beginPath();
         ctx.arc(this.crosshairPosition[0], this.crosshairPosition[1], 10, 0, 2 * Math.PI);
-        ctx.fillStyle = '#FF0000';
+        ctx.fillStyle = this.isShooting ? '#FF4500' : '#FF0000';
         ctx.fill();
         ctx.restore();
       }
