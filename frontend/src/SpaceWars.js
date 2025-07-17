@@ -33,9 +33,9 @@ const SpaceWars = () => {
         minDetectionConfidence: 0.7,
         minTrackingConfidence: 0.7,
       });
-      handsRef.current.onResults((results) => {
-        console.log('Hand detection results:', results);
-      });
+      handsRef.current.onResults((results) =>
+        onHandResults(results, canvas, video, gameObjectRef.current, gameStartedRef.current)
+      );
     };
 
     const startCamera = async () => {
@@ -122,6 +122,34 @@ const SpaceWars = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('test-camera-btn').addEventListener('click', testCamera);
 
+    const onHandResults = (results, ctx, video, gameObj, started) => {
+      ctx.save();
+      ctx.clearRect(0, 0, 1280, 720);
+      ctx.translate(1280, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, 1280, 720);
+      ctx.restore();
+
+      if (started && gameObj) {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+          const indexFinger = results.multiHandLandmarks[0][8];
+          const fingerX = Math.floor(1280 - indexFinger.x * 1280);
+          const fingerY = Math.floor(indexFinger.y * 720);
+          gameObj.updateFingerPosition(fingerX, fingerY);
+          debug.innerHTML = '';
+        } else {
+          debug.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
+        }
+        gameObj.render(ctx);
+      } else {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 30px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Camera Test - Press Start to Play', 640, 360);
+      }
+    };
+
     initHandDetection();
 
     class GameLogic {
@@ -130,6 +158,7 @@ const SpaceWars = () => {
         this.ufos = [];
         this.spawnTimer = 0;
         this.spawnInterval = 2000;
+        this.crosshairPosition = [640, 360];
       }
 
       spawnUfo() {
@@ -141,6 +170,10 @@ const SpaceWars = () => {
           height: 100,
           speedY: 100,
         });
+      }
+
+      updateFingerPosition(fingerX, fingerY) {
+        this.crosshairPosition = [fingerX, fingerY];
       }
 
       updateWithoutRender(deltaTime) {
@@ -167,6 +200,12 @@ const SpaceWars = () => {
           ctx.fillStyle = '#FFD700';
           ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
         });
+
+        ctx.beginPath();
+        ctx.arc(this.crosshairPosition[0], this.crosshairPosition[1], 10, 0, 2 * Math.PI);
+        ctx.fillStyle = '#FF0000';
+        ctx.fill();
+        ctx.restore();
       }
     }
 
