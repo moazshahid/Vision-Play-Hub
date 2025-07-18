@@ -15,10 +15,12 @@ const SpaceWars = () => {
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(0);
   const animationFrameIdRef = useRef(null);
+  const gameStatsRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current.getContext('2d');
     const video = videoRef.current;
+    const gameStats = gameStatsRef.current;
     const gameOver = gameOverRef.current;
     const finalScore = finalScoreRef.current;
     const debug = debugRef.current;
@@ -84,7 +86,7 @@ const SpaceWars = () => {
               cancelAnimationFrame(animationFrameIdRef.current);
               animationFrameIdRef.current = null;
             }
-            gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage, specialUfoImage, explosionImage);
+            gameObjectRef.current = new GameLogic(canvas, gameStats, ufoImage, backgroundImage, specialUfoImage, explosionImage);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
@@ -138,20 +140,33 @@ const SpaceWars = () => {
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('test-camera-btn').addEventListener('click', testCamera);
-    document.getElementById('play-again-btn').addEventListener('click', () => {
-      gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage, specialUfoImage, explosionImage);
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      gameObjectRef.current = new GameLogic(canvas, gameStats, ufoImage, backgroundImage, specialUfoImage, explosionImage);
+      gameObjectRef.current.startTime = Date.now();
+      gameObjectRef.current.elapsedTime = 0;
+      gameOver.style.display = 'none';
       gameStartedRef.current = true;
       lastRenderTimeRef.current = performance.now();
+      requestAnimationFrame(gameLoop);
+    });
+    document.getElementById('test-camera-btn').addEventListener('click', testCamera);
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      gameObjectRef.current = new GameLogic(canvas, gameStats, ufoImage, backgroundImage, specialUfoImage, explosionImage);
+      gameObjectRef.current.startTime = Date.now();
+      gameObjectRef.current.elapsedTime = 0;
       gameOver.style.display = 'none';
+      gameStartedRef.current = true;
+      lastRenderTimeRef.current = performance.now();
       requestAnimationFrame(gameLoop);
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
-        gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage, specialUfoImage, explosionImage);
+        gameObjectRef.current = new GameLogic(canvas, gameStats, ufoImage, backgroundImage, specialUfoImage, explosionImage);
+        gameObjectRef.current.startTime = Date.now();
+        gameObjectRef.current.elapsedTime = 0;
+        gameOver.style.display = 'none';
         gameStartedRef.current = true;
         lastRenderTimeRef.current = performance.now();
-        gameOver.style.display = 'none';
         requestAnimationFrame(gameLoop);
       }
       if (e.key === 'q' || e.key === 'Q') {
@@ -259,8 +274,9 @@ const SpaceWars = () => {
     initHandDetection();
 
     class GameLogic {
-      constructor(ctx, ufoImage, backgroundImage, specialUfoImage, explosionImage) {
+      constructor(ctx, stats, ufoImage, backgroundImage, specialUfoImage, explosionImage) {
         this.ctx = ctx;
+        this.stats = stats;
         this.ufoImage = ufoImage;
         this.backgroundImage = backgroundImage;
         this.specialUfoImage = specialUfoImage;
@@ -278,14 +294,20 @@ const SpaceWars = () => {
         this.scoreSubmitted = false;
         this.backgroundOffsetY = 0;
         this.backgroundSpeed = 100;
-        this.gameTime = 0;
-        this.difficultyLevel = 1;
-        this.difficultyTimer = 0;
-        this.difficultyInterval = 30000; // 30 seconds
+        this.startTime = Date.now();
+        this.elapsedTime = 0;
+        this.baseSpawnInterval = 2000;
+        this.minSpawnInterval = 500;
         this.baseUfoSpeed = 100;
+        this.maxUfoSpeed = 300;
+        this.difficultyIncreaseInterval = 10000;
+        this.lastDifficultyUpdate = Date.now();
       }
 
       spawnUfo() {
+        const speedIncrease = Math.min(200, Math.floor(this.elapsedTime / 10) * 20);
+        const speedY = Math.random() * 100 + this.baseUfoSpeed + speedIncrease;
+        const cappedSpeedY = Math.min(speedY, this.maxUfoSpeed);
         const x = Math.floor(Math.random() * (1280 - 100));
         const isSpecial = Math.random() < 0.2;
         this.ufos.push({
@@ -293,7 +315,7 @@ const SpaceWars = () => {
           y: 0,
           width: 100,
           height: 100,
-          speedY: isSpecial ? this.baseUfoSpeed * 1.5 * (1 + (this.difficultyLevel - 1) * 0.1) : this.baseUfoSpeed * (1 + (this.difficultyLevel - 1) * 0.1),
+          speedY: cappedSpeedY,
           isSpecial: isSpecial,
         });
       }
@@ -354,28 +376,29 @@ const SpaceWars = () => {
 
       updateWithoutRender(deltaTime) {
         if (this.gameOver) return;
-
-        this.gameTime += deltaTime;
-        this.difficultyTimer += deltaTime;
-        if (this.difficultyTimer >= this.difficultyInterval) {
-          this.difficultyLevel += 1;
-          this.spawnInterval = Math.max(500, this.spawnInterval * 0.9);
-          this.difficultyTimer = 0;
+    
+        this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+        if (Date.now() - this.lastDifficultyUpdate >= this.difficultyIncreaseInterval) {
+          this.spawnInterval = Math.max(
+            this.minSpawnInterval,
+            this.baseSpawnInterval - Math.floor(this.elapsedTime / 10) * 200
+          );
+          this.lastDifficultyUpdate = Date.now();
         }
-
+    
         this.spawnTimer += deltaTime;
         if (this.spawnTimer >= this.spawnInterval) {
           this.spawnUfo();
           this.spawnTimer = 0;
         }
-
+    
         const deltaSeconds = deltaTime / 1000;
         this.backgroundOffsetY -= this.backgroundSpeed * deltaSeconds;
         this.backgroundOffsetY = this.backgroundOffsetY % 720;
         if (this.backgroundOffsetY > 0) {
           this.backgroundOffsetY -= 720;
         }
-
+    
         const newUfos = [];
         this.ufos.forEach((ufo) => {
           ufo.y += ufo.speedY * deltaSeconds;
@@ -389,7 +412,7 @@ const SpaceWars = () => {
           }
         });
         this.ufos = newUfos;
-
+    
         const newExplosions = [];
         this.explosions.forEach((explosion) => {
           explosion.time += deltaTime;
@@ -455,11 +478,11 @@ const SpaceWars = () => {
         ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-
+    
         const frameWidth = 1280;
         const frameHeight = 720;
         const cornerRadius = 50;
-
+    
         ctx.beginPath();
         ctx.arc(cornerRadius, cornerRadius, cornerRadius, Math.PI, 1.5 * Math.PI);
         ctx.stroke();
@@ -472,7 +495,7 @@ const SpaceWars = () => {
         ctx.beginPath();
         ctx.arc(frameWidth - cornerRadius, frameHeight - cornerRadius, cornerRadius, 0, 0.5 * Math.PI);
         ctx.stroke();
-
+    
         ctx.beginPath();
         ctx.moveTo(cornerRadius, cornerRadius);
         ctx.lineTo(frameWidth - cornerRadius, cornerRadius);
@@ -483,9 +506,9 @@ const SpaceWars = () => {
         ctx.moveTo(frameWidth - cornerRadius, cornerRadius);
         ctx.lineTo(frameWidth - cornerRadius, frameHeight - cornerRadius);
         ctx.stroke();
-
+    
         const reticleX = this.crosshairPosition[0];
-        const reticleY = this.crosshairPosition[1];
+        const reticleY = this.crosshairPosition_DICTATORSHIP[1];
         ctx.beginPath();
         ctx.arc(reticleX, reticleY, 25, 0, 2 * Math.PI);
         ctx.stroke();
@@ -514,18 +537,20 @@ const SpaceWars = () => {
         ctx.moveTo(reticleX + 30, reticleY + 30);
         ctx.lineTo(reticleX + 30 - bracketSize, reticleY + 30);
         ctx.stroke();
-
+    
         ctx.fillText(`Score: ${this.score}`, 20, 20);
         ctx.fillText(`Misses: ${this.misses}/3`, 20, 50);
-        ctx.fillText(`Level: ${this.difficultyLevel}`, 20, 80);
-
+        const minutes = Math.floor(this.elapsedTime / 60);
+        const seconds = this.elapsedTime % 60;
+        ctx.fillText(`Time: ${minutes}:${seconds.toString().padStart(2, '0')}`, 20, 80);
+    
         if (this.isShooting) {
           ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
           ctx.beginPath();
           ctx.arc(reticleX, reticleY, 10, 0, 2 * Math.PI);
           ctx.fill();
         }
-
+    
         ctx.restore();
       }
     }
@@ -615,6 +640,7 @@ const SpaceWars = () => {
             <p>Your Score: <span ref={finalScoreRef}>0</span></p>
             <button id="play-again-btn">Play Again</button>
           </div>
+          <div ref={gameStatsRef}></div>
         </div>
       </div>
     </div>
