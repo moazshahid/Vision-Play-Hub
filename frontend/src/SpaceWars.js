@@ -281,7 +281,15 @@ const SpaceWars = () => {
         this.backgroundImage = backgroundImage;
         this.specialUfoImage = specialUfoImage;
         this.explosionImage = explosionImage;
+        this.bossImage = new Image();
+        this.bossImage.src = '/static/images/boss.png';
+        this.bossImage.onload = () => console.log('Boss image loaded successfully');
         this.ufos = [];
+        this.boss = null;
+        this.bossHits = 0;
+        this.bossSpawnScore = 15;
+        this.lastBossScore = 0;
+        this.bossMessage = null;
         this.explosions = [];
         this.spawnTimer = 0;
         this.spawnInterval = 2000;
@@ -305,19 +313,36 @@ const SpaceWars = () => {
       }
 
       spawnUfo() {
-        const speedIncrease = Math.min(200, Math.floor(this.elapsedTime / 10) * 20);
-        const speedY = Math.random() * 100 + this.baseUfoSpeed + speedIncrease;
-        const cappedSpeedY = Math.min(speedY, this.maxUfoSpeed);
-        const x = Math.floor(Math.random() * (1280 - 100));
-        const isSpecial = Math.random() < 0.2;
-        this.ufos.push({
-          x: x,
-          y: 0,
-          width: 100,
-          height: 100,
-          speedY: cappedSpeedY,
-          isSpecial: isSpecial,
-        });
+        if (this.score >= this.bossSpawnScore && this.score >= this.lastBossScore + 15 && !this.boss) {
+          this.boss = {
+            x: Math.floor(Math.random() * (1280 - 200)),
+            y: 0,
+            width: 200,
+            height: 200,
+            speedY: 50,
+            isBoss: true,
+            hits: 0,
+          };
+          this.bossMessage = {
+            text: 'Boss Incoming!',
+            startTime: Date.now(),
+          };
+          console.log('Boss spawned!');
+        } else {
+          const speedIncrease = Math.min(200, Math.floor(this.elapsedTime / 10) * 20);
+          const speedY = Math.random() * 100 + this.baseUfoSpeed + speedIncrease;
+          const cappedSpeedY = Math.min(speedY, this.maxUfoSpeed);
+          const x = Math.floor(Math.random() * (1280 - 100));
+          const isSpecial = Math.random() < 0.2;
+          this.ufos.push({
+            x: x,
+            y: 0,
+            width: 100,
+            height: 100,
+            speedY: cappedSpeedY,
+            isSpecial: isSpecial,
+          });
+        }
       }
 
       updateFingerPosition(fingerX, fingerY, isThumbsUp) {
@@ -346,17 +371,61 @@ const SpaceWars = () => {
 
       checkHit() {
         const newUfos = [];
+        let hit = false;
+        if (this.boss) {
+          const dx = this.crosshairPosition[0] - (this.boss.x + this.boss.width / 2);
+          const dy = this.crosshairPosition[1] - (this.boss.y + this.boss.height / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 100) {
+            this.boss.hits += 1;
+            hit = true;
+            try {
+              const explosionSound = new Audio('/static/sounds/explode.mp3');
+              explosionSound.volume = 0.5;
+              explosionSound.play().catch((e) => console.log('Error playing explosion sound:', e));
+            } catch (e) {
+              console.log('Could not load or play explosion sound:', e);
+            }
+            if (this.boss.hits >= 4) {
+              this.score += 10;
+              this.explosions.push({
+                x: this.boss.x,
+                y: this.boss.y,
+                width: this.boss.width,
+                height: this.boss.height,
+                time: 0,
+                duration: 700,
+              });
+              this.ufos.forEach((ufo) => {
+                this.explosions.push({
+                  x: ufo.x,
+                  y: ufo.y,
+                  width: ufo.width,
+                  height: ufo.height,
+                  time: 0,
+                  duration: 700,
+                });
+                this.score += ufo.isSpecial ? 5 : 1;
+              });
+              this.ufos = [];
+              this.boss = null;
+              this.lastBossScore = this.score;
+              this.bossSpawnScore = this.score + 15;
+            }
+          }
+        }
         this.ufos.forEach((ufo) => {
           const dx = this.crosshairPosition[0] - (ufo.x + ufo.width / 2);
           const dy = this.crosshairPosition[1] - (ufo.y + ufo.height / 2);
           const distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < 50) {
             this.score += ufo.isSpecial ? 5 : 1;
+            hit = true;
             this.explosions.push({
-              x: ufo.x + ufo.width / 2 - 50,
-              y: ufo.y + ufo.height / 2 - 50,
-              width: 100,
-              height: 100,
+              x: ufo.x,
+              y: ufo.y,
+              width: ufo.width,
+              height: ufo.height,
               time: 0,
               duration: 700,
             });
@@ -399,6 +468,17 @@ const SpaceWars = () => {
           this.backgroundOffsetY -= 720;
         }
     
+        if (this.boss) {
+          this.boss.y += this.boss.speedY * deltaSeconds;
+          if (this.boss.y > 720) {
+            this.misses += 1;
+            this.boss = null;
+            if (this.misses >= 3) {
+              this.gameOver = true;
+            }
+          }
+        }
+    
         const newUfos = [];
         this.ufos.forEach((ufo) => {
           ufo.y += ufo.speedY * deltaSeconds;
@@ -421,11 +501,11 @@ const SpaceWars = () => {
           }
         });
         this.explosions = newExplosions;
-      }
+      } 
 
       render(ctx) {
         ctx.clearRect(0, 0, 1280, 720);
-
+    
         if (this.backgroundImage.complete) {
           ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY, 1280, 720);
           ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY + 720, 1280, 720);
@@ -433,13 +513,32 @@ const SpaceWars = () => {
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, 1280, 720);
         }
-
+    
         ctx.save();
         ctx.translate(1280, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
         ctx.restore();
-
+    
+        if (this.bossMessage && Date.now() - this.bossMessage.startTime < 1200) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+          ctx.font = 'bold 60px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(this.bossMessage.text, 640, 360);
+          ctx.restore();
+        } else if (this.bossMessage) {
+          this.bossMessage = null;
+        }
+    
+        if (this.boss && this.bossImage.complete) {
+          ctx.drawImage(this.bossImage, this.boss.x, this.boss.y, this.boss.width, this.boss.height);
+        } else if (this.boss) {
+          ctx.fillStyle = '#800080';
+          ctx.fillRect(this.boss.x, this.boss.y, this.boss.width, this.boss.height);
+        }
+    
         this.ufos.forEach((ufo) => {
           if (ufo.isSpecial) {
             if (this.specialUfoImage.complete) {
@@ -457,7 +556,7 @@ const SpaceWars = () => {
             }
           }
         });
-
+    
         this.explosions.forEach((explosion) => {
           if (this.explosionImage.complete) {
             const alpha = 1 - explosion.time / explosion.duration;
@@ -466,9 +565,10 @@ const SpaceWars = () => {
             ctx.globalAlpha = 1;
           }
         });
-
+    
         this.drawHUD(ctx);
       }
+    
 
       drawHUD(ctx) {
         ctx.save();
