@@ -25,6 +25,14 @@ const SpaceWars = () => {
 
     gameOver.style.display = 'none';
 
+    const ufoImage = new Image();
+    ufoImage.src = '/static/images/ufo.png';
+    ufoImage.onload = () => console.log('UFO image loaded successfully');
+
+    const backgroundImage = new Image();
+    backgroundImage.src = '/static/images/space.jpg';
+    backgroundImage.onload = () => console.log('Background image loaded successfully');
+
     const initHandDetection = () => {
       handsRef.current = new window.Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
@@ -68,7 +76,7 @@ const SpaceWars = () => {
               cancelAnimationFrame(animationFrameIdRef.current);
               animationFrameIdRef.current = null;
             }
-            gameObjectRef.current = new GameLogic(canvas);
+            gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
@@ -124,7 +132,7 @@ const SpaceWars = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('test-camera-btn').addEventListener('click', testCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
-      gameObjectRef.current = new GameLogic(canvas);
+      gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage);
       gameStartedRef.current = true;
       lastRenderTimeRef.current = performance.now();
       gameOver.style.display = 'none';
@@ -132,7 +140,7 @@ const SpaceWars = () => {
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
-        gameObjectRef.current = new GameLogic(canvas);
+        gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage);
         gameStartedRef.current = true;
         lastRenderTimeRef.current = performance.now();
         gameOver.style.display = 'none';
@@ -243,8 +251,10 @@ const SpaceWars = () => {
     initHandDetection();
 
     class GameLogic {
-      constructor(ctx) {
+      constructor(ctx, ufoImage, backgroundImage) {
         this.ctx = ctx;
+        this.ufoImage = ufoImage;
+        this.backgroundImage = backgroundImage;
         this.ufos = [];
         this.spawnTimer = 0;
         this.spawnInterval = 2000;
@@ -255,6 +265,8 @@ const SpaceWars = () => {
         this.misses = 0;
         this.gameOver = false;
         this.scoreSubmitted = false;
+        this.backgroundOffsetY = 0;
+        this.backgroundSpeed = 100;
       }
 
       spawnUfo() {
@@ -316,9 +328,16 @@ const SpaceWars = () => {
           this.spawnTimer = 0;
         }
 
+        const deltaSeconds = deltaTime / 1000;
+        this.backgroundOffsetY -= this.backgroundSpeed * deltaSeconds;
+        this.backgroundOffsetY = this.backgroundOffsetY % 720;
+        if (this.backgroundOffsetY > 0) {
+          this.backgroundOffsetY -= 720;
+        }
+
         const newUfos = [];
         this.ufos.forEach((ufo) => {
-          ufo.y += (ufo.speedY * deltaTime) / 1000;
+          ufo.y += (ufo.speedY * deltaSeconds);
           if (ufo.y > 720) {
             this.misses += 1;
             if (this.misses >= 3) {
@@ -332,22 +351,112 @@ const SpaceWars = () => {
       }
 
       render(ctx) {
-        ctx.save();
         ctx.clearRect(0, 0, 1280, 720);
+
+        if (this.backgroundImage.complete) {
+          ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY, 1280, 720);
+          ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY + 720, 1280, 721);
+        } else {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, 1280, 720);
+        }
+
+        ctx.save();
         ctx.translate(1280, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
         ctx.restore();
 
         this.ufos.forEach((ufo) => {
-          ctx.fillStyle = '#FFD700';
-          ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
+          if (this.ufoImage.complete) {
+            ctx.drawImage(this.ufoImage, ufo.x, ufo.y, ufo.width, ufo.height);
+          } else {
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
+          }
         });
 
+        this.drawHUD(ctx);
+      }
+
+      drawHUD(ctx) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        const frameWidth = 1280;
+        const frameHeight = 720;
+        const cornerRadius = 50;
+
         ctx.beginPath();
-        ctx.arc(this.crosshairPosition[0], this.crosshairPosition[1], 10, 0, 2 * Math.PI);
-        ctx.fillStyle = this.isShooting ? '#FF4500' : '#FF0000';
-        ctx.fill();
+        ctx.arc(cornerRadius, cornerRadius, cornerRadius, Math.PI, 1.5 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(frameWidth - cornerRadius, cornerRadius, cornerRadius, 1.5 * Math.PI, 2 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cornerRadius, frameHeight - cornerRadius, cornerRadius, 0.5 * Math.PI, Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(frameWidth - cornerRadius, frameHeight - cornerRadius, cornerRadius, 0, 0.5 * Math.PI);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cornerRadius, cornerRadius);
+        ctx.lineTo(frameWidth - cornerRadius, cornerRadius);
+        ctx.moveTo(cornerRadius, frameHeight - cornerRadius);
+        ctx.lineTo(frameWidth - cornerRadius, frameHeight - cornerRadius);
+        ctx.moveTo(cornerRadius, cornerRadius);
+        ctx.lineTo(cornerRadius, frameHeight - cornerRadius);
+        ctx.moveTo(frameWidth - cornerRadius, cornerRadius);
+        ctx.lineTo(frameWidth - cornerRadius, frameHeight - cornerRadius);
+        ctx.stroke();
+
+        const reticleX = this.crosshairPosition[0];
+        const reticleY = this.crosshairPosition[1];
+        ctx.beginPath();
+        ctx.arc(reticleX, reticleY, 25, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(reticleX - 15, reticleY);
+        ctx.lineTo(reticleX + 15, reticleY);
+        ctx.moveTo(reticleX, reticleY - 15);
+        ctx.lineTo(reticleX, reticleY + 15);
+        ctx.stroke();
+        const bracketSize = 10;
+        ctx.beginPath();
+        ctx.moveTo(reticleX - 30, reticleY - 30);
+        ctx.lineTo(reticleX - 30, reticleY - 30 + bracketSize);
+        ctx.moveTo(reticleX - 30, reticleY - 30);
+        ctx.lineTo(reticleX - 30 + bracketSize, reticleY - 30);
+        ctx.moveTo(reticleX + 30, reticleY - 30);
+        ctx.lineTo(reticleX + 30, reticleY - 30 + bracketSize);
+        ctx.moveTo(reticleX + 30, reticleY - 30);
+        ctx.lineTo(reticleX + 30 - bracketSize, reticleY - 30);
+        ctx.moveTo(reticleX - 30, reticleY + 30);
+        ctx.lineTo(reticleX - 30, reticleY + 30 - bracketSize);
+        ctx.moveTo(reticleX - 30, reticleY + 30);
+        ctx.lineTo(reticleX - 30 + bracketSize, reticleY + 30);
+        ctx.moveTo(reticleX + 30, reticleY + 30);
+        ctx.lineTo(reticleX + 30, reticleY + 30 - bracketSize);
+        ctx.moveTo(reticleX + 30, reticleY + 30);
+        ctx.lineTo(reticleX + 30 - bracketSize, reticleY + 30);
+        ctx.stroke();
+
+        ctx.fillText(`Score: ${this.score}`, 20, 20);
+        ctx.fillText(`Misses: ${this.misses}/3`, 20, 50);
+
+        if (this.isShooting) {
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+          ctx.beginPath();
+          ctx.arc(reticleX, reticleY, 10, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+
         ctx.restore();
       }
     }
