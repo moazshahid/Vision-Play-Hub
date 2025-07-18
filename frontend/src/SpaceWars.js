@@ -278,6 +278,11 @@ const SpaceWars = () => {
         this.scoreSubmitted = false;
         this.backgroundOffsetY = 0;
         this.backgroundSpeed = 100;
+        this.gameTime = 0;
+        this.difficultyLevel = 1;
+        this.difficultyTimer = 0;
+        this.difficultyInterval = 30000; // 30 seconds
+        this.baseUfoSpeed = 100;
       }
 
       spawnUfo() {
@@ -288,7 +293,7 @@ const SpaceWars = () => {
           y: 0,
           width: 100,
           height: 100,
-          speedY: isSpecial ? 150 : 100,
+          speedY: isSpecial ? this.baseUfoSpeed * 1.5 * (1 + (this.difficultyLevel - 1) * 0.1) : this.baseUfoSpeed * (1 + (this.difficultyLevel - 1) * 0.1),
           isSpecial: isSpecial,
         });
       }
@@ -349,6 +354,14 @@ const SpaceWars = () => {
 
       updateWithoutRender(deltaTime) {
         if (this.gameOver) return;
+
+        this.gameTime += deltaTime;
+        this.difficultyTimer += deltaTime;
+        if (this.difficultyTimer >= this.difficultyInterval) {
+          this.difficultyLevel += 1;
+          this.spawnInterval = Math.max(500, this.spawnInterval * 0.9);
+          this.difficultyTimer = 0;
+        }
 
         this.spawnTimer += deltaTime;
         if (this.spawnTimer >= this.spawnInterval) {
@@ -504,6 +517,7 @@ const SpaceWars = () => {
 
         ctx.fillText(`Score: ${this.score}`, 20, 20);
         ctx.fillText(`Misses: ${this.misses}/3`, 20, 50);
+        ctx.fillText(`Level: ${this.difficultyLevel}`, 20, 80);
 
         if (this.isShooting) {
           ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
