@@ -29,9 +29,17 @@ const SpaceWars = () => {
     ufoImage.src = '/static/images/ufo.png';
     ufoImage.onload = () => console.log('UFO image loaded successfully');
 
+    const specialUfoImage = new Image();
+    specialUfoImage.src = '/static/images/specialufo.png';
+    specialUfoImage.onload = () => console.log('Special UFO image loaded successfully');
+
     const backgroundImage = new Image();
     backgroundImage.src = '/static/images/space.jpg';
     backgroundImage.onload = () => console.log('Background image loaded successfully');
+
+    const explosionImage = new Image();
+    explosionImage.src = '/static/images/explode.png';
+    explosionImage.onload = () => console.log('Explosion image loaded successfully');
 
     const initHandDetection = () => {
       handsRef.current = new window.Hands({
@@ -76,7 +84,7 @@ const SpaceWars = () => {
               cancelAnimationFrame(animationFrameIdRef.current);
               animationFrameIdRef.current = null;
             }
-            gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage);
+            gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage, specialUfoImage, explosionImage);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
@@ -132,7 +140,7 @@ const SpaceWars = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('test-camera-btn').addEventListener('click', testCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
-      gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage);
+      gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage, specialUfoImage, explosionImage);
       gameStartedRef.current = true;
       lastRenderTimeRef.current = performance.now();
       gameOver.style.display = 'none';
@@ -140,7 +148,7 @@ const SpaceWars = () => {
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
-        gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage);
+        gameObjectRef.current = new GameLogic(canvas, ufoImage, backgroundImage, specialUfoImage, explosionImage);
         gameStartedRef.current = true;
         lastRenderTimeRef.current = performance.now();
         gameOver.style.display = 'none';
@@ -251,11 +259,14 @@ const SpaceWars = () => {
     initHandDetection();
 
     class GameLogic {
-      constructor(ctx, ufoImage, backgroundImage) {
+      constructor(ctx, ufoImage, backgroundImage, specialUfoImage, explosionImage) {
         this.ctx = ctx;
         this.ufoImage = ufoImage;
         this.backgroundImage = backgroundImage;
+        this.specialUfoImage = specialUfoImage;
+        this.explosionImage = explosionImage;
         this.ufos = [];
+        this.explosions = [];
         this.spawnTimer = 0;
         this.spawnInterval = 2000;
         this.crosshairPosition = [640, 360];
@@ -271,12 +282,14 @@ const SpaceWars = () => {
 
       spawnUfo() {
         const x = Math.floor(Math.random() * (1280 - 100));
+        const isSpecial = Math.random() < 0.2;
         this.ufos.push({
           x: x,
           y: 0,
           width: 100,
           height: 100,
-          speedY: 100,
+          speedY: isSpecial ? 150 : 100,
+          isSpecial: isSpecial,
         });
       }
 
@@ -311,7 +324,22 @@ const SpaceWars = () => {
           const dy = this.crosshairPosition[1] - (ufo.y + ufo.height / 2);
           const distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < 50) {
-            this.score += 1;
+            this.score += ufo.isSpecial ? 5 : 1;
+            this.explosions.push({
+              x: ufo.x + ufo.width / 2 - 50,
+              y: ufo.y + ufo.height / 2 - 50,
+              width: 100,
+              height: 100,
+              time: 0,
+              duration: 700,
+            });
+            try {
+              const explosionSound = new Audio('/static/sounds/explode.mp3');
+              explosionSound.volume = 0.5;
+              explosionSound.play().catch((e) => console.log('Error playing explosion sound:', e));
+            } catch (e) {
+              console.log('Could not load or play explosion sound:', e);
+            }
           } else {
             newUfos.push(ufo);
           }
@@ -337,7 +365,7 @@ const SpaceWars = () => {
 
         const newUfos = [];
         this.ufos.forEach((ufo) => {
-          ufo.y += (ufo.speedY * deltaSeconds);
+          ufo.y += ufo.speedY * deltaSeconds;
           if (ufo.y > 720) {
             this.misses += 1;
             if (this.misses >= 3) {
@@ -348,6 +376,15 @@ const SpaceWars = () => {
           }
         });
         this.ufos = newUfos;
+
+        const newExplosions = [];
+        this.explosions.forEach((explosion) => {
+          explosion.time += deltaTime;
+          if (explosion.time < explosion.duration) {
+            newExplosions.push(explosion);
+          }
+        });
+        this.explosions = newExplosions;
       }
 
       render(ctx) {
@@ -355,7 +392,7 @@ const SpaceWars = () => {
 
         if (this.backgroundImage.complete) {
           ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY, 1280, 720);
-          ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY + 720, 1280, 721);
+          ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY + 720, 1280, 720);
         } else {
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, 1280, 720);
@@ -368,11 +405,29 @@ const SpaceWars = () => {
         ctx.restore();
 
         this.ufos.forEach((ufo) => {
-          if (this.ufoImage.complete) {
-            ctx.drawImage(this.ufoImage, ufo.x, ufo.y, ufo.width, ufo.height);
+          if (ufo.isSpecial) {
+            if (this.specialUfoImage.complete) {
+              ctx.drawImage(this.specialUfoImage, ufo.x, ufo.y, ufo.width, ufo.height);
+            } else {
+              ctx.fillStyle = '#FF0000';
+              ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
+            }
           } else {
-            ctx.fillStyle = '#FFD700';
-            ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
+            if (this.ufoImage.complete) {
+              ctx.drawImage(this.ufoImage, ufo.x, ufo.y, ufo.width, ufo.height);
+            } else {
+              ctx.fillStyle = '#FFD700';
+              ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
+            }
+          }
+        });
+
+        this.explosions.forEach((explosion) => {
+          if (this.explosionImage.complete) {
+            const alpha = 1 - explosion.time / explosion.duration;
+            ctx.globalAlpha = alpha;
+            ctx.drawImage(this.explosionImage, explosion.x, explosion.y, explosion.width, explosion.height);
+            ctx.globalAlpha = 1;
           }
         });
 
