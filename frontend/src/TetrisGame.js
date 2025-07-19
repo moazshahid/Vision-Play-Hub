@@ -224,14 +224,17 @@ const TetrisGame = () => {
       finalScore.textContent = score;
       over.style.display = 'block';
       if (!gameObjectRef.current.scoreSubmitted) {
-        submitScore('Tetris Game', score)
-          .then(() => {
-            gameObjectRef.current.scoreSubmitted = true;
-          })
-          .catch((error) => {
-            console.error('Failed to submit score:', error.message);
-          });
-      }
+          gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
+          console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+          submitScore('Tetris', score)
+            .then((response) => {
+             console.log('Score submitted successfully:', response);
+            })
+            .catch((error) => {
+              console.error('Failed to submit score:', error.response?.data || error.message);
+              alert('Failed to submit score. Please ensure you are logged in.');
+            });
+        }
     };
 
     class GameLogic {
