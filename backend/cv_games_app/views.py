@@ -20,20 +20,16 @@ import json
 from .models import Games, Sessions, Leaderboards, UserProfiles
 from .serializers import UserProfileSerializer
 
-
 logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 def csrf(request):
     return JsonResponse({'message': 'CSRF cookie set'})
 
-
-
 @require_POST
 def ping(request):
     request.session.modified = True  # extend session expiry
     return JsonResponse({'status': 'pong', 'new_expiry': request.session.get_expiry_age()})
-
 
 class SubmitScoreAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -99,6 +95,7 @@ def signup(request):
                 password=password
             )
             user.save()
+            UserProfiles.objects.create(user=user, is_dark_mode=False, is_colorblind_mode=False)
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -151,10 +148,16 @@ def signin(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-
-            request.session['login_time'] = int(time.time())  # or use timezone.now().isoformat() for readable time
+            # Ensure UserProfiles exists
+            UserProfiles.objects.get_or_create(
+                user=user,
+                defaults={
+                    'is_dark_mode': False,
+                    'is_colorblind_mode': False
+                }
+            )
+            request.session['login_time'] = int(time.time())
             request.session['username'] = username
-
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
@@ -226,36 +229,23 @@ def leaderboard(request):
 
 def record_game_session(request):
     try:
-
-        # Extract required values
         username = request.POST.get('username')
         game_name = request.POST.get('game_name')
         score = request.POST.get('score')
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
-
-        # Validation
         if not all([username, game_name, score, start_time, end_time]):
             return JsonResponse({'error': 'All fields are required.'}, status=400)
-
-        # Convert score to int
         try:
             score = int(score)
         except ValueError:
             return JsonResponse({'error': 'Score must be an integer.'}, status=400)
-
-        # Parse times
         start_time = parse_datetime(start_time)
         end_time = parse_datetime(end_time)
-
         if not start_time or not end_time:
             return JsonResponse({'error': 'Invalid datetime format.'}, status=400)
-
-        # Get user and game objects
         user = User.objects.get(username=username)
         game = Games.objects.get(title=game_name)
-
-        # Create session entry
         Sessions.objects.create(
             user_id=user.id,
             game_id=game.game_id,
@@ -263,16 +253,14 @@ def record_game_session(request):
             end_time=end_time,
             score=score
         ).save()
-
         return JsonResponse({'status': 'session saved'})
-
     except User.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
     except Games.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
+
 class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -297,3 +285,21 @@ class UserProfileImageUploadAPIView(APIView):
             return Response(serializer.data)
         except UserProfiles.DoesNotExist:
             return Response({'error': 'Profile not found'}, status=404)
+
+@require_POST
+def save_settings(request):
+    try:
+        profile = request.user.profile
+        profile.is_dark_mode = request.POST.get('is_dark_mode') == 'true'
+        profile.is_colorblind_mode = request.POST.get('is_colorblind_mode') == 'true'
+        profile.save()
+        messages.success(request, 'Settings saved successfully.')
+        return redirect('profile')
+    except UserProfiles.DoesNotExist:
+        logger.error("Profile not found for user: %s", request.user.username)
+        messages.error(request, 'Profile not found.')
+        return redirect('profile')
+    except Exception as e:
+        logger.error("Error saving settings: %s", str(e))
+        messages.error(request, 'Error saving settings.')
+        return redirect('profile')

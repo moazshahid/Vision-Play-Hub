@@ -14,4 +14,5 @@ urlpatterns = [
     path('record-session/', views.record_game_session, name='record_session'),
     path('api/user-profile/', views.UserProfileAPIView.as_view(), name='user_profile'),
     path('api/user-profile/upload/', views.UserProfileImageUploadAPIView.as_view(), name='user_profile_upload'),
+    path('save-settings/', views.save_settings, name='save_settings'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -5,7 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     {% load static %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="{% static 'js/canvas-filter.js' %}"></script>
     <style>
+    :root {
+      --color-filter: none;
+      --brightness-filter: none;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -15,10 +22,12 @@
     body {
       font-family: "Hanken Grotesk", sans-serif;
       letter-spacing: -0.05em;
-      color: #ffffff;
+      color: #09080e;
       height: 100vh;
       overflow-x: hidden;
       position: relative;
+      filter: var(--color-filter) var(--brightness-filter);
+      transition: filter 0.3s ease;
     }
 
     video {
@@ -186,69 +195,97 @@
       width: 100%;
     }
     </style>
+
+    <script>
+        window.onload = function() {
+            // Set default localStorage values if not already set
+            if (!localStorage.getItem('themeMode')) {
+                localStorage.setItem('themeMode', 'dark');
+            }
+            if (!localStorage.getItem('colorFilter')) {
+                localStorage.setItem('colorFilter', 'trichromatic');
+            }
+            // Initialize canvas filter
+            initializeCanvasFilter({{ profile.is_dark_mode|lower }}, {{ profile.is_colorblind_mode|lower }});
+        };
+    </script>
 </head>
 
 <body>
-  <!-- Video Background -->
-  <video autoplay loop muted playsinline>
-    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+  <canvas id="filterCanvas" style="position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1000;"></canvas>
+    <header>
+        <nav>
+            <a href="/">
+            <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
+            </a>
+            <div style="display: flex; gap: 0.8vw;">
+            <a href="{% url 'login' %}"><button class="button-design">Log In</button></a>
+            <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
+            <a href="{% url 'leaderboard' %}"><button class="button-design">Leaderboards</button></a>
+            <a href="{% url 'profile' %}"><button class="button-design">Profile</button></a>
+            <a href="{% url 'logout' %}"><button class="button-design">Log Out</button></a>
+            </div>
+        </nav>
+    </header>
 
-  <!-- Overlay -->
-  <div class="overlay"></div>
+    <main>
+        <section>
+            <h1>Profile</h1>
+            {% if user.is_authenticated %}
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Created:</strong> {{ user.date_joined }}</p>
+                <p><strong>Last Login:</strong> {{ user.last_login|default:"Never" }}</p>
+                {% if profile.profile_image %}
+                    <p><strong>Profile Image:</strong> {{ profile.profile_image.name }}</p>
+                {% endif %}
+            {% else %}
+                <p>{{ error|default:"You must be logged in to view this page." }}</p>
+            {% endif %}
+            <a href="{% url 'home' %}">Back to Home</a>
+        </section>
 
-  <!-- Navbar -->
-  <nav>
-    <a href="/">
-      <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
-    </a>
-    <div style="display: flex; gap: 0.8vw;">
-      <a href="{% url 'login' %}"><button class="button-design">Log In</button></a>
-      <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
-      <a href="{% url 'leaderboard' %}"><button class="button-design">Leaderboards</button></a>
-      <a href="http://localhost:8000/accounts/profile/"><button class="button-design">Profile</button></a>
-      <a href="{% url 'logout' %}"><button class="button-design">Log Out</button></a>
-    </div>
-  </nav>
+        <section>
+            <h2>Settings</h2>
+            <form method="POST" action="{% url 'save_settings' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div>
+                    <label for="volume">Volume</label>
+                    <input type="range" id="volume" name="volume" min="0" max="100">
+                </div>
+                <div>
+                    <label for="theme">Theme</label>
+                    <button type="button" onclick="toggleTheme()">Toggle Light/Dark</button>
+                    <input type="hidden" name="is_dark_mode" id="is_dark_mode" value="{{ profile.is_dark_mode|lower }}">
+                </div>
+                <div>
+                    <label for="colorblind_mode">Deuteranopia & Protanopia Theme</label>
+                    <button type="button" onclick="toggleColorblindMode()">On/Off</button>
+                    <input type="hidden" name="is_colorblind_mode" id="is_colorblind_mode" value="{{ profile.is_colorblind_mode|lower }}">
+                </div>
+                <div>
+                    <label for="profile_image">Change Profile Picture</label>
+                    <input type="file" id="profile_image" name="profile_image" accept="image/*">
+                </div>
+                <button type="submit">Save Settings</button>
+            </form>
+        </section>
+    </main>
 
-  <!-- Profile Content -->
-  <div class="profile-container">
-    <div class="profile-card">
-      <!-- Left: Profile Info -->
-      <div class="profile-left">
-        <h1>Profile</h1>
-        {% if user %}
-          <p>Username: <span class="highlight">{{ user.username }}</span></p>
-          <p>Email: <span class="highlight">{{ user.email }}</span></p>
-          <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
-          <p>Last Login: <span class="highlight">{{ user.last_login|default:"Never" }}</span></p>
-        {% else %}
-          <p>{{ error }}</p>
-        {% endif %}
-        <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
-      </div>
+    <script>
+        function toggleTheme() {
+            const isDarkMode = document.getElementById('is_dark_mode').value === 'true';
+            document.getElementById('is_dark_mode').value = !isDarkMode;
+            localStorage.setItem('themeMode', isDarkMode ? 'light' : 'dark');
+            updateCanvasFilter(!isDarkMode, document.getElementById('is_colorblind_mode').value === 'true');
+        }
 
-      <!-- Right: Settings -->
-      <div class="profile-right">
-        <h2>Settings</h2>
-
-        <div class="setting-option">
-          <label for="volume">Volume</label>
-          <input type="range" id="volume" name="volume" min="0" max="100" value="50">
-        </div>
-
-        <div class="setting-option">
-          <label for="theme-toggle">Theme</label>
-          <button id="theme-toggle" class="back-button">Toggle Light/Dark</button>
-        </div>
-
-        <div class="setting-option">
-          <label for="upload">Change Profile Picture</label>
-          <input type="file" id="upload" accept="image/*">
-        </div>
-      </div>
-    </div>
-  </div>
+        function toggleColorblindMode() {
+            const isColorblindMode = document.getElementById('is_colorblind_mode').value === 'true';
+            document.getElementById('is_colorblind_mode').value = !isColorblindMode;
+            localStorage.setItem('colorFilter', isColorblindMode ? 'trichromatic' : 'colorblind');
+            updateCanvasFilter(document.getElementById('is_dark_mode').value === 'true', !isColorblindMode);
+        }
+    </script>
 </body>
 </html>

@@ -29,6 +29,8 @@
     <script>
         window.REACT_USERNAME = "{{ username|escapejs }}";
         window.SESSION_TIME_LEFT = parseInt("{{ time_left|default:0 }}", 10);
+        localStorage.setItem('themeMode', 'dark');
+        localStorage.setItem('colorFilter', 'trichromatic');
     </script>
 </body>
 </html>
