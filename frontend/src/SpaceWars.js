@@ -274,16 +274,21 @@ const SpaceWars = () => {
     initHandDetection();
 
     class GameLogic {
-      constructor(ctx, stats, ufoImage, backgroundImage, specialUfoImage, explosionImage) {
+      constructor(ctx, stats, ufoImage, backgroundImage, specialUfoImage) {
         this.ctx = ctx;
         this.stats = stats;
         this.ufoImage = ufoImage;
         this.backgroundImage = backgroundImage;
         this.specialUfoImage = specialUfoImage;
-        this.explosionImage = explosionImage;
         this.bossImage = new Image();
         this.bossImage.src = '/static/images/boss.png';
         this.bossImage.onload = () => console.log('Boss image loaded successfully');
+        this.explosionImage = new Image();
+        this.explosionImage.src = '/static/images/explode.png';
+        this.explosionImage.onload = () => console.log('Explosion image loaded successfully');
+        this.frozenUfoImage = new Image();
+        this.frozenUfoImage.src = '/static/images/frozen_ufo.png';
+        this.frozenUfoImage.onload = () => console.log('Frozen UFO image loaded successfully');
         this.ufos = [];
         this.boss = null;
         this.bossHits = 0;
@@ -291,15 +296,25 @@ const SpaceWars = () => {
         this.lastBossScore = 0;
         this.bossMessage = null;
         this.explosions = [];
-        this.spawnTimer = 0;
-        this.spawnInterval = 2000;
-        this.crosshairPosition = [640, 360];
-        this.isShooting = false;
-        this.lastShotTime = 0;
         this.score = 0;
         this.misses = 0;
         this.gameOver = false;
+        this.crosshairPosition = [640, 360];
+        this.isShooting = false;
+        this.spawnTimer = 0;
+        this.spawnInterval = 2000;
         this.scoreSubmitted = false;
+        this.frozenUfo = null;
+        this.isFrozen = false;
+        this.freezeStartTime = 0;
+        this.freezeDuration = 3000;
+        this.freezeMessage = null;
+        this.lastShotTime = 0;
+        this.laserActive = false;
+        this.laserEndPosition = null;
+        this.laserStartPosition = null;
+        this.laserDisplayTime = 0;
+        this.laserDuration = 100;
         this.backgroundOffsetY = 0;
         this.backgroundSpeed = 100;
         this.startTime = Date.now();
@@ -328,6 +343,16 @@ const SpaceWars = () => {
             startTime: Date.now(),
           };
           console.log('Boss spawned!');
+        } else if (this.ufos.length > 0 && Math.random() < 0.45 && !this.frozenUfo) {
+          this.frozenUfo = {
+            x: Math.floor(Math.random() * (1280 - 100)),
+            y: 0,
+            width: 100,
+            height: 100,
+            speedY: 100,
+            isFrozenUfo: true,
+          };
+          console.log('Frozen UFO spawned!');
         } else {
           const speedIncrease = Math.min(200, Math.floor(this.elapsedTime / 10) * 20);
           const speedY = Math.random() * 100 + this.baseUfoSpeed + speedIncrease;
@@ -352,7 +377,7 @@ const SpaceWars = () => {
           if (isThumbsUp && !this.isShooting && (currentTime - this.lastShotTime > 200)) {
             this.isShooting = true;
             this.lastShotTime = currentTime;
-            this.checkHit();
+            this.checkHit([640, 720]);
             try {
               const shootSound = new Audio('/static/sounds/shoot2.mp3');
               shootSound.volume = 0.5;
@@ -369,9 +394,44 @@ const SpaceWars = () => {
         }
       }
 
-      checkHit() {
-        const newUfos = [];
+      checkHit(laserStartPosition) {
         let hit = false;
+        if (this.frozenUfo) {
+          const dx = this.crosshairPosition[0] - (this.frozenUfo.x + this.frozenUfo.width / 2);
+          const dy = this.crosshairPosition[1] - (this.frozenUfo.y + this.frozenUfo.height / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 50) {
+            this.score += 3;
+            hit = true;
+            this.isFrozen = true;
+            this.freezeStartTime = Date.now();
+            this.freezeMessage = {
+              text: 'Time Frozen for 3 Seconds!',
+              startTime: Date.now(),
+            };
+            this.explosions.push({
+              x: this.frozenUfo.x,
+              y: this.frozenUfo.y,
+              width: this.frozenUfo.width,
+              height: this.frozenUfo.height,
+              startTime: Date.now(),
+              opacity: 1.0,
+            });
+            this.laserActive = true;
+            this.laserEndPosition = [this.frozenUfo.x + this.frozenUfo.width / 2, this.frozenUfo.y + this.frozenUfo.height / 2];
+            this.laserStartPosition = laserStartPosition;
+            this.laserDisplayTime = Date.now();
+            try {
+              const explosionSound = new Audio('/static/sounds/explode.mp3');
+              explosionSound.volume = 0.5;
+              explosionSound.play().catch((e) => console.log('Error playing explosion sound:', e));
+            } catch (e) {
+              console.log('Could not load or play explosion sound:', e);
+            }
+            this.frozenUfo = null;
+            return;
+          }
+        }
         if (this.boss) {
           const dx = this.crosshairPosition[0] - (this.boss.x + this.boss.width / 2);
           const dy = this.crosshairPosition[1] - (this.boss.y + this.boss.height / 2);
@@ -379,6 +439,10 @@ const SpaceWars = () => {
           if (distance < 100) {
             this.boss.hits += 1;
             hit = true;
+            this.laserActive = true;
+            this.laserEndPosition = [this.boss.x + this.boss.width / 2, this.boss.y + this.boss.height / 2];
+            this.laserStartPosition = laserStartPosition;
+            this.laserDisplayTime = Date.now();
             try {
               const explosionSound = new Audio('/static/sounds/explode.mp3');
               explosionSound.volume = 0.5;
@@ -393,8 +457,8 @@ const SpaceWars = () => {
                 y: this.boss.y,
                 width: this.boss.width,
                 height: this.boss.height,
-                time: 0,
-                duration: 700,
+                startTime: Date.now(),
+                opacity: 1.0,
               });
               this.ufos.forEach((ufo) => {
                 this.explosions.push({
@@ -402,8 +466,8 @@ const SpaceWars = () => {
                   y: ufo.y,
                   width: ufo.width,
                   height: ufo.height,
-                  time: 0,
-                  duration: 700,
+                  startTime: Date.now(),
+                  opacity: 1.0,
                 });
                 this.score += ufo.isSpecial ? 5 : 1;
               });
@@ -414,6 +478,7 @@ const SpaceWars = () => {
             }
           }
         }
+        const newUfos = [];
         this.ufos.forEach((ufo) => {
           const dx = this.crosshairPosition[0] - (ufo.x + ufo.width / 2);
           const dy = this.crosshairPosition[1] - (ufo.y + ufo.height / 2);
@@ -426,9 +491,13 @@ const SpaceWars = () => {
               y: ufo.y,
               width: ufo.width,
               height: ufo.height,
-              time: 0,
-              duration: 700,
+              startTime: Date.now(),
+              opacity: 1.0,
             });
+            this.laserActive = true;
+            this.laserEndPosition = [ufo.x + ufo.width / 2, ufo.y + ufo.height / 2];
+            this.laserStartPosition = laserStartPosition;
+            this.laserDisplayTime = Date.now();
             try {
               const explosionSound = new Audio('/static/sounds/explode.mp3');
               explosionSound.volume = 0.5;
@@ -445,7 +514,6 @@ const SpaceWars = () => {
 
       updateWithoutRender(deltaTime) {
         if (this.gameOver) return;
-    
         this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
         if (Date.now() - this.lastDifficultyUpdate >= this.difficultyIncreaseInterval) {
           this.spawnInterval = Math.max(
@@ -454,21 +522,22 @@ const SpaceWars = () => {
           );
           this.lastDifficultyUpdate = Date.now();
         }
-    
+        if (this.isFrozen && Date.now() - this.freezeStartTime >= this.freezeDuration) {
+          this.isFrozen = false;
+          this.freezeMessage = null;
+        }
         this.spawnTimer += deltaTime;
-        if (this.spawnTimer >= this.spawnInterval) {
+        if (this.spawnTimer >= this.spawnInterval && !this.isFrozen) {
           this.spawnUfo();
           this.spawnTimer = 0;
         }
-    
         const deltaSeconds = deltaTime / 1000;
         this.backgroundOffsetY -= this.backgroundSpeed * deltaSeconds;
         this.backgroundOffsetY = this.backgroundOffsetY % 720;
         if (this.backgroundOffsetY > 0) {
           this.backgroundOffsetY -= 720;
         }
-    
-        if (this.boss) {
+        if (this.boss && !this.isFrozen) {
           this.boss.y += this.boss.speedY * deltaSeconds;
           if (this.boss.y > 720) {
             this.misses += 1;
@@ -478,10 +547,21 @@ const SpaceWars = () => {
             }
           }
         }
-    
+        if (this.frozenUfo && !this.isFrozen) {
+          this.frozenUfo.y += this.frozenUfo.speedY * deltaSeconds;
+          if (this.frozenUfo.y > 720) {
+            this.misses += 1;
+            this.frozenUfo = null;
+            if (this.misses >= 3) {
+              this.gameOver = true;
+            }
+          }
+        }
         const newUfos = [];
         this.ufos.forEach((ufo) => {
-          ufo.y += ufo.speedY * deltaSeconds;
+          if (!this.isFrozen) {
+            ufo.y += ufo.speedY * deltaSeconds;
+          }
           if (ufo.y > 720) {
             this.misses += 1;
             if (this.misses >= 3) {
@@ -492,20 +572,28 @@ const SpaceWars = () => {
           }
         });
         this.ufos = newUfos;
-    
-        const newExplosions = [];
-        this.explosions.forEach((explosion) => {
-          explosion.time += deltaTime;
-          if (explosion.time < explosion.duration) {
-            newExplosions.push(explosion);
+        if (this.laserActive && Date.now() - this.laserDisplayTime > this.laserDuration) {
+          this.laserActive = false;
+          this.laserEndPosition = null;
+        }
+        this.explosions = this.explosions.filter((explosion) => {
+          const timeElapsed = Date.now() - explosion.startTime;
+          const fadeDuration = 700;
+          if (timeElapsed < fadeDuration) {
+            explosion.opacity = 1.0 - timeElapsed / fadeDuration;
+            return true;
           }
+          return false;
         });
-        this.explosions = newExplosions;
-      } 
+      }
 
       render(ctx) {
         ctx.clearRect(0, 0, 1280, 720);
-    
+        ctx.save();
+        ctx.translate(1280, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
+        ctx.restore();
         if (this.backgroundImage.complete) {
           ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY, 1280, 720);
           ctx.drawImage(this.backgroundImage, 0, this.backgroundOffsetY + 720, 1280, 720);
@@ -513,13 +601,6 @@ const SpaceWars = () => {
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, 1280, 720);
         }
-    
-        ctx.save();
-        ctx.translate(1280, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(videoRef.current, 0, 0, 1280, 720);
-        ctx.restore();
-    
         if (this.bossMessage && Date.now() - this.bossMessage.startTime < 1200) {
           ctx.save();
           ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
@@ -531,41 +612,62 @@ const SpaceWars = () => {
         } else if (this.bossMessage) {
           this.bossMessage = null;
         }
-    
+        if (this.freezeMessage && Date.now() - this.freezeMessage.startTime < 1200) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(0, 191, 255, 0.8)';
+          ctx.font = 'bold 60px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(this.freezeMessage.text, 640, 360);
+          ctx.restore();
+        }
         if (this.boss && this.bossImage.complete) {
           ctx.drawImage(this.bossImage, this.boss.x, this.boss.y, this.boss.width, this.boss.height);
         } else if (this.boss) {
           ctx.fillStyle = '#800080';
           ctx.fillRect(this.boss.x, this.boss.y, this.boss.width, this.boss.height);
         }
-    
+        if (this.frozenUfo && this.frozenUfoImage.complete) {
+          ctx.drawImage(this.frozenUfoImage, this.frozenUfo.x, this.frozenUfo.y, this.frozenUfo.width, this.frozenUfo.height);
+        } else if (this.frozenUfo) {
+          ctx.fillStyle = '#00BFFF';
+          ctx.fillRect(this.frozenUfo.x, this.frozenUfo.y, this.frozenUfo.width, this.frozenUfo.height);
+        }
         this.ufos.forEach((ufo) => {
-          if (ufo.isSpecial) {
-            if (this.specialUfoImage.complete) {
-              ctx.drawImage(this.specialUfoImage, ufo.x, ufo.y, ufo.width, ufo.height);
-            } else {
-              ctx.fillStyle = '#FF0000';
-              ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
-            }
+          const image = ufo.isSpecial ? this.specialUfoImage : this.ufoImage;
+          if (image.complete) {
+            ctx.drawImage(image, ufo.x, ufo.y, ufo.width, ufo.height);
           } else {
-            if (this.ufoImage.complete) {
-              ctx.drawImage(this.ufoImage, ufo.x, ufo.y, ufo.width, ufo.height);
-            } else {
-              ctx.fillStyle = '#FFD700';
-              ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
-            }
+            ctx.fillStyle = ufo.isSpecial ? '#FF0000' : '#FFD700';
+            ctx.fillRect(ufo.x, ufo.y, ufo.width, ufo.height);
           }
         });
-    
         this.explosions.forEach((explosion) => {
           if (this.explosionImage.complete) {
-            const alpha = 1 - explosion.time / explosion.duration;
-            ctx.globalAlpha = alpha;
+            ctx.save();
+            ctx.globalAlpha = explosion.opacity;
             ctx.drawImage(this.explosionImage, explosion.x, explosion.y, explosion.width, explosion.height);
-            ctx.globalAlpha = 1;
+            ctx.restore();
+          } else {
+            ctx.save();
+            ctx.globalAlpha = explosion.opacity;
+            ctx.fillStyle = '#FF4500';
+            ctx.fillRect(explosion.x, explosion.y, explosion.width, explosion.height);
+            ctx.restore();
           }
         });
-    
+        if (this.laserActive && this.laserEndPosition && this.laserStartPosition) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.strokeStyle = '#FF0000';
+          ctx.lineWidth = 4;
+          ctx.shadowColor = '#FF0000';
+          ctx.shadowBlur = 10;
+          ctx.moveTo(this.laserStartPosition[0], this.laserStartPosition[1]);
+          ctx.lineTo(this.laserEndPosition[0], this.laserEndPosition[1]);
+          ctx.stroke();
+          ctx.restore();
+        }
         this.drawHUD(ctx);
       }
     
