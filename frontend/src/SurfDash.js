@@ -1,7 +1,7 @@
 // Importing necessary React hooks for managing component state, lifecycle, and references
 import React, { useEffect, useRef, useState } from 'react';
 import './Game.css'; // Importing CSS for styling the game interface
-
+import { submitScore } from './utils/api';
 // SurfDash is a React functional component that implements a lane-based runner game
 // It uses hand-tracking via MediaPipe for controls and supports character/skate selection
 const SurfDash = ({ setSelectedGame }) => {
@@ -939,7 +939,21 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.font = '40px Arial';
     ctx.fillText('Press "R" to Restart', 640, 500);
     finalScore.textContent = score;
-  };
+    over.style.display = 'block';
+      if (!gameObjectRef.current.scoreSubmitted) {
+          gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
+          console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+          submitScore('SurfDash', score)
+           .then((response) => {
+             console.log('Score submitted successfully:', response);
+           })
+           .catch((error) => {
+             console.error('Failed to submit score:', error.response?.data || error.message);
+             alert('Failed to submit score. Please ensure you are logged in.');
+      });
+  }
+    };
+  
 
   // Restarts the game
   const restartGame = () => {
