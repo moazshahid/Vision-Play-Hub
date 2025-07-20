@@ -295,26 +295,41 @@ const WhackAMole = () => {
     // Quit game and return to initial screen
     const quitGame = () => {
       console.log('Quitting game...');
-      if (cameraRef.current) cameraRef.current.stop();
       gameStartedRef.current = false;
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.clearRect(0, 0, 1280, 720); // Clear the canvas
+      gameObjectRef.current = null;
+      
+      // Stop camera and cleanup
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+        cameraRef.current = null;
       }
-      if (gameOverRef.current) {
-        gameOverRef.current.style.display = 'none'; // Hide game over DOM element
-        gameOverRef.current.innerHTML = ''; // Reset game over content
+      if (handsRef.current) {
+        handsRef.current.close();
+        handsRef.current = null;
       }
-      if (gameStatsRef.current) {
-        gameStatsRef.current.textContent = 'Score: 0'; // Reset score display
+      if (faceMeshRef.current) {
+        faceMeshRef.current.close();
+        faceMeshRef.current = null;
       }
-      setShowTrackingSelection(false);
-      setShowMoleSelection(false);
-      setHasSelectedMole(false);
-      setSelectedMole(null);
-      setShowGame(false);
-      moleImageRef.current = null;
-      gameObjectRef.current = null; // Reset game object
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+      
+      const canvas = canvasRef.current.getContext('2d');
+      canvas.clearRect(0, 0, 1280, 720);
+      
+      // Show quit message
+      canvas.fillStyle = 'rgba(0, 0, 0, 0.9)';
+      canvas.fillRect(0, 0, 1280, 720);
+      canvas.fillStyle = '#FFFFFF';
+      canvas.font = 'bold 48px Arial';
+      canvas.textAlign = 'center';
+      canvas.textBaseline = 'middle';
+      canvas.fillText('Game Quit', 640, 300);
+      canvas.font = '24px Arial';
+      canvas.fillText('Refresh the page to play again', 640, 360);
     };
 
     // Set up event listeners
