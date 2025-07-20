@@ -18,14 +18,25 @@ const AirHockey = () => {
   const gameStartedRef = useRef(false);
   const lastRenderTimeRef = useRef(0);
   const fingerPositionRef = useRef({ player: { x: 0, y: 0 }, opponent: { x: 0, y: 0 } });
+  const frameCountRef = useRef(0);
 
   // State to manage game mode, difficulty, UI, and confirmation message
   const [gameMode, setGameMode] = useState(null); // null, 'single', or 'two'
   const [difficulty, setDifficulty] = useState(null); // null means not selected yet
   const [modeSelected, setModeSelected] = useState(false);
-  const [showModeOverlay, setShowModeOverlay] = useState(true); // Controls mode selection overlay
-  const [showDifficultyOverlay, setShowDifficultyOverlay] = useState(false); // Controls difficulty selection overlay
   const [confirmationMessage, setConfirmationMessage] = useState(''); // Confirmation message after selection
+  const [showModeSelection, setShowModeSelection] = useState(false);
+  const [showDifficultySelection, setShowDifficultySelection] = useState(false);
+  const [hasSelectedMode, setHasSelectedMode] = useState(false);
+  const [hoveredMode, setHoveredMode] = useState(null); // For mode button hover effect
+  const [hoveredDifficulty, setHoveredDifficulty] = useState(null); // For difficulty button hover effect
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
+
+  const handleStartGame = () => {
+    setShowGame(true);
+    setShowModeSelection(true);
+    setHasSelectedMode(false); // Reset mode selection to allow new choices
+  };
 
   // Preload MediaPipe Hands script and sound files to reduce initialization lag
   useEffect(() => {
@@ -33,63 +44,52 @@ const AirHockey = () => {
     script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
     script.async = true;
     script.onload = () => console.log('MediaPipe Hands script preloaded');
-    document.head.appendChild(script);
-
+    
+    // Check if script is already loaded to avoid duplicates
+    if (!document.querySelector(`script[src="${script.src}"]`)) {
+      document.head.appendChild(script);
+    }
+  
     const hitSound = new Audio('/static/sounds/airhockey/hit.mp3');
     const goalSound = new Audio('/static/sounds/airhockey/goal.mp3');
     hitSound.preload = 'auto';
     goalSound.preload = 'auto';
-
+    
     return () => {
-      document.head.removeChild(script);
     };
   }, []);
 
   // Helper function to handle game mode selection
-  const selectGameMode = (selectedMode) => {
-    if (!gameStartedRef.current) { // Remove modeSelected check
-      setGameMode(selectedMode);
-      setShowModeOverlay(false);
-      if (selectedMode === 'single') {
-        setShowDifficultyOverlay(true);
-        setConfirmationMessage('Mode selected: Single Player');
-        setTimeout(() => {
-          setConfirmationMessage('');
-        }, 2000);
-      } else {
-        setDifficulty(null);
-        setShowDifficultyOverlay(false);
-        setConfirmationMessage('Mode selected: Two Player');
-        console.log('Mode selected: Two Player');
-        setTimeout(() => {
-          setConfirmationMessage('');
-          setModeSelected(true);
-          // Auto-start the game after two player selection
-          setTimeout(() => {
-            document.getElementById('start-btn').click();
-          }, 500);
-        }, 2000);
-      }
-      console.log(`Mode selected: ${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)} Player`);
+  const selectGameMode = (mode) => {
+    setGameMode(mode);
+    setConfirmationMessage(`Mode selected: ${mode === 'single' ? 'Single Player' : 'Two Player'}`);
+    setHoveredMode(mode);
+    if (mode === 'two') {
+      setHasSelectedMode(true); // Set immediately for two-player mode
     }
+    setTimeout(() => {
+      setShowModeSelection(false);
+      setConfirmationMessage('');
+      setHoveredMode(null);
+      if (mode === 'single') {
+        setShowDifficultySelection(true);
+      }
+    }, 2000);
+    console.log(`Selected mode: ${mode}`);
   };
 
   // Helper function to handle difficulty selection
   const selectDifficulty = (selectedDifficulty) => {
-    if (gameMode === 'single' && !gameStartedRef.current) {
-      setDifficulty(selectedDifficulty);
-      setShowDifficultyOverlay(false);
-      setConfirmationMessage(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
-      console.log(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
-      setTimeout(() => {
-        setConfirmationMessage('');
-        setModeSelected(true);
-        // Auto-start the game after difficulty selection
-        setTimeout(() => {
-          document.getElementById('start-btn').click();
-        }, 500);
-      }, 2000);
-    }
+    setDifficulty(selectedDifficulty);
+    setConfirmationMessage(`Difficulty selected: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`);
+    setHoveredDifficulty(selectedDifficulty);
+    setHasSelectedMode(true); // Set immediately after difficulty selection
+    setTimeout(() => {
+      setShowDifficultySelection(false);
+      setConfirmationMessage('');
+      setHoveredDifficulty(null);
+    }, 2000);
+    console.log(`Selected difficulty: ${selectedDifficulty}`);
   };
 
   // Use effect to set up the game environment when the component mounts
@@ -114,16 +114,19 @@ const AirHockey = () => {
         }
         
         // Add a small delay to ensure cleanup is complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
+        if (!window.Hands) {
+          throw new Error('MediaPipe Hands not loaded');
+        }
         handsRef.current = new window.Hands({
           locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
         });
         handsRef.current.setOptions({
           maxNumHands: gameMode === 'two' ? 2 : 1,
           modelComplexity: 0,
-          minDetectionConfidence: 0.6,
-          minTrackingConfidence: 0.6,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
         });
         handsRef.current.onResults((results) => onHandResults(results, gameObjectRef.current, gameStartedRef.current));
         await handsRef.current.initialize();
@@ -161,12 +164,12 @@ const AirHockey = () => {
         
         cameraRef.current = new window.Camera(video, {
           onFrame: async () => {
-            if (handsRef.current && gameStartedRef.current) {
+            frameCountRef.current++;
+            if (handsRef.current && gameStartedRef.current && !gameObjectRef.current?.gameOver && frameCountRef.current % 2 === 0) {
               try {
                 await handsRef.current.send({ image: video });
               } catch (error) {
                 console.error('Error processing video frame:', error);
-                debug.innerHTML = `<p class="warning">❌ Frame processing error: ${error.message}</p>`;
               }
             }
           },
@@ -175,44 +178,95 @@ const AirHockey = () => {
         });
         await cameraRef.current.start();
         console.log('Camera started successfully');
+        
+        // Initialize hand detection for camera testing
+        if (!handsRef.current) {
+          await initHandDetection();
+        }
       } catch (error) {
         debug.innerHTML = `<p class="warning">❌ Camera error: ${error.message}</p>`;
         console.error('Camera initialization failed:', error);
       }
     };
 
+    const restartGame = async () => {
+      console.log('Restarting game with same mode and difficulty...');
+      gameStartedRef.current = false;
+    
+      // Clean up existing resources
+      if (cameraRef.current) {
+        await cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+      if (handsRef.current) {
+        await handsRef.current.close();
+        handsRef.current = null;
+      }
+      if (video.srcObject) {
+        const tracks = video.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      gameObjectRef.current = null;
+      gameOver.style.display = 'none';
+      debug.innerHTML = '';
+      canvas.clearRect(0, 0, 960, 540);
+    
+      // Reset paddle positions
+      fingerPositionRef.current = { player: { x: 0, y: 0 }, opponent: { x: 0, y: 0 } };
+    
+      // Add delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+    
+      // Restart game
+      setShowCameraPreview(false);
+      setShowModeSelection(false);
+      setShowDifficultySelection(false);
+      await startGame();
+    };
+
     const startGame = async () => {
-      if (!gameStartedRef.current && (modeSelected || (gameMode && (gameMode === 'two' || difficulty)))) {
-        setShowModeOverlay(false);
-        setShowDifficultyOverlay(false);
+      if (!gameStartedRef.current && hasSelectedMode && gameMode) {
+        if (gameMode === 'single' && !difficulty) {
+          setShowDifficultySelection(true);
+          debug.innerHTML = `<p>Please select a difficulty.</p>`;
+          return;
+        }
+        setShowModeSelection(false);
+        setShowDifficultySelection(false);
         debug.innerHTML = `<p>Loading game, please wait...</p>`;
         
         // Clean up any existing instances first
         if (cameraRef.current) {
-          cameraRef.current.stop();
+          await cameraRef.current.stop();
           cameraRef.current = null;
         }
         if (handsRef.current) {
+          await handsRef.current.close();
           handsRef.current = null;
         }
+        // Add delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         await Promise.all([initHandDetection(), startCamera()])
           .then(() => {
+            setShowCameraPreview(false);
             gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
             gameStartedRef.current = true;
             lastRenderTimeRef.current = performance.now();
             gameOver.style.display = 'none';
-            requestAnimationFrame(gameLoop);
             debug.innerHTML = `<p>Game started! Mode: ${gameMode === 'two' ? 'Two Player' : 'Single Player'}${gameMode === 'single' ? `, Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` : ''}</p>`;
             console.log('Game started');
+            requestAnimationFrame(gameLoop);
           })
           .catch((error) => {
             alert('Camera access error: ' + error.message);
             console.error('Start game failed:', error);
+            debug.innerHTML = `<p class="warning">❌ Start game failed: ${error.message}</p>`;
           });
-      } else if (!modeSelected) {
-        setShowModeOverlay(true);
-        debug.innerHTML = `<p>Please select a game mode (1 or 2).</p>`;
+      } else {
+        setShowModeSelection(true);
+        debug.innerHTML = `<p>Please select a game mode.</p>`;
       }
     };
 
@@ -241,43 +295,19 @@ const AirHockey = () => {
     };
 
     document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('restart-btn').addEventListener('click', async () => {
-      // Stop camera and reset everything
-      gameStartedRef.current = false;
-      
-      if (cameraRef.current) {
-        await cameraRef.current.stop();
-        cameraRef.current = null;
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
+    document.getElementById('test-camera-btn').addEventListener('click', () => {
+      if (hasSelectedMode && gameMode) {
+        if (gameMode === 'single' && !difficulty) {
+          debug.innerHTML = `<p>Please select a difficulty before testing the camera.</p>`;
+          return;
+        }
+        setShowCameraPreview(true);
+        startCamera();
+      } else {
+        debug.innerHTML = `<p>Please select a game mode before testing the camera.</p>`;
       }
-      if (handsRef.current) {
-        handsRef.current.close();
-        handsRef.current = null;
-      }
-      
-      // Stop video stream
-      if (video.srcObject) {
-        const tracks = video.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
-        video.srcObject = null;
-      }
-      
-      gameObjectRef.current = null;
-      
-      // Reset all state
-      setGameMode(null);
-      setDifficulty(null);
-      setModeSelected(false);
-      setShowModeOverlay(true);
-      setShowDifficultyOverlay(false);
-      setConfirmationMessage('');
-      gameOver.style.display = 'none';
-      
-      // Clear debug messages
-      debug.innerHTML = '';
-      
-      console.log('Game reset to mode selection via restart button');
     });
-    document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
       gameObjectRef.current = new GameLogic(canvas, gameStats, video, difficulty, gameMode);
       gameOver.style.display = 'none';
@@ -288,66 +318,40 @@ const AirHockey = () => {
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
-        // Stop camera and reset everything
-        gameStartedRef.current = false;
-        
-        if (cameraRef.current) {
-          cameraRef.current.stop().then(() => {
-            cameraRef.current = null;
-          });
-        }
-        if (handsRef.current) {
-          handsRef.current.close();
-          handsRef.current = null;
-        }
-        
-        // Stop video stream
-        if (video.srcObject) {
-          const tracks = video.srcObject.getTracks();
-          tracks.forEach(track => track.stop());
-          video.srcObject = null;
-        }
-        
-        gameObjectRef.current = null;
-        
-        // Reset all state
-        setGameMode(null);
-        setDifficulty(null);
-        setModeSelected(false);
-        setShowModeOverlay(true);
-        setShowDifficultyOverlay(false);
-        setConfirmationMessage('');
-        gameOver.style.display = 'none';
-        
-        // Clear debug messages
-        debug.innerHTML = '';
-        
-        console.log('Game reset to mode selection via R key');
+        restartGame();
       }
       if (e.key === 'q' || e.key === 'Q') {
-        // Stop camera completely
+        gameStartedRef.current = false;
+        gameObjectRef.current = null;
+        
+        // Stop camera and cleanup
         if (cameraRef.current) {
           cameraRef.current.stop();
           cameraRef.current = null;
         }
         if (handsRef.current) {
+          handsRef.current.close();
           handsRef.current = null;
         }
-        
-        // Stop video stream
         if (video.srcObject) {
           const tracks = video.srcObject.getTracks();
           tracks.forEach(track => track.stop());
           video.srcObject = null;
         }
         
-        gameStartedRef.current = false;
-        gameObjectRef.current = null;
-        
-        // Clear canvas
         canvas.clearRect(0, 0, 960, 540);
         
-        debug.innerHTML = '<p>Game quit. Refresh page to restart.</p>';
+        // Show quit message
+        canvas.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        canvas.fillRect(0, 0, 960, 540);
+        canvas.fillStyle = '#FFFFFF';
+        canvas.font = 'bold 48px Arial';
+        canvas.textAlign = 'center';
+        canvas.textBaseline = 'middle';
+        canvas.fillText('Game Quit', 480, 220);
+        canvas.font = '24px Arial';
+        canvas.fillText('Refresh the page to play again', 480, 280);
+        
         console.log('Game quit via Q key');
       }
     });
@@ -356,8 +360,8 @@ const AirHockey = () => {
       try {
         if (started && gameObj && !gameObj.gameOver) {
           if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            // In Single Player Mode, track the first detected hand for the blue paddle
             if (gameMode === 'single') {
+              // Single Player: Require at least one hand
               const playerFinger = results.multiHandLandmarks[0][8]; // Index finger of first hand
               const playerFingerX = (1 - playerFinger.x) * 960; // Invert x due to canvas mirroring
               const playerFingerY = playerFinger.y * 540;
@@ -370,18 +374,18 @@ const AirHockey = () => {
                 fingerPositionRef.current.player.y = fingerPositionRef.current.player.y * (1 - smoothing) + playerFingerY * smoothing;
               }
               console.log('Player hand detected (Single Player):', { fingerX: fingerPositionRef.current.player.x, fingerY: fingerPositionRef.current.player.y });
-            }
-            // In Two Player Mode, assign hands based on side of the table
-            else if (gameMode === 'two') {
+              // Clear warning when hand is detected
+              debug.innerHTML = '';
+            } else if (gameMode === 'two') {
               let leftHandAssigned = false;
               let rightHandAssigned = false;
-
+    
               // Iterate through all detected hands
               for (const landmarks of results.multiHandLandmarks) {
                 const finger = landmarks[8]; // Index finger
                 const fingerX = (1 - finger.x) * 960; // Invert x due to canvas mirroring
                 const fingerY = finger.y * 540;
-
+    
                 // Hand on left side (x < 480) controls red paddle (opponent)
                 if (fingerX < 480) {
                   const opponentDx = fingerX - fingerPositionRef.current.opponent.x;
@@ -409,17 +413,26 @@ const AirHockey = () => {
                   rightHandAssigned = true;
                 }
               }
-
-              // Show debug warning if either hand is missing
-              if (!leftHandAssigned || !rightHandAssigned) {
-                debug.innerHTML = `<p class="warning">Please ensure one hand is visible on each side of the screen.</p>`;
-              } else {
-                debug.innerHTML = `<p>Both hands detected!</p>`;
+    
+              // Set appropriate message based on hand detection
+              if (leftHandAssigned && rightHandAssigned) {
+                debug.innerHTML = ''; // Clear warning when both hands are detected
+              } else if (!leftHandAssigned && !rightHandAssigned) {
+                debug.innerHTML = `<p class="warning">No hands detected - please ensure one hand is visible on each side of the screen.</p>`;
+              } else if (!leftHandAssigned) {
+                debug.innerHTML = `<p class="warning">Left hand (red paddle) not detected - please place a hand on the left side of the screen.</p>`;
+              } else if (!rightHandAssigned) {
+                debug.innerHTML = `<p class="warning">Right hand (blue paddle) not detected - please place a hand on the right side of the screen.</p>`;
               }
             }
           } else {
+            // No hands detected at all
             console.log('No hands detected in this frame');
-            debug.innerHTML = `<p class="warning">No hands detected - please ensure at least one hand is visible to the webcam.</p>`;
+            debug.innerHTML = `<p class="warning">${
+              gameMode === 'single'
+                ? 'No hand detected - please ensure one hand is visible to the webcam.'
+                : 'No hands detected - please ensure one hand is visible on each side of the screen.'
+            }</p>`;
           }
         }
       } catch (error) {
@@ -456,7 +469,7 @@ const AirHockey = () => {
       ctx.fillStyle = '#4CAF50';
       ctx.font = '30px Arial';
       ctx.fillText('Press "R" to Restart', 480, 420);
-      over.style.display = 'block';
+      // over.style.display = 'block'; (commented out this line to remove the green game over screen)
       if (!gameObjectRef.current.scoreSubmitted) {
         gameObjectRef.current.scoreSubmitted = true;
         const scoreToSubmit = gameObjectRef.current.gameMode === 'two' ? Math.max(playerScore, opponentScore) : playerScore;
@@ -802,6 +815,7 @@ const AirHockey = () => {
         cameraRef.current = null;
       }
       if (handsRef.current) {
+        handsRef.current.close();
         handsRef.current = null;
       }
       if (videoRef.current && videoRef.current.srcObject) {
@@ -813,7 +827,7 @@ const AirHockey = () => {
       gameObjectRef.current = null;
       console.log('Component unmounted, all resources cleaned up');
     };
-  }, [difficulty, gameMode, modeSelected]);
+  }, [difficulty, gameMode]);
 
   // Handle mode button clicks
   const handleModeSelect = (selectedMode) => {
@@ -827,189 +841,216 @@ const AirHockey = () => {
 
   return (
     <div className='inter'> 
-      <div style={{Width: "100vw", minHeight: "95vh", padding: "5vw", backgroundImage: "url(static/images/pages/hockey-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
-        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+      {/* Initial screen with instructions and start button */}
+      <div style={{
+        width: "100vw",
+        minHeight: "95vh",
+        backgroundImage: "url(static/images/pages/hockey-bg.png)",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center center",
+        backgroundSize: "contain",
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        display: !showGame ? 'flex' : 'none'
+      }}>
+        <div style={{
+          maxWidth: "50vw",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px'
+        }}>
           <div className="instructions inter" style={{ color: "#fff" }}>
-            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Air Hockey</h2>
+            <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Air Hockey</h2>
             <ul>
-              <li><strong>Select Mode:</strong> Click Single Player or Two Player.</li>
-              <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, or Hard) and play against AI.</li>
-              <li><strong>Two Player:</strong> Any hand on the left side controls the red paddle; any hand on the right side controls the blue paddle.</li>
-              <li><strong>Show your hand(s):</strong> Ensure hand(s) are visible to the webcam.</li>
-              <li><strong>Move the paddle:</strong> Use index finger to control your paddle.</li>
-              <li><strong>Hit the puck:</strong> Strike the puck to score in the opponent's goal.</li>
-              <li><strong>Score points:</strong> Get the puck into the opponent's goal to score.</li>
-              <li><strong>Win the game:</strong> First to 5 points wins!</li>
-              <li><strong>Controls:</strong> Press 'R' to return to mode selection and 'Q' to quit.</li>
+              <li><strong>Choose Mode:</strong> Select Single Player or Two Player.</li>
+              <li><strong>Single Player:</strong> Choose difficulty (Easy, Medium, Hard) and play against AI.</li>
+              <li><strong>Two Player:</strong> Left hand controls red paddle, right hand controls blue paddle.</li>
+              <li><strong>Show Hand(s):</strong> Ensure hand(s) are visible to the webcam.</li>
+              <li><strong>Move Paddle:</strong> Use index finger to control your paddle.</li>
+              <li><strong>Hit Puck:</strong> Strike the puck to score in the opponent's goal.</li>
+              <li><strong>Score Points:</strong> Get the puck into the opponent's goal to score.</li>
+              <li><strong>Win Game:</strong> First to 5 points wins!</li>
+              <li><strong>Controls:</strong> Press 'R' to restart with same settings, 'Q' to quit.</li>
             </ul>
           </div>
         </div>
-        <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div style={{maxWidth:"40%"}}>
-            <img src="static/images/pages/airhockey-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
+        <div style={{
+          maxWidth: "50vw",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px'
+        }}>
+          <div style={{ maxWidth: "40%" }}>
+            <img src="static/images/pages/airhockey-colour.svg" alt="Air Hockey" style={{ width: '100%', height: 'auto' }} />
           </div>
-          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
+          <div style={{
+            maxWidth: "20%",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: '5vh',
+            gap: '10px'
+          }}>
+            <button className="inter start-button" onClick={handleStartGame} style={{
+              backgroundColor: '#4CAF50',
+              border: 'none',
+              padding: '1em 1.5em',
+              borderRadius: '1em',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
         </div>
       </div>
-      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+      {/* Game screen with mode and difficulty selection modals */}
+      <div style={{
+        width: "100%",
+        minHeight: "95vh",
+        display: showGame ? 'flex' : 'none',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent'
+      }}>
+        {/* Mode selection modal */}
+        {showModeSelection && !hasSelectedMode && (
+          <div className="mode-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #2196F3'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Game Mode</h2>
+            <div className="mode-controls" style={{
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {['single', 'two'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => selectGameMode(mode)}
+                  onMouseEnter={() => setHoveredMode(mode)}
+                  onMouseLeave={() => setHoveredMode(null)}
+                  style={{
+                    backgroundColor: '#2196F3',
+                    border: hoveredMode === mode ? '3px solid #4CAF50' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px 30px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: '#fff',
+                    fontSize: '1.2em',
+                    fontWeight: 600
+                  }}
+                >
+                  {mode === 'single' ? 'Single Player' : 'Two Player'}
+                </button>
+              ))}
+            </div>
+            {confirmationMessage && (
+              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{confirmationMessage}</p>
+            )}
+          </div>
+        )}
+        {/* Difficulty selection modal */}
+        {showDifficultySelection && gameMode === 'single' && !hasSelectedMode && (
+          <div className="difficulty-selection" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: '40px',
+            borderRadius: '20px',
+            textAlign: 'center',
+            zIndex: 1000,
+            border: '3px solid #4CAF50'
+          }}>
+            <h2 style={{ color: '#fff', fontSize: '2em', marginBottom: '30px' }}>Choose Difficulty</h2>
+            <div className="difficulty-controls" style={{
+              display: 'flex',
+              gap: '30px',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              {['easy', 'medium', 'hard'].map((diff) => (
+                <button
+                  key={diff}
+                  onClick={() => selectDifficulty(diff)}
+                  onMouseEnter={() => setHoveredDifficulty(diff)}
+                  onMouseLeave={() => setHoveredDifficulty(null)}
+                  style={{
+                    backgroundColor: diff === 'easy' ? '#4CAF50' : diff === 'medium' ? '#FFC107' : '#F44336',
+                    border: hoveredDifficulty === diff ? '3px solid #4CAF50' : '3px solid transparent',
+                    borderRadius: '15px',
+                    padding: '15px 30px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    color: '#fff',
+                    fontSize: '1.2em',
+                    fontWeight: 600
+                  }}
+                >
+                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                </button>
+              ))}
+            </div>
+            {confirmationMessage && (
+              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{confirmationMessage}</p>
+            )}
+          </div>
+        )}
+        {/* Game controls */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
-            </button>
             <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
+            </button>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
             </button>
             <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
               <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
             </button>
           </div>
         </div>
-        <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
+        <div ref={debugRef} className="debug-box" style={{ backgroundColor: "transparent" }}></div>
         <div className="game-container inter">
           <canvas ref={canvasRef} style={{ width: '960px', height: '540px' }}></canvas>
-          <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
+          <video ref={videoRef} autoPlay playsInline style={{ 
+            display: showCameraPreview ? 'block' : 'none', 
+            width: '960px', 
+            height: '540px',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }}></video>
           <div ref={gameStatsRef} className="game-stats">Player: 0  Opponent: 0</div>
           <div ref={gameOverRef} className="game-over">
             <h2>Game Over!</h2>
             <p>Final Score: <span ref={finalScoreRef}>Player: 0  Opponent: 0</span></p>
             <button id="play-again-btn">Play Again</button>
           </div>
-          {showModeOverlay && (
-            <div className="mode-overlay" style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '960px',
-              height: '540px',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}>
-              <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Game Mode</h2>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <button
-                  onClick={() => handleModeSelect('single')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#4CAF50',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Single Player
-                </button>
-                <button
-                  onClick={() => handleModeSelect('two')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#2196F3',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Two Player
-                </button>
-              </div>
-              <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
-                Press 1 or 2 to select a game mode
-              </p>
-            </div>
-          )}
-          {showDifficultyOverlay && gameMode === 'single' && (
-            <div className="difficulty-overlay" style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '960px',
-              height: '540px',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}>
-              <h2 style={{ color: '#FFFFFF', fontSize: '2.5em', marginBottom: '20px' }}>Select Difficulty</h2>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <button
-                  onClick={() => handleDifficultySelect('easy')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#4CAF50',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Easy
-                </button>
-                <button
-                  onClick={() => handleDifficultySelect('medium')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#FFC107',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Medium
-                </button>
-                <button
-                  onClick={() => handleDifficultySelect('hard')}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: '1.5em',
-                    backgroundColor: '#F44336',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Hard
-                </button>
-              </div>
-              <p style={{ color: '#FFFFFF', fontSize: '1.2em' }}>
-                Press 1, 2, or 3 to select a difficulty
-              </p>
-            </div>
-          )}
-          {confirmationMessage && (
-            <div className="confirmation-message" style={{
-              position: 'absolute',
-              top: '50px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              color: '#FFFFFF',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              fontSize: '1.2em',
-              zIndex: 11
-            }}>
-              {confirmationMessage}
-            </div>
-          )}
         </div>
       </div>
     </div>

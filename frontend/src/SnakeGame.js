@@ -203,6 +203,9 @@ const SnakeGame = () => {
           const baseX = Math.floor(1280 - fingerBase.x * 1280);
           const baseY = Math.floor(fingerBase.y * 720);
           gameObj.updateFingerPosition(fingerX, fingerY, baseX, baseY); // Update snake direction
+          debugRef.current.innerHTML = ''; // Clear warning when hand is detected
+        } else {
+          debugRef.current.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
         }
         gameObj.render(ctx); // Render the game state
         // Continue the game loop if the game is active
@@ -238,7 +241,7 @@ const SnakeGame = () => {
       ctx.fillText('Press "R" to Restart', 640, 500);
       // Update the DOM game over overlay
       finalScore.textContent = score;
-      over.style.display = 'block';
+      // over.style.display = 'block'; (commented out to avoid showing green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
           gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
           console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));

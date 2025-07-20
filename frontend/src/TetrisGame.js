@@ -132,9 +132,43 @@ const TetrisGame = () => {
         requestAnimationFrame(gameLoop);
       }
       if (e.key === 'q' || e.key === 'Q') {
-        if (cameraRef.current) cameraRef.current.stop();
-        if (bgMusicRef.current) bgMusicRef.current.pause();
         gameStartedRef.current = false;
+        gameObjectRef.current = null;
+        
+        // Stop camera and cleanup
+        if (cameraRef.current) {
+          cameraRef.current.stop();
+          cameraRef.current = null;
+        }
+        if (handsRef.current) {
+          handsRef.current.close();
+          handsRef.current = null;
+        }
+        if (video.srcObject) {
+          const tracks = video.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+          video.srcObject = null;
+        }
+        
+        // Stop background music
+        if (bgMusicRef.current) {
+          bgMusicRef.current.pause();
+          bgMusicRef.current = null;
+        }
+        
+        // Show quit message
+        canvas.clearRect(0, 0, 1280, 720);
+        canvas.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        canvas.fillRect(0, 0, 1280, 720);
+        canvas.fillStyle = '#FFFFFF';
+        canvas.font = 'bold 48px Arial';
+        canvas.textAlign = 'center';
+        canvas.textBaseline = 'middle';
+        canvas.fillText('Game Quit', 640, 320);
+        canvas.font = '24px Arial';
+        canvas.fillText('Refresh the page to play again', 640, 380);
+        
+        console.log('Game quit via Q key');
       }
     });
 
@@ -181,7 +215,9 @@ const TetrisGame = () => {
           lastFistDetectedRef.current = isFist;
 
           gameObj.updateFingerPosition(fingerX, fingerY, isFist && !wasFist);
+          debug.innerHTML = ''; // Clear warning when hand is detected
         } else {
+          debug.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
           lastFistDetectedRef.current = false;
         }
         gameObj.render(ctx);
@@ -222,7 +258,7 @@ const TetrisGame = () => {
       ctx.font = '40px Arial';
       ctx.fillText('Press "R" to Restart', 640, 500);
       finalScore.textContent = score;
-      over.style.display = 'block';
+      // over.style.display = 'block'; (Commented out this line to remove green screen from win/loss screens)
       if (!gameObjectRef.current.scoreSubmitted) {
         submitScore('Tetris Game', score)
           .then(() => {
