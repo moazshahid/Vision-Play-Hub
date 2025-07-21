@@ -181,13 +181,13 @@
             <a href="{% url 'signup' %}">
                 <button class="button-design">Sign Up</button>
             </a>
-            <a href="{% url 'leaderboard' %}">
-                <button class="button-design">Leaderboards</button>
-            </a>
-            <a href="/accounts/profile/">
-                <button class="button-design">Profile</button>
-            </a>
             {% if user.is_authenticated %}
+                <a href="{% url 'leaderboard' %}">
+                    <button class="button-design">Leaderboards</button>
+                </a>
+                <a href="/accounts/profile/">
+                    <button class="button-design">Profile</button>
+                </a>
                 <a href="{% url 'logout' %}">
                     <button class="button-design">Log Out</button>
                 </a>

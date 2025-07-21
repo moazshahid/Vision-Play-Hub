@@ -9,7 +9,6 @@ import { login } from './utils/api';
 import TetrisGame from './TetrisGame';
 import SpaceWars from './SpaceWars'; 
 
-// --- NEW: GameCarousel Component ---
 const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const intervalRef = useRef(null);
@@ -394,12 +393,6 @@ const App = () => {
               </a>
               <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
                 <button className="hanken-grotesk-bold back-button">Sign Up</button>
-              </a>
-              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
-              </a>
-              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Profile</button>
               </a>
             </>
           )}
