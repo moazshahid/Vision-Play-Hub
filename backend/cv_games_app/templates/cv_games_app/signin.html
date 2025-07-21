@@ -27,15 +27,35 @@
 
         .form-container {
             text-align: center;
-            background-color: transparent;
+            background-color: rgba(255, 255, 255, 0.1); 
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 400px;
-            color: black;
+            color: white; 
             position: relative;
             z-index: 20;
+        }
+
+        .message-success {
+            background-color: #28a745; 
+            color: white;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .message-error {
+            background-color: #dc3545; 
+            color: white;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
         }
 
         .button-design {
@@ -200,7 +220,7 @@
         <div class="form-container">
             {% if messages %}
                 {% for message in messages %}
-                    <p>{{ message }}</p>
+                    <p class="{% if message.tags == 'success' %}message-success{% else %}message-error{% endif %}">{{ message }}</p>
                 {% endfor %}
             {% endif %}
             <form method="post">
