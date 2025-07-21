@@ -4,6 +4,8 @@ import { submitScore } from './utils/api';
 
 // Define the SnakeGame component for the Hand Tracker Snake game
 const SnakeGame = () => {
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
   const [showGame, setShowGame] = useState(false); // State to control game visibility
   // Initialize refs for DOM elements and game state
   const videoRef = useRef(null); // Ref for the video element (webcam feed)
@@ -434,6 +436,7 @@ const SnakeGame = () => {
       if (cameraRef.current) cameraRef.current.stop();
     };
   }, []);
+
 
   // Render the game UI
   return (

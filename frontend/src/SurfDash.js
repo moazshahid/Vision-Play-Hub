@@ -1108,7 +1108,7 @@ const SurfDash = ({ setSelectedGame }) => {
   // JSX for rendering the game UI
   return (
     <div className='inter'>
-      <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/surfdash-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
+      <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/surfdash-bg.svg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
         <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="instructions inter" style={{ color: "#fff" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Surf Dash</h2>

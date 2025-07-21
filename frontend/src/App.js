@@ -232,7 +232,30 @@ const App = () => {
   
   useEffect(() => {
     let lastPing = 0;
-    const PING_INTERVAL = 60 * 1000; // 1 minute
+    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const scriptSrc = '/static/js/bgAnimation.js';
+    const svgId = 'eszI2DbBTPV1';
+
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const injectScript = async () => {
+      await delay(1000); // Delay 1 second before injecting
+      if (!document.querySelector(`script[src="${scriptSrc}"]`)) {
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        script.async = true;
+        document.body.appendChild(script);
+        console.log('Injected bgAnimation.js');
+      }
+    };
+
+    const checkAndInject = async () => {
+      const svg = document.getElementById(svgId);
+      const script = document.querySelector(`script[src="${scriptSrc}"]`);
+      if (svg && !script) {
+        await injectScript();
+      }
+    };
 
     const pingServerIfDue = () => {
       const now = Date.now();
@@ -248,23 +271,28 @@ const App = () => {
           credentials: 'include',
           body: JSON.stringify({ ping: true }),
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data.new_expiry) {
-            setTimeLeft(data.new_expiry); // if you show countdown
-          }
-        });
+          .then(res => res.json())
+          .then(async data => {
+            if (data.new_expiry) {
+              setTimeLeft(data.new_expiry);
+            }
+            await checkAndInject();
+          })
+          .catch(async () => {
+            await checkAndInject();
+          });
       }
     };
 
     document.addEventListener('click', pingServerIfDue);
     document.addEventListener('keydown', pingServerIfDue);
-    document.addEventListener('mousemove', pingServerIfDue);
+
+    // Initial delayed check
+    injectScript();
 
     return () => {
       document.removeEventListener('click', pingServerIfDue);
       document.removeEventListener('keydown', pingServerIfDue);
-      document.removeEventListener('mousemove', pingServerIfDue);
     };
   }, []);
 
