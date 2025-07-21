@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 def csrf(request):
     return JsonResponse({'message': 'CSRF cookie set'})
 
-
 class SubmitScoreAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -138,10 +137,8 @@ def signin(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-
-            request.session['login_time'] = int(time.time())  # or use timezone.now().isoformat() for readable time
+            request.session['login_time'] = int(time.time())
             request.session['username'] = username
-
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
@@ -186,6 +183,8 @@ def signin(request):
     return render(request, 'cv_games_app/signin.html')
 
 def signout(request):
+    storage = messages.get_messages(request)
+    storage.used = True 
     logout(request)
     request.session.flush()
     messages.success(request, 'You have been logged out.')
@@ -201,7 +200,11 @@ def home(request):
         time_left = max(0, 600 - elapsed)
     if not username:
         username = 'Guest'
-    return render(request, 'index.html', {'username': username, 'time_left': time_left})
+    return render(request, 'index.html', {
+        'username': username,
+        'time_left': time_left,
+        'messages': messages.get_messages(request)  
+    })
 
 def leaderboard(request):
     games = Games.objects.all()
@@ -212,5 +215,5 @@ def leaderboard(request):
     return render(request, 'cv_games_app/leaderboard.html', {'leaderboard_data': leaderboard_data})
 
 def keep_session_alive(request):
-    request.session.modified = True  # refresh session expiry
+    request.session.modified = True
     return JsonResponse({'status': 'alive'})
