@@ -297,6 +297,15 @@ const App = () => {
   // eslint-disable-next-line no-unused-vars
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
 
+  useEffect(() => {
+    if (window.REACT_USERNAME && window.REACT_USERNAME !== "Guest") {
+      setUsername(window.REACT_USERNAME);
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     const username = e.target.username.value;
@@ -357,47 +366,48 @@ const App = () => {
       )}
 
       {/* Navigation bar */}
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '2vh 2vw',
-      }}>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
-          <a href="http://localhost:8000/">
-            <img
-              src="/static/images/pages/logo-colour.svg"
-              alt="Vision Play Hub Logo"
-              style={{ height: '6vh', width: 'auto' }}
-            />
-          </a>
-        </div>
-                <div style={{ display: 'flex', gap: '0.8vw' }}>
-          {isAuthenticated ? (
-            <>
-              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
-              </a>
-              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Profile</button>
-              </a>
-              <button className="hanken-grotesk-bold back-button" onClick={handleLogout}>
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Log In</button>
-              </a>
-              <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Sign Up</button>
-              </a>
-            </>
-          )}
-        </div>
-      </nav>
+      {!selectedGame && (
+        <nav style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '2vh 2vw',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
+            <a href="http://localhost:8000/">
+              <img
+                src="/static/images/pages/logo-colour.svg"
+                alt="Vision Play Hub Logo"
+                style={{ height: '6vh', width: 'auto' }}
+              />
+            </a>
+          </div>
+          <div style={{ display: 'flex', gap: '0.8vw' }}>
+            {isAuthenticated ? (
+              <>
+                <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Leaderboard</button>
+                </a>
+                <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Profile</button>
+                </a>
+                <button className="hanken-grotesk-bold back-button" onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Log In</button>
+                </a>
+                <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Sign Up</button>
+                </a>
+              </>
+            )}
+          </div>
+        </nav>
+      )}
 
       {showHero && (
         <div id='hero' style={{ position: "relative", minHeight: "40vh", maxHeight: "60vh", width: "100%", display: "flex", justifyContent: 'center', paddingTop: "5vh" }}>
