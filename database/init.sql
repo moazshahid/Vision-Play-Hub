@@ -284,7 +284,7 @@ ALTER TABLE public.django_session OWNER TO cv_games_user;
 
 CREATE TABLE public.games (
     game_id integer NOT NULL,
-    title character varying(255) NOT NULL,
+    title character varying(255) NOT NULL UNIQUE,
     genre character varying(100),
     release_date date
 );
