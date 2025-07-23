@@ -198,12 +198,6 @@
         </a>
     </div>
     <div style="display: flex; gap: 0.8vw;">
-        <a href="{% url 'login' %}">
-            <button class="button-design">Log In</button>
-        </a>
-        <a href="{% url 'signup' %}">
-            <button class="button-design">Sign Up</button>
-        </a>
         {% if user.is_authenticated %}
             <a href="{% url 'leaderboard' %}">
                 <button class="button-design">Leaderboards</button>
@@ -217,7 +211,7 @@
         {% endif %}
     </div>
   </nav>
-  
+
   <!-- Leaderboard Content -->
   <div class="leaderboard-container">
     <h1>Leaderboard</h1>
