@@ -9,4 +9,6 @@ urlpatterns = [
     path('auth/leaderboard/', views.leaderboard, name='leaderboard'),
     path('auth/api/submit-score/', views.SubmitScoreAPIView.as_view(), name='api_submit_score'),
     path('ping/', views.keep_session_alive, name='keep_alive'),
+    path('faqs/', views.faqs_view, name='faqs'),
+    path('about-us/', views.about_us_view, name='aboutus')
 ]

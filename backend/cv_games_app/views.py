@@ -214,3 +214,9 @@ def leaderboard(request):
 def keep_session_alive(request):
     request.session.modified = True  # refresh session expiry
     return JsonResponse({'status': 'alive'})
+
+def faqs_view(request):
+    return render(request, 'cv_games_app/faqs.html')
+
+def about_us_view(request):
+    return render(request, 'cv_games_app/aboutus.html')

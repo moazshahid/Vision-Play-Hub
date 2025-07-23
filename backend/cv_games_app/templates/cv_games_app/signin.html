@@ -176,20 +176,26 @@
         </div>
         <div style="display: flex; gap: 0.8vw;">
             <a href="{% url 'login' %}">
-                <button class="button-design">Log In</button>
+                <button class="button-design back-button">Log In</button>
             </a>
             <a href="{% url 'signup' %}">
-                <button class="button-design">Sign Up</button>
+                <button class="button-design back-button">Sign Up</button>
+            </a>
+            <a href="http://localhost:8000/faqs/">
+                <button className="button-design back-button">faqs</button>
+            </a>
+            <a href="http://localhost:8000/about-us/">
+                <button className="button-design back-button">About Us</button>
             </a>
             {% if user.is_authenticated %}
                 <a href="{% url 'leaderboard' %}">
-                    <button class="button-design">Leaderboards</button>
+                    <button class="button-design back-button">Leaderboards</button>
                 </a>
                 <a href="/accounts/profile/">
-                    <button class="button-design">Profile</button>
+                    <button class="button-design back-button">Profile</button>
                 </a>
                 <a href="{% url 'logout' %}">
-                    <button class="button-design">Log Out</button>
+                    <button class="button-design back-button">Log Out</button>
                 </a>
             {% endif %}
         </div>
