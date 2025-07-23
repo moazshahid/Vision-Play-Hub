@@ -311,13 +311,6 @@ const App = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    setIsAuthenticated(false);
-    setHasChosenAccess(false);
-    window.location.href = 'http://localhost:8000/auth/logout/';
-  };
 
   return (
     <div className="App">
@@ -412,9 +405,6 @@ const App = () => {
                 <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
                   <button className="hanken-grotesk-bold back-button">Profile</button>
                 </a>
-                <button className="hanken-grotesk-bold back-button" onClick={handleLogout}>
-                  Logout
-                </button>
               </>
             ) : (
               <>

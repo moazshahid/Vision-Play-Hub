@@ -200,13 +200,10 @@
     <div style="display: flex; gap: 0.8vw;">
         {% if user.is_authenticated %}
             <a href="{% url 'leaderboard' %}">
-                <button class="button-design">Leaderboards</button>
+                <button class="button-design">Leaderboard</button>
             </a>
             <a href="/accounts/profile/">
                 <button class="button-design">Profile</button>
-            </a>
-            <a href="{% url 'logout' %}">
-                <button class="button-design">Log Out</button>
             </a>
         {% endif %}
     </div>
