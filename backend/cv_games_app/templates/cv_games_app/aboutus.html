@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Vision Play Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     {% load static %}
+    {% load socialaccount %}
+
     <style>
     * {
       margin: 0;
@@ -147,15 +148,35 @@
 
   <!-- Navbar -->
   <nav>
-    <a href="/">
-      <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
-    </a>
+    <div style="display: flex; align-items: center; gap: 0.8vw;">
+        <a href="/">
+            <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
+        </a>
+        <a href="{% url 'aboutus' %}">
+            <button class="button-design">About Us</button>
+        </a>
+        <a href="{% url 'faqs' %}">
+            <button class="button-design">FAQs</button>
+        </a>
+    </div>
     <div style="display: flex; gap: 0.8vw;">
-      <a href="{% url 'login' %}"><button class="button-design">Log In</button></a>
-      <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
-      <a href="{% url 'leaderboard' %}"><button class="button-design">Leaderboards</button></a>
-      <a href="http://localhost:8000/accounts/profile/"><button class="button-design">Profile</button></a>
-      <a href="{% url 'logout' %}"><button class="button-design">Log Out</button></a>
+        <a href="{% url 'login' %}">
+            <button class="button-design">Log In</button>
+        </a>
+        <a href="{% url 'signup' %}">
+            <button class="button-design">Sign Up</button>
+        </a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'leaderboard' %}">
+                <button class="button-design">Leaderboards</button>
+            </a>
+            <a href="/accounts/profile/">
+                <button class="button-design">Profile</button>
+            </a>
+            <a href="{% url 'logout' %}">
+                <button class="button-design">Log Out</button>
+            </a>
+        {% endif %}
     </div>
   </nav>
 
@@ -164,10 +185,10 @@
     <div class="about-card">
       <h1>About Us</h1>
       <p>
-        Welcome to <span class="highlight">Vision Play Hub</span>, created by <span class="highlight">The Woks</span>! We are a passionate team dedicated to bringing fun and engaging mini-games to players worldwide. Our mission is to create a vibrant community where you can enjoy a variety of games, track your progress, and compete on leaderboards.
+        <span class="highlight">The Woks</span> is a dedicated team aiming to transform the gaming industry by leveraging computer vision technology for interactive and immersive gaming experiences.
       </p>
       <p>
-        Launched in 2025, our platform combines cutting-edge technology with a love for gaming. Whether you're here to relax with a quick game of Snake or challenge friends in Air Hockey, we’re here to make every moment enjoyable.
+        Our <span class="highlight">mission</span> is to redefine the gaming experience by making it more interactive, immersive, and accessible to everyone, regardless of age or background. 
       </p>
       <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
     </div>
