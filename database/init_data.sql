@@ -75,25 +75,12 @@ ON CONFLICT (title) DO NOTHING;
 
 INSERT INTO public.django_site (id, domain, name) VALUES
     (1, 'localhost:8000', 'localhost')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE
+    SET domain = EXCLUDED.domain,
+        name = EXCLUDED.name;
 
---
--- Insert default social app for django-allauth
---
 
-INSERT INTO public.socialaccount_socialapp (id, provider, provider_id, name, client_id, secret, key, settings) VALUES
-    (1, 'google', 'google', 'Google', '772340795124-8bhbar3gft6vdoc8cjkkkmkh1dndl1vk.apps.googleusercontent.com', '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','','{}')
-ON CONFLICT (id) DO NOTHING;
 
---
--- Insert social app site mapping
---
-
-INSERT INTO public.socialaccount_socialapp_sites (id, socialapp_id, site_id) VALUES
-    (1, 1, 1)
-ON CONFLICT (id) DO NOTHING;
-
---
 -- Grant privileges
 --
 
