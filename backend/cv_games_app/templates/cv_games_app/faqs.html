@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>FAQs - Vision Play Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesk:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     {% load static %}
-    {% load socialaccount %}
-
     <style>
     * {
       margin: 0;
@@ -17,9 +16,9 @@
       font-family: "Hanken Grotesk", sans-serif;
       letter-spacing: -0.05em;
       color: #ffffff;
-      height: 100vh;
-      overflow-x: hidden;
       position: relative;
+      height: 100vh; /* Revert to fixed height to prevent page scrolling */
+      overflow-y: hidden; /* Prevent page-level scrolling */
     }
 
     video {
@@ -76,40 +75,93 @@
       border: none;
     }
 
-    .about-container {
+    .faq-container {
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
+      align-items: flex-start;
       width: 100%;
       padding: 1rem;
       z-index: 20;
       position: relative;
-      text-align: center;
+      margin-top: 13vh; /* Space from navbar */
+      height: calc(100vh - 18vh); /* Fill remaining viewport height */
     }
 
-    .about-card {
+    .faq-card {
       background-color: rgba(0, 0, 0, 0.7);
-      padding: 2rem;
+      padding: 1.3rem;
       border-radius: 16px;
       box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
       max-width: 820px;
       width: 90%;
+      height: 100%; /* Fill the container height */
+      position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
-    .about-card h1 {
+    .faq-card .fixed-title {
+      position: sticky;
+      top: 0;
+      background-color: rgba(0, 0, 0, 0.7); 
+      z-index: 10;
+      padding-bottom: 1em;
+      flex-shrink: 0; 
+    }
+
+    .faq-card h1 {
       font-family: "Inter", sans-serif;
       font-size: 3rem;
       font-weight: 700;
-      margin-bottom: 1rem;
       color: #66fcf1;
+      text-align: center;
     }
 
-    .about-card p {
-      font-family: "Bricolage Grotesque", sans-serif;
+    .faq-card .scrollable-content {
+      flex-grow: 1;
+      max-height: calc(100% - 4rem);
+      overflow-y: auto;
+      padding: 1rem 1.5rem 1rem 1rem; /* Increased padding-right to 1.5rem for space */
+      scrollbar-width: thin; 
+      scrollbar-color: #2c2c2c transparent; 
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar {
+      width: 8px; 
+      background: transparent; 
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar-thumb {
+      background-color: #66fcf1; 
+      border-radius: 4px; 
+      background-clip: padding-box; 
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar-track {
+      background: transparent; 
+    }
+
+    .faq-card p {
+      font-family: "Bricolage Grotesk", sans-serif;
       font-size: 1.1rem;
       margin: 0.5rem 0;
       color: #c5c6c7;
+    }
+
+    .faq-list {
+      list-style-type: decimal;
+      padding-left: 2rem;
+      text-align: left;
+    }
+
+    .faq-list li {
+      margin-bottom: 1rem;
+    }
+
+    .faq-list strong {
+      display: block;
+      font-size: 1.2rem;
+      color: #66fcf1;
     }
 
     .highlight {
@@ -126,7 +178,8 @@
       color: #66fcf1;
       cursor: pointer;
       transition: background 0.3s, color 0.3s;
-      font-family: "Bricolage Grotesque", sans-serif;
+      font-family: "Bricolage Grotesk", sans-serif;
+      margin-bottom: 1rem; /* Space at bottom */
     }
 
     .back-button:hover {
@@ -147,47 +200,80 @@
   <div class="overlay"></div>
 
   <!-- Navbar -->
-    <nav>
-        <div style="display: flex; align-items: center; gap: 0.8vw;">
-            <a href="/">
-                <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
-            </a>
-            <a href="{% url 'aboutus' %}">
-                <button class="button-design">About Us</button>
-            </a>
-            <a href="{% url 'faqs' %}">
-                <button class="button-design">FAQs</button>
-            </a>
-        </div>
-        <div style="display: flex; gap: 0.8vw;">
-            {% if not user.is_authenticated %}
-                <a href="{% url 'login' %}">
-                    <button class="button-design">Log In</button>
-                </a>
-                <a href="{% url 'signup' %}">
-                    <button class="button-design">Sign Up</button>
-                </a>
-            {% endif %}
-            {% if user.is_authenticated %}
-                <a href="{% url 'leaderboard' %}">
-                    <button class="button-design">Leaderboard</button>
-                </a>
-                <a href="/accounts/profile/">
-                    <button class="button-design">Profile</button>
-                </a>
-            {% endif %}
-        </div>
-    </nav>
+  <nav>
+    <div style="display: flex; align-items: center; gap: 0.8vw;">
+      <a href="/">
+        <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
+      </a>
+      <a href="{% url 'aboutus' %}">
+        <button class="button-design">About Us</button>
+      </a>
+      <a href="{% url 'faqs' %}">
+        <button class="button-design">FAQs</button>
+      </a>
+    </div>
+    <div style="display: flex; gap: 0.8vw;">
+      {% if not user.is_authenticated %}
+        <a href="{% url 'login' %}">
+          <button class="button-design">Log In</button>
+        </a>
+        <a href="{% url 'signup' %}">
+          <button class="button-design">Sign Up</button>
+        </a>
+      {% endif %}
+      {% if user.is_authenticated %}
+        <a href="{% url 'leaderboard' %}">
+          <button class="button-design">Leaderboards</button>
+        </a>
+        <a href="/accounts/profile/">
+          <button class="button-design">Profile</button>
+        </a>
+        <a href="{% url 'logout' %}">
+          <button class="button-design">Log Out</button>
+        </a>
+      {% endif %}
+    </div>
+  </nav>
 
-  <!-- About Us Content -->
-  <div class="about-container">
-    <div class="about-card">
-      <h1>FAQs</h1>
-      <p>
-        Testing.
-      </p>
-
-      <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
+  <!-- FAQ Content -->
+  <div class="faq-container">
+    <div class="faq-card">
+      <div class="fixed-title">
+        <h1>Frequently Asked Questions</h1>
+      </div>
+      <div class="scrollable-content">
+        <ol class="faq-list">
+          <li>
+            <strong>Do I need to create an account to play?</strong>
+            No! There is an option to play as a guest, but creating an account is recommended to save your game statistics.
+          </li>
+          <li>
+            <strong>How can I track my high scores?</strong>
+            After logging in, your scores are automatically submitted to the leaderboard page. Navigate there to check your high scores!
+          </li>
+          <li>
+            <strong>What devices are supported by Vision Play Hub?</strong>
+            At the moment Vision Play Hub is only accessible and optimised on a desktop browser. Make sure to use your browser's latest version for the best gaming experience!
+            
+          </li>
+          <li>
+            <strong>How do I report a bug or issue?</strong>
+            If you find any bug or issues kindly reach out to the contact us details in our About Us page!
+          </li>
+          <li>
+            <strong>Can I play with friends?</strong>
+            Yes! Some of our game options allow for co-op gameplay, which requires one screen for two players!
+          </li>
+          <li>
+            <strong>Can I sign in with my google account?</strong>
+            Absolutely! Signing up using your google account is an availble option when creating an account.
+          </li>
+          <li>
+            <strong>Can I sign in with my google account?</strong>
+            Absolutely! Signing up using your google account is an availble option when creating an account.
+          </li>
+        </ol>
+      </div>
     </div>
   </div>
 </body>
