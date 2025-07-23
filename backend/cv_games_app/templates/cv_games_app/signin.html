@@ -23,6 +23,7 @@
             overflow: hidden;
             position: relative;
             color: white;
+            background-color: #09080e;
         }
 
         .form-container {
@@ -153,17 +154,7 @@
 </head>
 <body>
     <!-- Background video -->
-    <video
-        autoplay
-        loop
-        muted
-        playsinline
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;"
-    >
-        <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-        Your browser does not support the video tag.
-    </video>
-
+    <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" width="100vw" height="100vh" frameBorder="0" style="opacity: 0.5;position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10;"></iframe>
     <!-- Overlay to darken the video -->
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
 
@@ -203,7 +194,7 @@
                     <p>{{ message }}</p>
                 {% endfor %}
             {% endif %}
-            <form method="post">
+            <form id="login-form" method="post">
                 {% csrf_token %}
                 <input type="text" name="username" placeholder="Username" required><br>
                 <input type="password" name="password" placeholder="Password" required><br>
@@ -220,5 +211,111 @@
             </a>
         </div>
     </div>
+    <script>
+        function getCookie(name) {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith(name + '='))
+                ?.split('=')[1];
+            return cookieValue || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply theme class based on localStorage
+            const isLightMode = localStorage.getItem('themeMode') === 'true';
+            const isColorFilter = localStorage.getItem('colorFilter') === 'true';
+            const appDiv = document.querySelector('.App');
+            if (isLightMode) {
+                appDiv.classList.add('light');
+            } else if (isColorFilter) {
+                appDiv.classList.add('colorblind');
+            }
+
+            // Handle login form submission
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const username = e.target.username.value;
+                    const password = e.target.password.value;
+                    const csrfToken = getCookie('csrftoken');
+
+                    try {
+                        const response = await fetch('{% url 'login' %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: new URLSearchParams({
+                                'username': username,
+                                'password': password,
+                            }),
+                            credentials: 'include',
+                        });
+
+                        // Check if response is a redirect (successful login)
+                        if (response.redirected) {
+                            console.log('Login successful, redirecting to:', response.url);
+
+                            // Fetch user profile settings after successful login
+                            const profileResponse = await fetch('{% url 'user_profile' %}', {
+                                headers: {
+                                    'Authorization': `Bearer ${getCookie('access_token')}`,
+                                    'X-CSRFToken': csrfToken,
+                                },
+                                credentials: 'include',
+                            });
+
+                            if (profileResponse.ok) {
+                                const profileData = await profileResponse.json();
+                                console.log('Profile data fetched:', profileData);
+
+                                // Store settings in localStorage
+                                localStorage.setItem('access_token', getCookie('access_token'));
+                                localStorage.setItem('refresh_token', getCookie('refresh_token'));
+                                localStorage.setItem('themeMode', profileData.is_dark_mode ? "light" : "dark");
+                                localStorage.setItem('colorFilter', profileData.is_colorblind_mode ? "colorblind" : "trichromatic");
+                                localStorage.setItem('log', (!localStorage.getItem('log')) ? String("Added in " + localStorage.getItem('themeMode') + " and " + localStorage.getItem('colorFilter')) : localStorage.getItem('log') + String("\nAdded in " + localStorage.getItem('themeMode') + " and " + localStorage.getItem('colorFilter')));
+
+                                // Update theme class
+                                appDiv.classList.remove('light', 'colorblind');
+                                if (profileData.is_dark_mode) {
+                                    appDiv.classList.add('light');
+                                } else if (profileData.is_colorblind_mode) {
+                                    appDiv.classList.add('colorblind');
+                                }
+                            } else {
+                                console.error('Failed to fetch profile data:', profileResponse.statusText);
+                            }
+
+                            // Follow the redirect to homepage
+                            window.location.href = response.url;
+                        } else {
+                            // Handle non-redirect response (likely a failed login)
+                            const text = await response.text();
+                            console.error('Login failed, response:', text);
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.marginBottom = '1rem';
+                            messageDiv.style.color = 'red';
+                            messageDiv.textContent = 'Invalid username or password.';
+                            const formContainer = document.querySelector('div[style*="max-width: 400px"]');
+                            formContainer.parentNode.insertBefore(messageDiv, formContainer);
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        const messageDiv = document.createElement('div');
+                        messageDiv.style.marginBottom = '1rem';
+                        messageDiv.style.color = 'red';
+                        messageDiv.textContent = 'An error occurred during login. Please try again.';
+                        const formContainer = document.querySelector('div[style*="max-width: 400px"]');
+                        formContainer.parentNode.insertBefore(messageDiv, formContainer);
+                    }
+                });
+            } else {
+                console.error('Form with id="login-form" not found in the DOM');
+            }
+        });
+    </script>
 </body>
 </html>
