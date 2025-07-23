@@ -901,7 +901,7 @@ const AirHockey = () => {
                   style={{
                     padding: '10px 20px',
                     fontSize: '1.5em',
-                    backgroundColor: '#4CAF50',
+                    backgroundColor: `${useState(localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50')}`,
                     color: '#FFFFFF',
                     border: 'none',
                     borderRadius: '5px',
