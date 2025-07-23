@@ -173,29 +173,29 @@
             <a href="/">
                 <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
             </a>
+            <a href="{% url 'aboutus' %}">
+                <button class="button-design">About Us</button>
+            </a>
+            <a href="{% url 'faqs' %}">
+                <button class="button-design">FAQs</button>
+            </a>
         </div>
         <div style="display: flex; gap: 0.8vw;">
             <a href="{% url 'login' %}">
-                <button class="button-design back-button">Log In</button>
+                <button class="button-design">Log In</button>
             </a>
             <a href="{% url 'signup' %}">
-                <button class="button-design back-button">Sign Up</button>
-            </a>
-            <a href="http://localhost:8000/faqs/">
-                <button className="button-design back-button">faqs</button>
-            </a>
-            <a href="http://localhost:8000/about-us/">
-                <button className="button-design back-button">About Us</button>
+                <button class="button-design">Sign Up</button>
             </a>
             {% if user.is_authenticated %}
                 <a href="{% url 'leaderboard' %}">
-                    <button class="button-design back-button">Leaderboards</button>
+                    <button class="button-design">Leaderboards</button>
                 </a>
                 <a href="/accounts/profile/">
-                    <button class="button-design back-button">Profile</button>
+                    <button class="button-design">Profile</button>
                 </a>
                 <a href="{% url 'logout' %}">
-                    <button class="button-design back-button">Log Out</button>
+                    <button class="button-design">Log Out</button>
                 </a>
             {% endif %}
         </div>

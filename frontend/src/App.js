@@ -396,6 +396,12 @@ const App = () => {
                 style={{ height: '6vh', width: 'auto' }}
               />
             </a>
+            <a href="http://localhost:8000/about-us/" style={{ textDecoration: 'none' }}>
+              <button className="hanken-grotesk-bold back-button">About Us</button>
+            </a>
+            <a href="http://localhost:8000/faqs/" style={{ textDecoration: 'none' }}>
+              <button className="hanken-grotesk-bold back-button">FAQs</button>
+            </a>
           </div>
           <div style={{ display: 'flex', gap: '0.8vw' }}>
             {isAuthenticated ? (

@@ -173,6 +173,12 @@
             <a href="/">
                 <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
             </a>
+            <a href="{% url 'aboutus' %}">
+                <button class="button-design">About Us</button>
+            </a>
+            <a href="{% url 'faqs' %}">
+                <button class="button-design">FAQs</button>
+            </a>
         </div>
         <div style="display: flex; gap: 0.8vw;">
             <a href="{% url 'login' %}">
