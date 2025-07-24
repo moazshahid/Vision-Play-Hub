@@ -185,20 +185,113 @@
     .setting-option input[type="file"] {
       width: 100%;
     }
+
+    .profile-picture {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      border: 2px solid #66fcf1;
+      background-color: #4a4a4a;
+    }
+
+    .profile-picture-btn {
+      width: 40px; /* Smaller size for nav button */
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #66fcf1;
+      background-color: #4a4a4a;
+      cursor: pointer;
+      padding: 0;
+      margin: 0 0.5vw;
+    }
+
+    .profile-picture-btn:hover {
+      border-color: #00f0ff;
+    }
+
+    .upload-button {
+      padding: 8px 16px;
+      background: none;
+      border: 1px solid #66fcf1;
+      color: #66fcf1;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .upload-button:hover {
+      background-color: #66fcf1;
+      color: #0b0c10;
+    }
     </style>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const uploadInput = document.getElementById('upload');
+        const profilePic = document.getElementById('profile-pic');
+        const form = document.querySelector('.setting-option form');
+
+        uploadInput.addEventListener('change', (event) => {
+          const file = event.target.files[0];
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              profilePic.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            const formData = new FormData(form);
+            fetch('/profile/', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('Server response:', data);
+              if (data.success) {
+                alert('Profile picture updated successfully!');
+                if (data.url) profilePic.src = data.url;
+              } else {
+                alert('Error updating profile picture: ' + (data.error || 'Unknown error'));
+                profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+              }
+            })
+            .catch(error => {
+              console.error('Fetch error:', error);
+              alert('An error occurred while uploading.');
+              profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+            });
+          } else {
+            alert('Please upload a valid image file.');
+          }
+        });
+
+        document.querySelector('.upload-button').addEventListener('click', () => {
+          uploadInput.click();
+        });
+
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          console.log('Form submit prevented');
+        });
+      });
+    </script>
 </head>
 
 <body>
-  <!-- Video Background -->
   <video autoplay loop muted playsinline>
     <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
     Your browser does not support the video tag.
   </video>
 
-  <!-- Overlay -->
   <div class="overlay"></div>
 
-  <!-- Navbar -->
   <nav>
     <div style="display: flex; align-items: center; gap: 0.8vw;">
         <a href="/">
@@ -211,13 +304,13 @@
             <button class="button-design">FAQs</button>
         </a>
     </div>
-    <div style="display: flex; gap: 0.8vw;">
+    <div style="display: flex; gap: 0.8vw; align-items: center;">
         {% if user.is_authenticated %}
             <a href="{% url 'leaderboard' %}">
                 <button class="button-design">Leaderboard</button>
             </a>
-            <a href="/accounts/profile/">
-                <button class="button-design">Profile</button>
+            <a href="{% url 'profile' %}">
+                <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile" class="profile-picture-btn">
             </a>
             <a href="{% url 'logout' %}">
                 <button class="button-design">Log Out</button>
@@ -226,13 +319,12 @@
     </div>
   </nav>
 
-  <!-- Profile Content -->
   <div class="profile-container">
     <div class="profile-card">
-      <!-- Left: Profile Info -->
       <div class="profile-left">
         <h1>Profile</h1>
         {% if user %}
+          <img id="profile-pic" src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile Picture" class="profile-picture">
           <p>Username: <span class="highlight">{{ user.username }}</span></p>
           <p>Email: <span class="highlight">{{ user.email }}</span></p>
           <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
@@ -242,24 +334,23 @@
         {% endif %}
         <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
       </div>
-
-      <!-- Right: Settings -->
       <div class="profile-right">
         <h2>Settings</h2>
-
         <div class="setting-option">
           <label for="volume">Volume</label>
           <input type="range" id="volume" name="volume" min="0" max="100" value="50">
         </div>
-
         <div class="setting-option">
           <label for="theme-toggle">Theme</label>
           <button id="theme-toggle" class="back-button">Toggle Light/Dark</button>
         </div>
-
         <div class="setting-option">
           <label for="upload">Change Profile Picture</label>
-          <input type="file" id="upload" accept="image/*">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" id="upload" name="profile_picture" accept="image/*" style="display: none;">
+            <button type="button" class="upload-button">Upload Picture</button>
+          </form>
         </div>
       </div>
     </div>
