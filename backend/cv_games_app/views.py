@@ -16,7 +16,6 @@ import time
 import json
 from .forms import ProfilePictureForm  # Add this form
 from django.contrib.auth.decorators import login_required
-from .models import Profile
 
 logger = logging.getLogger(__name__)
 
@@ -247,3 +246,15 @@ def profile_view(request):
     else:
         form = ProfilePictureForm(instance=profile)
     return render(request, 'cv_games_app/profile.html', {'form': form})
+
+@login_required
+def get_profile_pic(request):
+    try:
+        profile = request.user.profile
+        profile_pic_url = request.build_absolute_uri(profile.profile_picture.url) if profile.profile_picture else None
+        return JsonResponse({'profile_picture': profile_pic_url})
+    except Profile.DoesNotExist:
+        return JsonResponse({'profile_picture': None}, status=404)
+    except Exception as e:
+        logger.error("Error fetching profile picture: %s", str(e))
+        return JsonResponse({'profile_picture': None}, status=500)

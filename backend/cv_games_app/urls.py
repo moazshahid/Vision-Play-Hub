@@ -14,5 +14,5 @@ urlpatterns = [
     path('faqs/', views.faqs_view, name='faqs'),
     path('about-us/', views.about_us_view, name='aboutus'),
     path('profile/', views.profile_view, name='profile'),
+    path('api/profile-pic/', views.get_profile_pic, name='profile-pic'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

@@ -181,17 +181,50 @@ const App = () => {
   const [showHero, setShowHero] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
   const [username, setUsername] = useState('');
+  const [profilePic, setProfilePic] = useState('');
   const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
   const [hasChosenAccess, setHasChosenAccess] = useState(isAuthenticated);
   const timerRef = useRef(null);
 
-  useEffect(() => {
-    // Pull username from global variable injected by Django
-    if (window.REACT_USERNAME) {
-      setUsername(window.REACT_USERNAME);
+  // Fetch profile picture
+  const fetchProfilePic = async () => {
+    console.log('Fetching profile pic with token:', localStorage.getItem('access_token'));
+    try {
+      const response = await fetch('/api/profile-pic/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetch response:', data);
+        setProfilePic(data.profile_picture || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+      } else {
+        console.log('Fetch failed with status:', response.status, response.statusText);
+        setProfilePic('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+      }
+    } catch (error) {
+      console.error('Error fetching profile picture:', error);
+      setProfilePic('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
     }
-  }, []);
+  };
 
+  useEffect(() => {
+    console.log('Checking profile pic:', window.REACT_PROFILE_PIC, isAuthenticated);
+      if (window.REACT_USERNAME) {
+        setUsername(window.REACT_USERNAME);
+      }
+      if (window.REACT_PROFILE_PIC) {
+        setProfilePic(window.REACT_PROFILE_PIC);
+      } else if (isAuthenticated) {
+        fetchProfilePic();
+      } else {
+        setProfilePic('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+      }
+    }, [isAuthenticated]);
+    
   useEffect(() => {
     if (username === 'Guest' || !username) {
       // Don't start countdown if username is "Guest" or empty
@@ -306,11 +339,12 @@ const App = () => {
       await login(username, password);
       setIsAuthenticated(true);
       setHasChosenAccess(true);
+      // Fetch profile picture after successful login
+      fetchProfilePic();
     } catch (error) {
       alert('Login failed');
     }
   };
-
 
   return (
     <div className="App">
@@ -396,14 +430,29 @@ const App = () => {
               <button className="hanken-grotesk-bold back-button">FAQs</button>
             </a>
           </div>
-          <div style={{ display: 'flex', gap: '0.8vw' }}>
+          <div style={{ display: 'flex', gap: '0.8vw', alignItems: 'center' }}>
             {isAuthenticated ? (
               <>
                 <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
                   <button className="hanken-grotesk-bold back-button">Leaderboard</button>
                 </a>
                 <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-                  <button className="hanken-grotesk-bold back-button">Profile</button>
+                  <img
+                    src={profilePic}
+                    alt="Profile"
+                    className='profile-pic'
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid transparent',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => (e.target.style.borderColor = '#66fcf1')}
+                    onMouseLeave={(e) => (e.target.style.borderColor = 'transparent')}
+                  />
                 </a>
               </>
             ) : (
@@ -472,19 +521,29 @@ const App = () => {
               }}
             >
               <button
-                onClick={() => {
-                  setUsername('Guest');
-                  setHasChosenAccess(true);
-                }}
                 className="hanken-grotesk-bold"
+                onClick={() => {
+                setUsername('Guest');
+                    setHasChosenAccess(true);
+                }}
                 style={{
-                  padding: '1rem 2rem',
-                  fontSize: '1.2rem',
+                  padding: '10px 20px',
                   borderRadius: '10px',
-                  backgroundColor: '#66fcf1',
-                  color: '#0b0c10',
-                  border: 'none',
+                  background: 'none',
+                  border: '1px solid #66fcf1',
+                  color: '#66fcf1',
                   cursor: 'pointer',
+                  transition: 'background 0.3s, color 0.3s',
+                  fontSize: '1rem',
+                  fontFamily: '"Bricolage Grotesque", sans-serif',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#66fcf1';
+                  e.target.style.color = '#0b0c10';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'none';
+                  e.target.style.color = '#66fcf1';
                 }}
               >
                 Play as Guest
