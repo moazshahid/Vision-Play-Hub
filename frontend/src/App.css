@@ -7,6 +7,28 @@ body {
   background-color: #09080e; /* Light background for better contrast */
 }
 
+body.light {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #fff; /* Light background for better contrast */
+}
+
+a {
+  text-decoration: none;
+  color: #fff; /* Inherit color from parent */
+}
+
+body.light a,
+body.light h1,
+body.light h2 {
+  color: #01fefcff; /* Dark text for light mode */
+}
+
+body.light p {
+  color: #000; /* Dark text for light mode */
+}
+
 * {
   margin: 0;
   padding: 0;

@@ -9,7 +9,7 @@ import { login } from './utils/api';
 import TetrisGame from './TetrisGame';
 import Bg from './Background';
 
-// --- NEW: GameCarousel Component ---
+// --- GameCarousel Component ---
 const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const intervalRef = useRef(null);
@@ -193,7 +193,6 @@ function getCookie(name) {
   return cookieValue || '';
 }
 
-
 const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
@@ -201,6 +200,10 @@ const App = () => {
   const [username, setUsername] = useState('');
   const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
   const timerRef = useRef(null);
+
+  // Read themeMode and colorFilter from localStorage
+  const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'dark');
+  const [colorFilter, setColorFilter] = useState(localStorage.getItem('colorFilter') || 'trichromatic');
 
   useEffect(() => {
     // Pull username from global variable injected by Django
@@ -229,7 +232,37 @@ const App = () => {
     return () => clearInterval(countdown);
   }, [username]);
 
-  
+  // Apply light and colorblind classes to <body>
+  useEffect(() => {
+    const body = document.body;
+    // Remove existing classes
+    body.classList.remove('light', 'colorblind');
+    
+    // Map themeMode: 'light' -> add 'light' class, 'dark' -> no class
+    if (themeMode === 'light') {
+      body.classList.add('light');
+    }
+    
+    // Map colorFilter: 'colorblind' -> add 'colorblind' class, 'trichromatic' -> no class
+    if (colorFilter === 'colorblind') {
+      body.classList.add('colorblind');
+    }
+  }, [themeMode, colorFilter]);
+
+  // Sync localStorage changes to state
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setThemeMode(localStorage.getItem('themeMode') || 'dark');
+      setColorFilter(localStorage.getItem('colorFilter') || 'trichromatic');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   useEffect(() => {
     let lastPing = 0;
     const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
@@ -323,9 +356,7 @@ const App = () => {
 
     // Cleanup interval on unmount or when selectedGame changes
     return () => clearInterval(intervalId);
-
   }, [selectedGame]);
-
 
   function genHexColorPair() {
     let r, g, b, avg;
@@ -384,16 +415,16 @@ const App = () => {
       alert('Login failed');
     }
   };
+
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setIsAuthenticated(false);
     window.location.href = 'http://localhost:8000/auth/logout/';
   };
+
   return (
     <div className="App">
-      
-
       {/* Optional overlay for better text visibility */}
       <div
         style={{
@@ -408,7 +439,7 @@ const App = () => {
       ></div>
 
       <header></header>
-      <Bg themeMode="dark" colorFilter="trichromatic"/>
+      <Bg themeMode={themeMode} colorFilter={colorFilter} />
 
       {(timeLeft <= 10 && timeLeft > 0) && (
         <div style={{position: "absolute", top: 0, right: "50%", transform: "translate(50%, 0%)", borderRadius: "0 0 500% 500%", backgroundColor: 'white', justifyContent: "center", alignItems: "center", padding: "1em", zIndex: 10, width: "10em", height: "10em", textAlign: "center"}}>
@@ -423,7 +454,6 @@ const App = () => {
         alignItems: 'center',
         padding: '2vh 2vw',
       }}>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
           <a href="http://localhost:8000/">
             <img
@@ -433,7 +463,7 @@ const App = () => {
             />
           </a>
         </div>
-                <div style={{ display: 'flex', gap: '0.8vw' }}>
+        <div style={{ display: 'flex', gap: '0.8vw' }}>
           {isAuthenticated ? (
             <>
               <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
