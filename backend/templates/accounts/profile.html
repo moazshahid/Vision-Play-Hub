@@ -65,7 +65,8 @@
       border: none;
       color: #ffffff;
       cursor: pointer;
-      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
     }
 
     .button-design:hover {
@@ -107,7 +108,7 @@
     }
 
     .profile-card h1 {
-      font-family: "Inter", sans-serif;
+      font-family: "Bricolage Grotesque", sans-serif;
       font-size: 3rem;
       font-weight: 700;
       margin-bottom: 1rem;
@@ -122,7 +123,7 @@
     }
 
     .profile-left h1 {
-      font-family: "Inter", sans-serif;
+      font-family: "Bricolage Grotesque", sans-serif;
       font-size: 3rem;
       font-weight: 700;
       margin-bottom: 1rem;
@@ -197,7 +198,7 @@
     }
 
     .profile-picture-btn {
-      width: 40px; /* Smaller size for nav button */
+      width: 40px;
       height: 40px;
       border-radius: 50%;
       object-fit: cover;
@@ -239,7 +240,7 @@
           if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
-              profilePic.src = e.target.result;
+              profilePic.src = e.target.result; // Preview the image
             };
             reader.readAsDataURL(file);
 
@@ -256,7 +257,8 @@
               console.log('Server response:', data);
               if (data.success) {
                 alert('Profile picture updated successfully!');
-                if (data.url) profilePic.src = data.url;
+                // Refresh the page to update the nav bar image
+                window.location.reload();
               } else {
                 alert('Error updating profile picture: ' + (data.error || 'Unknown error'));
                 profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
@@ -322,7 +324,6 @@
   <div class="profile-container">
     <div class="profile-card">
       <div class="profile-left">
-        <h1>Profile</h1>
         {% if user %}
           <img id="profile-pic" src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile Picture" class="profile-picture">
           <p>Username: <span class="highlight">{{ user.username }}</span></p>

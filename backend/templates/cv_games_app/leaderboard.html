@@ -14,7 +14,7 @@
     }
 
     body {
-      font-family: "Hanken Grotesk", sans-serif;
+      font-family: "Bricolage Grotesque", sans-serif;
       color: #ffffff;
       height: 100vh;
       overflow-x: hidden;
@@ -65,7 +65,8 @@
       border: none;
       color: #ffffff;
       cursor: pointer;
-      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
     }
 
     .button-design:hover {
@@ -99,10 +100,26 @@
       display: block; /* Show selected card */
     }
 
-    h1, h2 {
+    .leaderboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      width: 100%;
+    }
+
+    h1 {
+      font-family: "Hanken Grotesk", sans-serif;
+      font-weight: 700;
+      text-align: left;
+      margin: 0;
+      color: #ffffff;
+    }
+
+    h2 {
       text-align: center;
       margin-bottom: 1.5rem;
-      color: #66fcf1;
+      color: #ffffff;
     }
 
     table {
@@ -151,7 +168,6 @@
     }
 
     .game-filter {
-      margin: 0 auto 1.5rem;
       padding: 8px 16px;
       border: 1px solid #66fcf1;
       border-radius: 10px;
@@ -160,6 +176,11 @@
       font-family: "Bricolage Grotesque", sans-serif;
       cursor: pointer;
       width: 200px;
+      appearance: none; /* Remove default arrow */
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%2366FCF1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
     }
 
     .game-filter option {
@@ -170,7 +191,56 @@
     .game-filter:hover {
       background-color: #66fcf1;
       color: #0b0c10;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%230b0c10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     }
+
+    @keyframes glowPulse {
+      0% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+      33% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(204, 0, 255, 0.5),
+          0 0 20px rgba(204, 0, 255, 0.4),
+          0 0 30px rgba(204, 0, 255, 0.3);
+      }
+      66% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(255, 0, 128, 0.5),
+          0 0 20px rgba(255, 0, 128, 0.4),
+          0 0 30px rgba(255, 0, 128, 0.3);
+      }
+      100% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+    }
+
+    .glow-pulse {
+      animation: glowPulse 5s ease-in-out infinite;
+      color: #ffffff;
+    }
+
+    @media (max-width: 600px) {
+      .leaderboard-header {
+        flex-direction: column;
+        align-items: center;
+      }
+      .game-filter {
+        margin-top: 1rem;
+        width: 150px;
+      }
+    }
+    
   </style>
 </head>
 <body>
@@ -211,14 +281,15 @@
 
   <!-- Leaderboard Content -->
   <div class="leaderboard-container">
-    <h1>Leaderboard</h1>
-
-    <select class="game-filter" id="gameFilter" onchange="filterLeaderboard()">
-      <option value="all">All Games</option>
-      {% for data in leaderboard_data %}
-        <option value="{{ data.game.title }}">{{ data.game.title }}</option>
-      {% endfor %}
-    </select>
+    <div class="leaderboard-header">
+      <h1 class="glow-pulse">Leaderboard</h1>
+      <select class="game-filter" id="gameFilter" onchange="filterLeaderboard()">
+        <option value="all">All Games</option>
+        {% for data in leaderboard_data %}
+          <option value="{{ data.game.title }}">{{ data.game.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
     {% if leaderboard_data %}
       {% for data in leaderboard_data %}

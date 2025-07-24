@@ -489,7 +489,9 @@ const App = () => {
               >
                 Play as Guest
               </button>
-              <p style={{ color: '#ffffff' }}>Alternatively, log in or sign up from the top-right menu!</p>
+              <p className="bricolage-grotesque-regular" style={{ color: '#ffffff' }}>
+                Alternatively, log in or sign up from the top-right menu!
+                </p>
             </div>
           ) : (
             <GameCarousel

@@ -66,7 +66,8 @@
       border: none;
       color: #ffffff;
       cursor: pointer;
-      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
     }
 
     .button-design:hover {
@@ -98,11 +99,11 @@
     }
 
     .about-card h1 {
-      font-family: "Inter", sans-serif;
+      font-family: "Hanken Grotesk", sans-serif;
       font-size: 3rem;
       font-weight: 700;
       margin-bottom: 1rem;
-      color: #66fcf1;
+      color: #ffffff;
     }
 
     .about-card p {
@@ -133,6 +134,43 @@
       background-color: #66fcf1;
       color: #0b0c10;
     }
+
+    @keyframes glowPulse {
+      0% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+      33% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(204, 0, 255, 0.5),
+          0 0 20px rgba(204, 0, 255, 0.4),
+          0 0 30px rgba(204, 0, 255, 0.3);
+      }
+      66% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(255, 0, 128, 0.5),
+          0 0 20px rgba(255, 0, 128, 0.4),
+          0 0 30px rgba(255, 0, 128, 0.3);
+      }
+      100% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+    }
+
+    .glow-pulse {
+        animation: glowPulse 5s ease-in-out infinite;
+        color: #ffffff;
+    }
+
     </style>
 </head>
 
@@ -182,7 +220,7 @@
   <!-- About Us Content -->
   <div class="about-container">
     <div class="about-card">
-      <h1>About Us</h1>
+      <h1 class="glow-pulse">About Us</h1>
       <p>
         <span class="highlight">The Woks</span> is a dedicated team aiming to transform the gaming industry by leveraging computer vision technology for interactive and immersive gaming experiences.
       </p>

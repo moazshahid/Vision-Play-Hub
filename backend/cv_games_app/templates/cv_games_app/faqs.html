@@ -65,7 +65,8 @@
       border: none;
       color: #ffffff;
       cursor: pointer;
-      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
     }
 
     .button-design:hover {
@@ -110,7 +111,7 @@
     }
 
     .faq-card h1 {
-      font-family: "Inter", sans-serif;
+      font-family: "Hanken Grotesk", sans-serif;
       font-size: 3rem;
       font-weight: 700;
       color: #ffffff;
@@ -211,7 +212,7 @@
       color: #66fcf1;
       cursor: pointer;
       transition: background 0.3s, color 0.3s;
-      font-family: "Bricolage Grotesk", sans-serif;
+      font-family: "Hanken Grotesk", sans-serif;
       margin-bottom: 1rem;
     }
 
@@ -219,7 +220,44 @@
       background-color: #66fcf1;
       color: #0b0c10;
     }
+
+    @keyframes glowPulse {
+      0% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+      33% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(204, 0, 255, 0.5),
+          0 0 20px rgba(204, 0, 255, 0.4),
+          0 0 30px rgba(204, 0, 255, 0.3);
+      }
+      66% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(255, 0, 128, 0.5),
+          0 0 20px rgba(255, 0, 128, 0.4),
+          0 0 30px rgba(255, 0, 128, 0.3);
+      }
+      100% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+    }
+
+    .glow-pulse {
+      animation: glowPulse 5s ease-in-out infinite;
+      color: #ffffff;
+    }
     </style>
+
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         const faqCards = document.querySelectorAll('.faq-item-card');
@@ -271,7 +309,7 @@
       {% endif %}
       {% if user.is_authenticated %}
         <a href="{% url 'leaderboard' %}">
-          <button class="button-design">Leaderboards</button>
+          <button class="button-design">Leaderboard</button>
         </a>
         <a href="/accounts/profile/">
           <button class="button-design">Profile</button>
@@ -284,7 +322,7 @@
   <div class="faq-container">
     <div class="faq-card">
       <div class="fixed-title">
-        <h1>Frequently Asked Questions</h1>
+        <h1 class="glow-pulse">Frequently Asked Questions</h1>
       </div>
       <div class="scrollable-content">
         <div class="faq-item-card">
