@@ -7,15 +7,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Games, Leaderboards, Profile  # Add Profile model
+from .models import Games, Leaderboards, Profile
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 import logging
 from django.views.decorators.csrf import ensure_csrf_cookie
 import time
 import json
-from .forms import ProfilePictureForm  # Add this form
+from .forms import ProfilePictureForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +141,12 @@ def signin(request):
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            # Ensure Profile exists before login
+            if not hasattr(user, 'profile'):
+                from .models import Profile
+                Profile.objects.create(user=user)
             login(request, user)
-            request.session['login_time'] = int(time.time())  # or use timezone.now().isoformat() for readable time
+            request.session['login_time'] = int(time.time())
             request.session['username'] = username
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -258,3 +263,29 @@ def get_profile_pic(request):
     except Exception as e:
         logger.error("Error fetching profile picture: %s", str(e))
         return JsonResponse({'profile_picture': None}, status=500)
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST['old_password']
+        new_password = request.POST['new_password']
+        confirm_password = request.POST['confirm_password']
+
+        if new_password != confirm_password:
+            return JsonResponse({'error': 'New passwords do not match'}, status=400)
+
+        user = request.user
+        if not user.check_password(old_password):
+            return JsonResponse({'error': 'Old password is incorrect'}, status=400)
+
+        user.set_password(new_password)
+        user.save()
+        # Ensure Profile exists after password change
+        if not hasattr(user, 'profile'):
+            from .models import Profile
+            Profile.objects.create(user=user)
+        update_session_auth_hash(request, user)  # Keep the user logged in
+        messages.success(request, 'Your password has been changed successfully.')
+        return JsonResponse({'success': True})
+
+    return render(request, 'profile.html')

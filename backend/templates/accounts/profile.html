@@ -120,6 +120,7 @@
       font-size: 1.1rem;
       margin: 0.5rem 0;
       color: #c5c6c7;
+      text-align: center;
     }
 
     .profile-left h1 {
@@ -135,7 +136,7 @@
       font-size: 1.1rem;
       margin: 0.5rem 0;
       color: #c5c6c7;
-      text-align: center; /* Center the text */
+      text-align: center;
     }
 
     .highlight {
@@ -210,7 +211,7 @@
       height: 150px;
       border-radius: 50%;
       object-fit: cover;
-      margin: 0 auto 1rem; /* Center horizontally with auto margins */
+      margin: 0 auto 1rem;
       border: 2px solid transparent;
       background-color: transparent;
       display: flex;
@@ -249,60 +250,117 @@
     .profile-picture-btn:hover {
       border-color: #66fcf1;
     }
+
+    .change-password-form {
+        margin-top: 1.5rem;
+    }
+    .change-password-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        color: #c5c6c7;
+    }
+    .change-password-form input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid #66fcf1;
+        border-radius: 10px;
+        background: none;
+        color: #ffffff;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+    .change-password-form button {
+        margin-top: 0.3rem;
+        padding: 8px 18px;
+        border-radius: 10px;
+        background: none;
+        border: 1px solid #66fcf1;
+        color: #66fcf1;
+        cursor: pointer;
+        transition: background 0.3s, color 0.3s;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+    .change-password-form button:hover {
+        background-color: #66fcf1;
+        color: #0b0c10;
+    }
     </style>
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const uploadInput = document.getElementById('upload');
-        const profilePic = document.getElementById('profile-pic');
-        const form = document.querySelector('.setting-option form');
+        document.addEventListener('DOMContentLoaded', () => {
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            if (changePasswordForm) {
+                changePasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(changePasswordForm); // Now targets the form
+                    const response = await fetch('/profile/change-password/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Password changed successfully!');
+                        changePasswordForm.reset();
+                    } else {
+                        alert(data.error || 'An error occurred');
+                    }
+                });
+            }
 
-        uploadInput.addEventListener('change', (event) => {
-          const file = event.target.files[0];
-          if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              profilePic.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+            const uploadInput = document.getElementById('upload');
+            const profilePic = document.getElementById('profile-pic');
+            const form = document.querySelector('.setting-option form');
 
-            const formData = new FormData(form);
-            fetch('/profile/', {
-              method: 'POST',
-              body: formData,
-              headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-              }
-            })
-            .then(response => response.json())
-            .then(data => {
-              console.log('Server response:', data);
-              if (data.success) {
-                alert('Profile picture updated successfully!');
-                window.location.reload();
-              } else {
-                alert('Error updating profile picture: ' + (data.error || 'Unknown error'));
-                profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-              }
-            })
-            .catch(error => {
-              console.error('Fetch error:', error);
-              alert('An error occurred while uploading.');
-              profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+            uploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        profilePic.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+
+                    const formData = new FormData(form);
+                    fetch('/profile/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Server response:', data);
+                        if (data.success) {
+                            alert('Profile picture updated successfully!');
+                            window.location.reload();
+                        } else {
+                            alert('Error updating profile picture: ' + (data.error || 'Unknown error'));
+                            profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('An error occurred while uploading.');
+                        profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+                    });
+                } else {
+                    alert('Please upload a valid image file.');
+                }
             });
-          } else {
-            alert('Please upload a valid image file.');
-          }
-        });
 
-        document.querySelector('.upload-button').addEventListener('click', () => {
-          uploadInput.click();
-        });
+            document.querySelector('.upload-button').addEventListener('click', () => {
+                uploadInput.click();
+            });
 
-        form.addEventListener('submit', (event) => {
-          event.preventDefault();
-          console.log('Form submit prevented');
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                console.log('Form submit prevented');
+            });
         });
-      });
     </script>
 </head>
 
@@ -348,7 +406,7 @@
     <div class="profile-card">
       <div class="profile-left">
         {% if user %}
-          <div class="profile-picture {% if not user.profile.profile_picture %}default{% endif %}">
+          <div class="profile-picture {% if not user.profile.profile_picture %}default{% endif %}" id="profile-pic">
             {% if user.profile.profile_picture %}
               <img src="{{ user.profile.profile_picture.url }}" alt="Profile Picture" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
             {% else %}
@@ -378,6 +436,18 @@
             {% csrf_token %}
             <input type="file" id="upload" name="profile_picture" accept="image/*" style="display: none;">
             <button type="button" class="upload-button">Upload Picture</button>
+          </form>
+        </div>
+        <div class="change-password-form">
+          <form method="post" id="changePasswordForm">
+            {% csrf_token %}
+            <label for="old_password">Old Password</label>
+            <input type="password" id="old_password" name="old_password" required>
+            <label for="new_password">New Password</label>
+            <input type="password" id="new_password" name="new_password" required>
+            <label for="confirm_password">Confirm New Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+            <button type="submit">Change Password</button>
           </form>
         </div>
       </div>
