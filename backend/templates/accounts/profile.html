@@ -135,6 +135,7 @@
       font-size: 1.1rem;
       margin: 0.5rem 0;
       color: #c5c6c7;
+      text-align: center; /* Center the text */
     }
 
     .highlight {
@@ -176,7 +177,6 @@
       color: #0b0c10;
     }
 
-
     .profile-right {
       border-left: 1px solid rgba(255, 255, 255, 0.1);
       padding-left: 2rem;
@@ -210,9 +210,19 @@
       height: 150px;
       border-radius: 50%;
       object-fit: cover;
-      margin-bottom: 1rem;
+      margin: 0 auto 1rem; /* Center horizontally with auto margins */
       border: 2px solid transparent;
       background-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #66fcf1;
+    }
+
+    .profile-picture.default {
+      background-color: #4a4a4a;
     }
 
     .profile-picture-btn {
@@ -225,12 +235,20 @@
       cursor: pointer;
       padding: 0;
       margin: 0 0.25vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: #66fcf1;
+    }
+
+    .profile-picture-btn.default {
+      background-color: #4a4a4a;
     }
 
     .profile-picture-btn:hover {
       border-color: #66fcf1;
     }
-
     </style>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
@@ -243,7 +261,7 @@
           if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
-              profilePic.src = e.target.result; // Preview the image
+              profilePic.src = e.target.result;
             };
             reader.readAsDataURL(file);
 
@@ -260,7 +278,6 @@
               console.log('Server response:', data);
               if (data.success) {
                 alert('Profile picture updated successfully!');
-                // Refresh the page to update the nav bar image
                 window.location.reload();
               } else {
                 alert('Error updating profile picture: ' + (data.error || 'Unknown error'));
@@ -315,7 +332,13 @@
                 <button class="button-design">Leaderboard</button>
             </a>
             <a href="{% url 'profile' %}">
-                <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile" class="profile-picture-btn">
+                <div class="profile-picture-btn {% if not user.profile.profile_picture %}default{% endif %}">
+                    {% if user.profile.profile_picture %}
+                        <img src="{{ user.profile.profile_picture.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
             </a>
         {% endif %}
     </div>
@@ -325,7 +348,13 @@
     <div class="profile-card">
       <div class="profile-left">
         {% if user %}
-          <img id="profile-pic" src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile Picture" class="profile-picture">
+          <div class="profile-picture {% if not user.profile.profile_picture %}default{% endif %}">
+            {% if user.profile.profile_picture %}
+              <img src="{{ user.profile.profile_picture.url }}" alt="Profile Picture" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            {% else %}
+              {{ user.username|first|upper }}
+            {% endif %}
+          </div>
           <p>Username: <span class="highlight">{{ user.username }}</span></p>
           <p>Email: <span class="highlight">{{ user.email }}</span></p>
           <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
@@ -339,10 +368,6 @@
       </div>
       <div class="profile-right">
         <h2>Settings</h2>
-        <div class="setting-option">
-          <label for="volume">Volume</label>
-          <input type="range" id="volume" name="volume" min="0" max="100" value="50">
-        </div>
         <div class="setting-option">
           <label for="theme-toggle">Theme</label>
           <button id="theme-toggle" class="back-button">Toggle Light/Dark</button>

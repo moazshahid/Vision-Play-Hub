@@ -181,7 +181,7 @@ const App = () => {
   const [showHero, setShowHero] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
   const [username, setUsername] = useState('');
-  const [profilePic, setProfilePic] = useState('');
+  const [profilePic, setProfilePic] = useState(null); // Changed to null initially
   const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
   const [hasChosenAccess, setHasChosenAccess] = useState(isAuthenticated);
   const timerRef = useRef(null);
@@ -200,31 +200,31 @@ const App = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Fetch response:', data);
-        setProfilePic(data.profile_picture || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+        setProfilePic(data.profile_picture || null); // Set to null if no picture
       } else {
         console.log('Fetch failed with status:', response.status, response.statusText);
-        setProfilePic('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+        setProfilePic(null);
       }
     } catch (error) {
       console.error('Error fetching profile picture:', error);
-      setProfilePic('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+      setProfilePic(null);
     }
   };
 
   useEffect(() => {
     console.log('Checking profile pic:', window.REACT_PROFILE_PIC, isAuthenticated);
-      if (window.REACT_USERNAME) {
-        setUsername(window.REACT_USERNAME);
-      }
-      if (window.REACT_PROFILE_PIC) {
-        setProfilePic(window.REACT_PROFILE_PIC);
-      } else if (isAuthenticated) {
-        fetchProfilePic();
-      } else {
-        setProfilePic('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
-      }
-    }, [isAuthenticated]);
-    
+    if (window.REACT_USERNAME) {
+      setUsername(window.REACT_USERNAME);
+    }
+    if (window.REACT_PROFILE_PIC) {
+      setProfilePic(window.REACT_PROFILE_PIC);
+    } else if (isAuthenticated) {
+      fetchProfilePic();
+    } else {
+      setProfilePic(null);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (username === 'Guest' || !username) {
       // Don't start countdown if username is "Guest" or empty
@@ -437,22 +437,40 @@ const App = () => {
                   <button className="hanken-grotesk-bold back-button">Leaderboard</button>
                 </a>
                 <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-                  <img
-                    src={profilePic}
-                    alt="Profile"
-                    className='profile-pic'
+                  <div
+                    className={`profile-pic ${!profilePic ? 'default' : ''}`}
                     style={{
                       width: '40px',
                       height: '40px',
                       borderRadius: '50%',
-                      objectFit: 'cover',
                       border: '2px solid transparent',
-                      backgroundColor: 'transparent',
+                      backgroundColor: !profilePic ? '#4a4a4a' : 'transparent',
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.2rem',
+                      fontFamily: '"Bricolage Grotesque", sans-serif',
+                      color: '#66fcf1',
                     }}
                     onMouseEnter={(e) => (e.target.style.borderColor = '#66fcf1')}
                     onMouseLeave={(e) => (e.target.style.borderColor = 'transparent')}
-                  />
+                  >
+                    {profilePic ? (
+                      <img
+                        src={profilePic}
+                        alt="Profile"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    ) : (
+                      username ? username.charAt(0).toUpperCase() : 'G' // Default to first letter or 'G' for Guest
+                    )}
+                  </div>
                 </a>
               </>
             ) : (
@@ -523,8 +541,8 @@ const App = () => {
               <button
                 className="hanken-grotesk-bold"
                 onClick={() => {
-                setUsername('Guest');
-                    setHasChosenAccess(true);
+                  setUsername('Guest');
+                  setHasChosenAccess(true);
                 }}
                 style={{
                   padding: '10px 20px',
@@ -548,9 +566,9 @@ const App = () => {
               >
                 Play as Guest
               </button>
-              <p className="bricolage-grotesque-regular" style={{ color: '#ffffff' }}>
+              <p className="bricolage-grotesk-regular" style={{ color: '#ffffff' }}>
                 Alternatively, log in or sign up from the top-right menu!
-                </p>
+              </p>
             </div>
           ) : (
             <GameCarousel

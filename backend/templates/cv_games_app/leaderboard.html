@@ -82,6 +82,16 @@
       background-color: transparent;
       cursor: pointer;
       padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #66fcf1;
+    }
+
+    .profile-pic-nav.default {
+      background-color: #4a4a4a;
     }
 
     .profile-pic-nav:hover {
@@ -288,8 +298,14 @@
                 <button class="button-design">Leaderboard</button>
             </a>
             <a href="/accounts/profile/">
-                <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile" class="profile-pic-nav">
-            </a>
+                <div class="profile-pic-nav {% if not user.profile.profile_picture %}default{% endif %}">
+                    {% if user.profile.profile_picture %}
+                        <img src="{{ user.profile.profile_picture.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+              </a>  
         {% endif %}
     </div>
   </nav>
