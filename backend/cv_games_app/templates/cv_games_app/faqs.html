@@ -256,6 +256,22 @@
       animation: glowPulse 5s ease-in-out infinite;
       color: #ffffff;
     }
+
+    .profile-pic-nav {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #66fcf1;
+      background-color: #4a4a4a;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .profile-pic-nav:hover {
+      border-color: #00f0ff;
+    }
+
     </style>
 
     <script>
@@ -312,7 +328,7 @@
           <button class="button-design">Leaderboard</button>
         </a>
         <a href="/accounts/profile/">
-          <button class="button-design">Profile</button>
+            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile" class="profile-pic-nav">
         </a>
       {% endif %}
     </div>
