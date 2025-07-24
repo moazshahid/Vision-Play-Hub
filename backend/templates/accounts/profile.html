@@ -143,7 +143,7 @@
     }
 
     .back-button {
-      margin-top: 1.8rem;
+      margin-top: 0.3rem;
       padding: 8px 18px;
       border-radius: 10px;
       background: none;
@@ -158,6 +158,24 @@
       background-color: #66fcf1;
       color: #0b0c10;
     }
+
+    .upload-button {
+      margin-top: 0.3rem;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: none;
+      border: 1px solid #66fcf1;
+      color: #66fcf1;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .upload-button:hover {
+      background-color: #66fcf1;
+      color: #0b0c10;
+    }
+
 
     .profile-right {
       border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -193,8 +211,8 @@
       border-radius: 50%;
       object-fit: cover;
       margin-bottom: 1rem;
-      border: 2px solid #66fcf1;
-      background-color: #4a4a4a;
+      border: 2px solid transparent;
+      background-color: transparent;
     }
 
     .profile-picture-btn {
@@ -202,32 +220,17 @@
       height: 40px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #66fcf1;
-      background-color: #4a4a4a;
+      border: 2px solid transparent;
+      background-color: transparent;
       cursor: pointer;
       padding: 0;
-      margin: 0 0.5vw;
+      margin: 0 0.25vw;
     }
 
     .profile-picture-btn:hover {
-      border-color: #00f0ff;
+      border-color: #66fcf1;
     }
 
-    .upload-button {
-      padding: 8px 16px;
-      background: none;
-      border: 1px solid #66fcf1;
-      color: #66fcf1;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.3s, color 0.3s;
-      font-family: "Bricolage Grotesque", sans-serif;
-    }
-
-    .upload-button:hover {
-      background-color: #66fcf1;
-      color: #0b0c10;
-    }
     </style>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
@@ -314,9 +317,6 @@
             <a href="{% url 'profile' %}">
                 <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=={% endif %}" alt="Profile" class="profile-picture-btn">
             </a>
-            <a href="{% url 'logout' %}">
-                <button class="button-design">Log Out</button>
-            </a>
         {% endif %}
     </div>
   </nav>
@@ -330,6 +330,9 @@
           <p>Email: <span class="highlight">{{ user.email }}</span></p>
           <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
           <p>Last Login: <span class="highlight">{{ user.last_login|default:"Never" }}</span></p>
+          <a href="{% url 'logout' %}">
+            <button class="back-button">Log Out</button>
+          </a>
         {% else %}
           <p>{{ error }}</p>
         {% endif %}
