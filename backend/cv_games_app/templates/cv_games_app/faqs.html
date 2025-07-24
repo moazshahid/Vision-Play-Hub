@@ -162,7 +162,7 @@
     .faq-item-card:hover,
     .faq-item-card.active {
       background-color: rgba(20, 21, 25, 0.9);
-      transform: scale(1.01); /* Slight scale up for opening effect */
+      transform: scale(1.01);
     }
 
     .faq-item-card .icon {
@@ -174,18 +174,18 @@
 
     .faq-item-card h3 {
       font-size: 1.2rem;
-      color: #ffffff; /* Default white color */
+      color: #ffffff;
       margin-bottom: 0.5rem;
       display: inline;
       transition: color 0.3s;
     }
 
     .faq-item-card:hover h3 {
-      color: #66fcf1; /* Cyan color on hover */
+      color: #66fcf1;
     }
 
     .faq-item-card.active h3 {
-      color: #66fcf1; /* Cyan color when active */
+      color: #66fcf1;
     }
 
     .faq-item-card p {
@@ -193,12 +193,13 @@
       font-size: 1.1rem;
       color: #c5c6c7;
       line-height: 1.4;
-      max-height: 0; /* Start collapsed */
+      max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease-out; /* Smooth opening animation */
+      transition: max-height 0.3s ease-out, margin-top 0.3s ease-out; /* Add margin-top transition */
     }
 
     .faq-item-card.active p {
+      margin-top: 1em; /* Add space between question and answer when active */
       max-height: 200px; /* Sufficient height for most answers; adjust as needed */
       display: block;
     }
@@ -270,7 +271,7 @@
       align-items: center;
       justify-content: center;
       font-size: 1.2rem;
-      font-family: "Bricolage Grotesque", sans-serif;
+      font-family: "Bricolage Grotesk", sans-serif;
       color: #66fcf1;
     }
 
@@ -281,7 +282,6 @@
     .profile-pic-nav:hover {
       border-color: #66fcf1;
     }
-
     </style>
 
     <script>
@@ -290,11 +290,11 @@
         faqCards.forEach(card => {
           const icon = document.createElement('span');
           icon.className = 'icon';
-          icon.textContent = '+'; // Inactive Icon
+          icon.textContent = '+';
           card.insertBefore(icon, card.firstChild);
           card.addEventListener('click', () => {
             card.classList.toggle('active');
-            icon.textContent = card.classList.contains('active') ? '-' : '+'; // Toggle between - and +
+            icon.textContent = card.classList.contains('active') ? '-' : '+';
           });
         });
       });
@@ -386,5 +386,7 @@
           <p>No, but it is recommended for the best game experiencing.</p>
         </div>
       </div>
+    </div>
+  </div>
 </body>
 </html>
