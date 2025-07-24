@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -10,5 +12,7 @@ urlpatterns = [
     path('auth/api/submit-score/', views.SubmitScoreAPIView.as_view(), name='api_submit_score'),
     path('ping/', views.keep_session_alive, name='keep_alive'),
     path('faqs/', views.faqs_view, name='faqs'),
-    path('about-us/', views.about_us_view, name='aboutus')
-]
+    path('about-us/', views.about_us_view, name='aboutus'),
+    path('profile/', views.profile_view, name='profile'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
