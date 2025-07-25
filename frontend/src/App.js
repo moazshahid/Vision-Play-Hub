@@ -7,9 +7,8 @@ import AirHockey from './AirHockey';
 import SurfDash from './SurfDash';
 import { login } from './utils/api';
 import TetrisGame from './TetrisGame';
-import SpaceWars from './SpaceWars'; 
+import SpaceWars from './SpaceWars';
 
-// --- NEW: GameCarousel Component ---
 const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const intervalRef = useRef(null);
@@ -23,7 +22,6 @@ const GameCarousel = ({ games, onSelectGame }) => {
 
   useEffect(() => {
     resetInterval(); // Start interval on mount
-
     return () => clearInterval(intervalRef.current);
   }, [games.length]);
 
@@ -49,26 +47,25 @@ const GameCarousel = ({ games, onSelectGame }) => {
   return (
     <div
       style={{
-        position: "relative",
-        width: "90vw",
-        maxWidth: "600px",
-        height: "400px",
-        margin: "2rem auto",
-        borderRadius: "12px",
-        overflow: "hidden",
-        cursor: "pointer",
-        userSelect: "none",
+        position: 'relative',
+        width: '90vw',
+        maxWidth: '600px',
+        height: '400px',
+        margin: '2rem auto',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        userSelect: 'none',
       }}
       onClick={handleClick}
     >
-      {/* Slide container with horizontal translate */}
       <div
         style={{
-          display: "flex",
-          height: "100%",
+          display: 'flex',
+          height: '100%',
           width: `${games.length * 100}%`,
           transform: `translateX(-${currentIndex * (100 / games.length)}%)`,
-          transition: "transform 0.5s ease-in-out",
+          transition: 'transform 0.5s ease-in-out',
         }}
       >
         {games.map((game) => (
@@ -76,16 +73,16 @@ const GameCarousel = ({ games, onSelectGame }) => {
             key={game.id}
             style={{
               flex: `0 0 ${100 / games.length}%`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "400px",
-              padding: "0",
-              userSelect: "none",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '400px',
+              padding: '0',
+              userSelect: 'none',
             }}
             onClick={(e) => {
-              e.stopPropagation(); // Prevent parent click if needed
+              e.stopPropagation();
               onSelectGame(game);
             }}
           >
@@ -93,12 +90,12 @@ const GameCarousel = ({ games, onSelectGame }) => {
               src={game.icon}
               alt={game.name}
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                marginBottom: "1rem",
-                pointerEvents: "none",
-                borderRadius: "1em",
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                marginBottom: '1rem',
+                pointerEvents: 'none',
+                borderRadius: '1em',
               }}
               draggable={false}
             />
@@ -106,7 +103,6 @@ const GameCarousel = ({ games, onSelectGame }) => {
         ))}
       </div>
 
-      {/* Left arrow */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -114,24 +110,22 @@ const GameCarousel = ({ games, onSelectGame }) => {
         }}
         aria-label="Previous Slide"
         style={{
-          position: "absolute",
-          top: "50%",
-          left: "10px",
-          transform: "translateY(-50%)",
-          backgroundColor: "rgba(255,255,255,0.4)",
-          border: "none",
-          width: "12px",
-          height: "48px",
-          cursor: "pointer",
-          fontSize: "2rem",
-          color: "#333",
-          userSelect: "none",
-          borderRadius: "12px"
+          position: 'absolute',
+          top: '50%',
+          left: '10px',
+          transform: 'translateY(-50%)',
+          backgroundColor: 'rgba(255,255,255,0.4)',
+          border: 'none',
+          width: '12px',
+          height: '48px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          color: '#333',
+          userSelect: 'none',
+          borderRadius: '12px',
         }}
-      >
-      </button>
+      />
 
-      {/* Right arrow */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -139,44 +133,41 @@ const GameCarousel = ({ games, onSelectGame }) => {
         }}
         aria-label="Next Slide"
         style={{
-          position: "absolute",
-          top: "50%",
-          right: "10px",
-          transform: "translateY(-50%)",
-          backgroundColor: "rgba(255,255,255,0.4)",
-          border: "none",
-          width: "12px",
-          height: "48px",
-          cursor: "pointer",
-          fontSize: "2rem",
-          color: "#333",
-          userSelect: "none",
-          borderRadius: "12px"
+          position: 'absolute',
+          top: '50%',
+          right: '10px',
+          transform: 'translateY(-50%)',
+          backgroundColor: 'rgba(255,255,255,0.4)',
+          border: 'none',
+          width: '12px',
+          height: '48px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          color: '#333',
+          userSelect: 'none',
+          borderRadius: '12px',
         }}
-      >
-      </button>
+      />
 
-      
-      {/* Dot indicators */}
       <div
         style={{
-          position: "absolute",
-          bottom: "15px",
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          gap: "4px",
+          position: 'absolute',
+          bottom: '15px',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '4px',
         }}
       >
         {games.map((_, index) => (
           <span
             key={index}
             style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              backgroundColor: index === currentIndex ? "#fff" : "rgba(255, 255, 255, 0.5)",
-              transition: "background-color 0.3s",
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: index === currentIndex ? '#fff' : 'rgba(255, 255, 255, 0.5)',
+              transition: 'background-color 0.3s',
             }}
           />
         ))}
@@ -185,30 +176,63 @@ const GameCarousel = ({ games, onSelectGame }) => {
   );
 };
 
-
 const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
   const [username, setUsername] = useState('');
+  const [profilePic, setProfilePic] = useState(null); // Changed to null initially
   const [timeLeft, setTimeLeft] = useState(window.SESSION_TIME_LEFT || 0);
+  const [hasChosenAccess, setHasChosenAccess] = useState(isAuthenticated);
   const timerRef = useRef(null);
 
+  // Fetch profile picture
+  const fetchProfilePic = async () => {
+    console.log('Fetching profile pic with token:', localStorage.getItem('access_token'));
+    try {
+      const response = await fetch('/api/profile-pic/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetch response:', data);
+        setProfilePic(data.profile_picture || null); // Set to null if no picture
+      } else {
+        console.log('Fetch failed with status:', response.status, response.statusText);
+        setProfilePic(null);
+      }
+    } catch (error) {
+      console.error('Error fetching profile picture:', error);
+      setProfilePic(null);
+    }
+  };
+
   useEffect(() => {
-    // Pull username from global variable injected by Django
+    console.log('Checking profile pic:', window.REACT_PROFILE_PIC, isAuthenticated);
     if (window.REACT_USERNAME) {
       setUsername(window.REACT_USERNAME);
     }
-  }, []);
+    if (window.REACT_PROFILE_PIC) {
+      setProfilePic(window.REACT_PROFILE_PIC);
+    } else if (isAuthenticated) {
+      fetchProfilePic();
+    } else {
+      setProfilePic(null);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (username === "Guest" || !username) {
+    if (username === 'Guest' || !username) {
       // Don't start countdown if username is "Guest" or empty
       return;
     }
 
     const countdown = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(countdown);
           window.location.reload();
@@ -282,7 +306,7 @@ const App = () => {
     return { light: lightHex, dark: darkHex };
   }
 
-  const { light, dark } = { light: "#ededed", dark: "#232323" };
+  const { light, dark } = { light: '#ededed', dark: '#232323' };
 
   const games = [
     { id: 'snake', name: 'Snake Game', component: <SnakeGame />, icon: 'static/images/pages/snake-colour.jpg' },
@@ -292,11 +316,20 @@ const App = () => {
     { id: 'tetris', name: 'Tetris Game', component: <TetrisGame />, icon: 'static/images/pages/tetris-colour.jpg' },
     { id: 'surfdash', name: 'Surf Dash', component: <SurfDash />, icon: 'static/images/pages/surfdash-colour.png' },
     { id: 'spacewars', name: 'Space Wars', component: <SpaceWars />, icon: 'static/images/pages/spacewars-colour.png' },
-    // More games will be added here in the future
   ];
 
-  // eslint-disable-next-line no-unused-vars
   const selectedGameData = selectedGame && games.find((game) => game.id === selectedGame);
+
+  useEffect(() => {
+    if (window.REACT_USERNAME && window.REACT_USERNAME !== 'Guest') {
+      setUsername(window.REACT_USERNAME);
+      setIsAuthenticated(true);
+      setHasChosenAccess(true);
+    } else {
+      setIsAuthenticated(false);
+      setHasChosenAccess(false);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -305,16 +338,14 @@ const App = () => {
     try {
       await login(username, password);
       setIsAuthenticated(true);
+      setHasChosenAccess(true);
+      // Fetch profile picture after successful login
+      fetchProfilePic();
     } catch (error) {
       alert('Login failed');
     }
   };
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    setIsAuthenticated(false);
-    window.location.href = 'http://localhost:8000/auth/logout/';
-  };
+
   return (
     <div className="App">
       <video
@@ -323,12 +354,12 @@ const App = () => {
         muted
         playsInline
         style={{
-          position: "fixed",
+          position: 'fixed',
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
           zIndex: -2,
         }}
       >
@@ -336,15 +367,14 @@ const App = () => {
         Your browser does not support the video tag.
       </video>
 
-      {/* Optional overlay for better text visibility */}
       <div
         style={{
-          position: "fixed",
+          position: 'fixed',
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0,0,0,0.5)",
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
           zIndex: -1,
         }}
       ></div>
@@ -352,69 +382,144 @@ const App = () => {
       <header></header>
 
       {(timeLeft <= 10 && timeLeft > 0) && (
-        <div style={{position: "absolute", top: 0, right: "50%", transform: "translate(50%, 0%)", borderRadius: "0 0 500% 500%", backgroundColor: 'white', justifyContent: "center", alignItems: "center", padding: "1em", zIndex: 10, width: "10em", height: "10em", textAlign: "center"}}>
-          <p style={{ color: "black" , fontWeight: "bold", fontSize: "1.25em"}}>You Still There?<br/><h2 style={{color: "black" , fontWeight: "bold", fontSize: "2em"}}>{timeLeft}</h2></p>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: '50%',
+            transform: 'translate(50%, 0%)',
+            borderRadius: '0 0 500% 500%',
+            backgroundColor: 'white',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '1em',
+            zIndex: 10,
+            width: '10em',
+            height: '10em',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ color: 'black', fontWeight: 'bold', fontSize: '1.25em' }}>
+            You Still There?<br />
+            <h2 style={{ color: 'black', fontWeight: 'bold', fontSize: '2em' }}>{timeLeft}</h2>
+          </p>
         </div>
       )}
 
-      {/* Navigation bar */}
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '2vh 2vw',
-      }}>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
-          <a href="http://localhost:8000/">
-            <img
-              src="/static/images/pages/logo-colour.svg"
-              alt="Vision Play Hub Logo"
-              style={{ height: '6vh', width: 'auto' }}
-            />
-          </a>
-        </div>
-                <div style={{ display: 'flex', gap: '0.8vw' }}>
-          {isAuthenticated ? (
-            <>
-              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
-              </a>
-              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Profile</button>
-              </a>
-              <button className="hanken-grotesk-bold back-button" onClick={handleLogout}>
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Log In</button>
-              </a>
-              <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Sign Up</button>
-              </a>
-              <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Leaderboard</button>
-              </a>
-              <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
-                <button className="hanken-grotesk-bold back-button">Profile</button>
-              </a>
-            </>
-          )}
-        </div>
-      </nav>
+      {!selectedGame && (
+        <nav
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '2vh 2vw',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw' }}>
+            <a href="http://localhost:8000/">
+              <img
+                src="/static/images/pages/logo-colour.svg"
+                alt="Vision Play Hub Logo"
+                style={{ height: '6vh', width: 'auto' }}
+              />
+            </a>
+            <a href="http://localhost:8000/about-us/" style={{ textDecoration: 'none' }}>
+              <button className="hanken-grotesk-bold back-button">About Us</button>
+            </a>
+            <a href="http://localhost:8000/faqs/" style={{ textDecoration: 'none' }}>
+              <button className="hanken-grotesk-bold back-button">FAQs</button>
+            </a>
+          </div>
+          <div style={{ display: 'flex', gap: '0.8vw', alignItems: 'center' }}>
+            {isAuthenticated ? (
+              <>
+                <a href="http://localhost:8000/auth/leaderboard/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Leaderboard</button>
+                </a>
+                <a href="http://localhost:8000/accounts/profile/" style={{ textDecoration: 'none' }}>
+                  <div
+                    className={`profile-pic ${!profilePic ? 'default' : ''}`}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      border: '2px solid transparent',
+                      backgroundColor: !profilePic ? '#4a4a4a' : 'transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.2rem',
+                      fontFamily: '"Bricolage Grotesque", sans-serif',
+                      color: '#66fcf1',
+                    }}
+                    onMouseEnter={(e) => (e.target.style.borderColor = '#66fcf1')}
+                    onMouseLeave={(e) => (e.target.style.borderColor = 'transparent')}
+                  >
+                    {profilePic ? (
+                      <img
+                        src={profilePic}
+                        alt="Profile"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    ) : (
+                      username ? username.charAt(0).toUpperCase() : 'G' // Default to first letter or 'G' for Guest
+                    )}
+                  </div>
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="http://localhost:8000/auth/login/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Log In</button>
+                </a>
+                <a href="http://localhost:8000/auth/signup/" style={{ textDecoration: 'none' }}>
+                  <button className="hanken-grotesk-bold back-button">Sign Up</button>
+                </a>
+              </>
+            )}
+          </div>
+        </nav>
+      )}
 
       {showHero && (
-        <div id='hero' style={{ position: "relative", minHeight: "40vh", maxHeight: "60vh", width: "100%", display: "flex", justifyContent: 'center', paddingTop: "5vh" }}>
-          <div style={{ display: "flex", justifyContent: "center", flexDirection: "column", gap: "clamp(2px, 5vw, 10px)" }}>
-            <div style={{ position: "relative" }}>
-              <h1 className="hanken-grotesk-bold glow-pulse" style={{ fontSize: "6em", textAlign: "center", color: "#ffffff" }}>
+        <div
+          id="hero"
+          style={{
+            position: 'relative',
+            minHeight: '40vh',
+            maxHeight: '60vh',
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            paddingTop: '5vh',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 'clamp(2px, 5vw, 10px)',
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <h1
+                className="hanken-grotesk-bold glow-pulse"
+                style={{ fontSize: '6em', textAlign: 'center', color: '#ffffff' }}
+              >
                 Vision Play Hub
               </h1>
             </div>
-            <p className="bricolage-grotesque-regular" style={{ margin: 0, textAlign: "center", color: "#ffffff" }}>
+            <p
+              className="bricolage-grotesque-regular"
+              style={{ margin: 0, textAlign: 'center', color: '#ffffff' }}
+            >
               A home for your entertainment. Enjoy our selection of mini games for you to play!
             </p>
           </div>
@@ -423,13 +528,57 @@ const App = () => {
 
       {!selectedGame ? (
         <div style={{ zIndex: 4 }}>
-          <GameCarousel
-            games={games}
-            onSelectGame={(game) => {
-              setSelectedGame(game);
-              setShowHero(false);
-            }}
-          />
+          {!hasChosenAccess ? (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: '2rem',
+                gap: '1rem',
+              }}
+            >
+              <button
+                className="hanken-grotesk-bold"
+                onClick={() => {
+                  setUsername('Guest');
+                  setHasChosenAccess(true);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  background: 'none',
+                  border: '1px solid #66fcf1',
+                  color: '#66fcf1',
+                  cursor: 'pointer',
+                  transition: 'background 0.3s, color 0.3s',
+                  fontSize: '1rem',
+                  fontFamily: '"Bricolage Grotesque", sans-serif',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#66fcf1';
+                  e.target.style.color = '#0b0c10';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'none';
+                  e.target.style.color = '#66fcf1';
+                }}
+              >
+                Play as Guest
+              </button>
+              <p className="bricolage-grotesk-regular" style={{ color: '#ffffff' }}>
+                Alternatively, log in or sign up from the top-right menu!
+              </p>
+            </div>
+          ) : (
+            <GameCarousel
+              games={games}
+              onSelectGame={(game) => {
+                setSelectedGame(game);
+                setShowHero(false);
+              }}
+            />
+          )}
         </div>
       ) : (
         <div>
@@ -453,7 +602,7 @@ const App = () => {
               cursor: 'pointer',
               transition: 'background 0.3s, color 0.3s',
               fontSize: '1rem',
-              fontFamily: '"Bricolage Grotesque", sans-serif'
+              fontFamily: '"Bricolage Grotesque", sans-serif',
             }}
             onMouseEnter={(e) => {
               e.target.style.background = '#66fcf1';
@@ -470,7 +619,7 @@ const App = () => {
       )}
 
       <footer>
-        <p className="dm-sans-bold" style={{ textAlign: "center", color: "#ffffff" }}>
+        <p className="dm-sans-bold" style={{ textAlign: 'center', color: '#ffffff' }}>
           The Woks © 2025
         </p>
       </footer>
