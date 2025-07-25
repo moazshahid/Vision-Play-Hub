@@ -266,7 +266,7 @@ class UserProfileAPIView(APIView):
 
     def get(self, request):
         try:
-            profile = request.user.profile
+            profile = UserProfiles.objects.get(user=request.user)
             serializer = UserProfileSerializer(profile, context={'request': request})
             return Response(serializer.data)
         except UserProfiles.DoesNotExist:
@@ -278,7 +278,7 @@ class UserProfileImageUploadAPIView(APIView):
 
     def post(self, request):
         try:
-            profile = request.user.profile
+            profile = UserProfiles.objects.get(user=request.user)
             profile.profile_image = request.FILES.get('profile_image')
             profile.save()
             serializer = UserProfileSerializer(profile, context={'request': request})
@@ -289,7 +289,7 @@ class UserProfileImageUploadAPIView(APIView):
 @require_POST
 def save_settings(request):
     try:
-        profile = request.user.profile
+        profile = UserProfiles.objects.get(user=request.user)
         profile.is_dark_mode = request.POST.get('is_dark_mode') == 'true'
         profile.is_colorblind_mode = request.POST.get('is_colorblind_mode') == 'true'
         profile.save()

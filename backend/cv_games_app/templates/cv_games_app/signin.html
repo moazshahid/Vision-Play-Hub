@@ -213,107 +213,99 @@
     </div>
     <script>
         function getCookie(name) {
-            const cookieValue = document.cookie
-                .split('; ')
-                .find(row => row.startsWith(name + '='))
-                ?.split('=')[1];
-            return cookieValue || '';
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Apply theme class based on localStorage
-            const isLightMode = localStorage.getItem('themeMode') === 'true';
-            const isColorFilter = localStorage.getItem('colorFilter') === 'true';
-            const appDiv = document.querySelector('.App');
-            if (isLightMode) {
-                appDiv.classList.add('light');
-            } else if (isColorFilter) {
-                appDiv.classList.add('colorblind');
-            }
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = e.target.username.value;
+            const password = e.target.password.value;
+            const csrfToken = getCookie('csrftoken');
+            console.log('CSRF token:', csrfToken || 'null');
 
-            // Handle login form submission
-            const loginForm = document.getElementById('login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const username = e.target.username.value;
-                    const password = e.target.password.value;
-                    const csrfToken = getCookie('csrftoken');
-
-                    try {
-                        const response = await fetch('{% url 'login' %}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-CSRFToken': csrfToken,
-                            },
-                            body: new URLSearchParams({
-                                'username': username,
-                                'password': password,
-                            }),
-                            credentials: 'include',
-                        });
-
-                        // Check if response is a redirect (successful login)
-                        if (response.redirected) {
-                            console.log('Login successful, redirecting to:', response.url);
-
-                            // Fetch user profile settings after successful login
-                            const profileResponse = await fetch('{% url 'user_profile' %}', {
-                                headers: {
-                                    'Authorization': `Bearer ${getCookie('access_token')}`,
-                                    'X-CSRFToken': csrfToken,
-                                },
-                                credentials: 'include',
-                            });
-
-                            if (profileResponse.ok) {
-                                const profileData = await profileResponse.json();
-                                console.log('Profile data fetched:', profileData);
-
-                                // Store settings in localStorage
-                                localStorage.setItem('access_token', getCookie('access_token'));
-                                localStorage.setItem('refresh_token', getCookie('refresh_token'));
-                                localStorage.setItem('themeMode', profileData.is_dark_mode ? "light" : "dark");
-                                localStorage.setItem('colorFilter', profileData.is_colorblind_mode ? "colorblind" : "trichromatic");
-                                localStorage.setItem('log', (!localStorage.getItem('log')) ? String("Added in " + localStorage.getItem('themeMode') + " and " + localStorage.getItem('colorFilter')) : localStorage.getItem('log') + String("\nAdded in " + localStorage.getItem('themeMode') + " and " + localStorage.getItem('colorFilter')));
-
-                                // Update theme class
-                                appDiv.classList.remove('light', 'colorblind');
-                                if (profileData.is_dark_mode) {
-                                    appDiv.classList.add('light');
-                                } else if (profileData.is_colorblind_mode) {
-                                    appDiv.classList.add('colorblind');
-                                }
-                            } else {
-                                console.error('Failed to fetch profile data:', profileResponse.statusText);
-                            }
-
-                            // Follow the redirect to homepage
-                            window.location.href = response.url;
-                        } else {
-                            // Handle non-redirect response (likely a failed login)
-                            const text = await response.text();
-                            console.error('Login failed, response:', text);
-                            const messageDiv = document.createElement('div');
-                            messageDiv.style.marginBottom = '1rem';
-                            messageDiv.style.color = 'red';
-                            messageDiv.textContent = 'Invalid username or password.';
-                            const formContainer = document.querySelector('div[style*="max-width: 400px"]');
-                            formContainer.parentNode.insertBefore(messageDiv, formContainer);
-                        }
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        const messageDiv = document.createElement('div');
-                        messageDiv.style.marginBottom = '1rem';
-                        messageDiv.style.color = 'red';
-                        messageDiv.textContent = 'An error occurred during login. Please try again.';
-                        const formContainer = document.querySelector('div[style*="max-width: 400px"]');
-                        formContainer.parentNode.insertBefore(messageDiv, formContainer);
-                    }
+            try {
+                // Step 1: Get JWT tokens
+                const tokenResponse = await fetch('http://localhost:8000/api/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ username, password }),
                 });
-            } else {
-                console.error('Form with id="login-form" not found in the DOM');
+                const tokenText = await tokenResponse.text();
+                console.log('Token response:', tokenText);
+                let tokenData;
+                try {
+                    tokenData = JSON.parse(tokenText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON from /api/token/: ${tokenText}`);
+                }
+                if (!tokenResponse.ok) {
+                    throw new Error(tokenData.detail || 'Failed to get tokens');
+                }
+                const { access, refresh } = tokenData;
+
+                // Store tokens
+                localStorage.setItem('access_token', access);
+                localStorage.setItem('refresh_token', refresh);
+                localStorage.setItem('csrftoken', csrfToken);
+                document.cookie = `access_token=${access};max-age=3600;path=/;samesite=Lax`;
+                document.cookie = `refresh_token=${refresh};max-age=86400;path=/;samesite=Lax`;
+                document.cookie = `csrftoken=${csrfToken};max-age=31449600;path=/;samesite=Lax`;
+                console.log('Tokens stored: access_token=', access.substring(0, 10) + '...', 'refresh_token=', refresh.substring(0, 10) + '...', 'csrftoken=', csrfToken);
+
+                // Step 2: Get user profile settings
+                const profileResponse = await fetch('http://localhost:8000/api/user-profile/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${access}`,
+                        'X-CSRFToken': csrfToken,
+                    },
+                });
+                const profileText = await profileResponse.text();
+                console.log('Profile response:', profileText);
+                let profileData;
+                try {
+                    profileData = JSON.parse(profileText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON from /api/user-profile/: ${profileText}`);
+                }
+                if (!profileResponse.ok) {
+                    throw new Error(profileData.error || 'Failed to get profile settings');
+                }
+                localStorage.setItem('themeMode', profileData.is_dark_mode ? 'dark' : 'light');
+                localStorage.setItem('colorFilter', profileData.is_colorblind_mode ? 'colorblind' : 'normal');
+                console.log('Settings stored: themeMode=', localStorage.getItem('themeMode'), 'colorFilter=', localStorage.getItem('colorFilter'));
+
+                // Step 3: Server-side login
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                const loginResponse = await fetch('{% url "login" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                    redirect: 'manual',
+                });
+                console.log('Login response status:', loginResponse.status, 'Redirected:', loginResponse.redirected);
+                if (loginResponse.status === 0 || loginResponse.redirected) {
+                    console.log('Server-side login successful, redirecting to home');
+                    window.location.href = '{% url "home" %}';
+                } else {
+                    const loginText = await loginResponse.text();
+                    console.log('Login response:', loginText);
+                    throw new Error('Server-side login failed: ' + loginText);
+                }
+            } catch (error) {
+                console.error('Login error:', error.message);
+                alert('Login failed: ' + error.message);
             }
         });
     </script>
