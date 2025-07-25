@@ -16,6 +16,8 @@ idna==3.10
 requests==2.32.4
 urllib3==2.5.0
 pillow>=10.2.0
+dj-database-url==2.2.0
+
 
 
 

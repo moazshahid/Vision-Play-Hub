@@ -98,6 +98,10 @@ def signup(request):
             logger.warning("Email %s already exists", email)
             messages.error(request, 'Email already exists')
             return render(request, 'cv_games_app/signup.html')
+        
+        storage = messages.get_messages(request)
+        storage.used = True
+        
         try:
             user = User.objects.create_user(
                 username=username,
@@ -108,11 +112,17 @@ def signup(request):
             UserProfiles.objects.create(user=user, is_dark_mode=False, is_colorblind_mode=False)
             # Create a profile for the new user
             Profile.objects.create(user=user)
+        except Exception as e:
+            logger.error("User creation failed: %s", str(e))
+            messages.error(request, f"Error creating account: {str(e)}")
+            return render(request, 'cv_games_app/signup.html')
+        
+        try:
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
-            response = redirect('home')  
+            response = redirect('home')
             response.set_cookie(
                 'access_token',
                 access_token,
@@ -147,9 +157,9 @@ def signup(request):
             messages.success(request, f"Successfully signed up as {username}.")
             return response
         except Exception as e:
-            logger.error("Error during signup: %s", str(e))
-            messages.error(request, 'An error occurred during signup. Please try again.')
-            return render(request, 'cv_games_app/signup.html')
+            logger.error("Post-user creation error (login/cookies): %s", str(e))
+            messages.success(request, f"Account created for {username}. Please log in.")
+            return redirect('login')
     return render(request, 'cv_games_app/signup.html')
 
 @ensure_csrf_cookie
@@ -218,6 +228,8 @@ def signin(request):
     return render(request, 'cv_games_app/signin.html')
 
 def signout(request):
+    storage = messages.get_messages(request)
+    storage.used = True
     logout(request)
     request.session.flush()
     messages.success(request, 'You have been logged out.')
@@ -233,7 +245,11 @@ def home(request):
         time_left = max(0, 600 - elapsed)
     if not username:
         username = 'Guest'
-    return render(request, 'index.html', {'username': username, 'time_left': time_left})
+    return render(request, 'index.html', {
+        'username': username,
+        'time_left': time_left,
+        'messages': messages.get_messages(request)
+    })
 
 def leaderboard(request):
     games = Games.objects.all()
