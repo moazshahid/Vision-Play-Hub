@@ -58,5 +58,5 @@ docker-compose exec -T db psql -U cv_games_user -d cv_games_db -f /tmp/init_data
 echo -e "${GREEN}Initial game data added successfully!${NC}"
 
 echo -e "${GREEN}Setup complete! You can now access the app at http://localhost:8000/${NC}"
-echo "To stop the app, run: ./stop-app.sh"
-echo "To reset the database, run: ./reset-app.sh"
+echo "To stop the app, use Docker Desktop or run: docker-compose down"
+echo "To restart it later, run: docker-compose up -d"
