@@ -98,10 +98,6 @@ def signup(request):
             logger.warning("Email %s already exists", email)
             messages.error(request, 'Email already exists')
             return render(request, 'cv_games_app/signup.html')
-        
-        storage = messages.get_messages(request)
-        storage.used = True
-        
         try:
             user = User.objects.create_user(
                 username=username,
@@ -112,17 +108,11 @@ def signup(request):
             UserProfiles.objects.create(user=user, is_dark_mode=False, is_colorblind_mode=False)
             # Create a profile for the new user
             Profile.objects.create(user=user)
-        except Exception as e:
-            logger.error("User creation failed: %s", str(e))
-            messages.error(request, f"Error creating account: {str(e)}")
-            return render(request, 'cv_games_app/signup.html')
-        
-        try:
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
-            response = redirect('home')
+            response = redirect('home')  
             response.set_cookie(
                 'access_token',
                 access_token,
