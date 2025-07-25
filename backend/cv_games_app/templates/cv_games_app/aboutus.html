@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>About Us - Vision Play Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    {% load socialaccount %}
+
+    <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Hanken Grotesk", sans-serif;
+      letter-spacing: -0.05em;
+      color: #ffffff;
+      height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2vh 2vw;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: transparent;
+      z-index: 30;
+      color: white;
+    }
+
+    nav a {
+      text-decoration: none;
+    }
+
+    .button-design {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+
+    .button-design:hover {
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+      color: #ffffff;
+      background: none;
+      border: none;
+    }
+
+    .about-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100%;
+      padding: 1rem;
+      z-index: 20;
+      position: relative;
+      text-align: center;
+    }
+
+    .about-card {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
+      max-width: 820px;
+      width: 90%;
+    }
+
+    .about-card h1 {
+      font-family: "Hanken Grotesk", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #ffffff;
+    }
+
+    .about-card p {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+      color: #c5c6c7;
+    }
+
+    .highlight {
+      color: #66fcf1;
+      font-weight: 600;
+    }
+
+    .back-button {
+      margin-top: 1.8rem;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: none;
+      border: 1px solid #66fcf1;
+      color: #66fcf1;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .back-button:hover {
+      background-color: #66fcf1;
+      color: #0b0c10;
+    }
+
+    @keyframes glowPulse {
+      0% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+      33% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(204, 0, 255, 0.5),
+          0 0 20px rgba(204, 0, 255, 0.4),
+          0 0 30px rgba(204, 0, 255, 0.3);
+      }
+      66% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(255, 0, 128, 0.5),
+          0 0 20px rgba(255, 0, 128, 0.4),
+          0 0 30px rgba(255, 0, 128, 0.3);
+      }
+      100% {
+          text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+    }
+
+    .glow-pulse {
+        animation: glowPulse 5s ease-in-out infinite;
+        color: #ffffff;
+    }
+
+    .profile-pic-nav {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid transparent;
+      background-color: transparent;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #66fcf1;
+    }
+
+    .profile-pic-nav.default {
+      background-color: #4a4a4a;
+    }
+
+    .profile-pic-nav:hover {
+      border-color: #66fcf1;
+    }
+
+    </style>
+</head>
+
+<body>
+  <!-- Video Background -->
+  <video autoplay loop muted playsinline>
+    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Overlay -->
+  <div class="overlay"></div>
+
+  <!-- Navbar -->
+  <nav>
+    <div style="display: flex; align-items: center; gap: 0.8vw;">
+        <a href="/">
+            <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
+        </a>
+        <a href="{% url 'aboutus' %}">
+            <button class="button-design">About Us</button>
+        </a>
+        <a href="{% url 'faqs' %}">
+            <button class="button-design">FAQs</button>
+        </a>
+    </div>
+    <div style="display: flex; gap: 0.8vw;">
+        {% if not user.is_authenticated %}
+          <a href="{% url 'login' %}">
+            <button class="button-design">Log In</button>
+          </a>
+          <a href="{% url 'signup' %}">
+            <button class="button-design">Sign Up</button>
+          </a>
+        {% endif %}
+        {% if user.is_authenticated %}
+            <a href="{% url 'leaderboard' %}">
+                <button class="button-design">Leaderboard</button>
+            </a>
+            <a href="/accounts/profile/">
+                <div class="profile-pic-nav {% if not user.profile.profile_picture %}default{% endif %}">
+                    {% if user.profile.profile_picture %}
+                        <img src="{{ user.profile.profile_picture.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+            </a>  
+        {% endif %}
+    </div>
+  </nav>
+
+  <!-- About Us Content -->
+  <div class="about-container">
+    <div class="about-card">
+      <h1 class="glow-pulse">About Us</h1>
+      <p>
+        <span class="highlight">The Woks</span> is a dedicated team aiming to transform the gaming industry by leveraging computer vision technology for interactive and immersive gaming experiences.
+      </p>
+      <p>
+        Our <span class="highlight">mission</span> is to redefine the gaming experience by making it more interactive, immersive, and accessible to everyone, regardless of age or background. 
+      </p>
+
+      <div class="contact-section">
+        <h2>Contact Us</h2>
+        <p>If you have any questions, feedback, or need support, feel free to reach out to us:</p>
+        <p>Email: support@visionplayhub.com</p>
+        <p>Phone: +1-234-567-890</a></p>
+        <p>Or visit our <a href="{% url 'faqs' %}"><button class="button-design">FAQs page</button></a> for quick answers!</p>
+
+      </div>
+    </div>
+  </div>
+</body>
+</html>

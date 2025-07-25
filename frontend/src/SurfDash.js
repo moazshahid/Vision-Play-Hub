@@ -897,6 +897,9 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.scale(-1, 1); // Mirror video feed
     ctx.drawImage(results.image, 0, 0, 1280, 720);
     ctx.restore();
+
+    const debug = debugRef.current; // Reference to debug element
+
     if (started && gameObj) {
       if (!gameObj.gameOver || gameObj.deathAnimation) {
         // Update runner position based on hand tracking
@@ -905,6 +908,10 @@ const SurfDash = ({ setSelectedGame }) => {
           const fingerX = Math.floor(1280 - indexFinger.x * 1280); // Mirror X-coordinate
           const fingerY = Math.floor(indexFinger.y * 720);
           gameObj.updateFingerPosition(fingerX, fingerY);
+          debug.innerHTML = ''; // Clear debug message when hand is detected
+        } else {
+          console.log('No hands detected in this frame');
+          debug.innerHTML = `<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam.</p>`;
         }
         gameObj.render(ctx); // Render game
       }
@@ -932,7 +939,6 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.font = '40px Arial';
     ctx.fillText('Press "R" to Restart', 640, 500);
     finalScore.textContent = score;
-    over.style.display = 'block';
   };
 
   // Restarts the game
@@ -962,7 +968,7 @@ const SurfDash = ({ setSelectedGame }) => {
     }
   };
 
-  // Quits the game and returns to the main menu
+  // Updated quitGame function to render quit message directly
   const quitGame = () => {
     console.log('Quitting game...');
     if (cameraRef.current) cameraRef.current.stop();
@@ -977,9 +983,32 @@ const SurfDash = ({ setSelectedGame }) => {
     immunitySoundRef.current.currentTime = 0;
     setImmunityMessage(false);
     setSkateMessage(false);
-    setShowGame(false);
-    setSelectedGame(null); // Return to game selection
+    setShowGame(true);
+    setSelectedGame(null);
+    // Render quit message directly on canvas
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, 1280, 720);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, 0, 1280, 720);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Game Quit', 640, 300);
+        ctx.font = '24px Arial';
+        ctx.fillText('Refresh the page to play again', 640, 360);
+        console.log('Quit message rendered on canvas');
+      } else {
+        console.error('Canvas context not available');
+      }
+    } else {
+      console.error('Canvas reference not available');
+    }
+    console.log('Game quit via Q key');
   };
+
 
   // useEffect hook for initialization and cleanup
   useEffect(() => {

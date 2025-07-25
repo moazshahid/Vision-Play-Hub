@@ -45,8 +45,8 @@
             border: none;
             color: #ffffff;
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: 'Hanken Grotesk', sans-serif;
         }
 
         .button-design:hover {
@@ -65,7 +65,7 @@
             border: 1px solid #ccc;
             border-radius: 20px;
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Bricolage Grotesque', sans-serif;
             font-size: 0.9rem;
             color: #000000;
             text-decoration: none;
@@ -85,7 +85,7 @@
 
         .or-text {
             color: white;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Bricolage Grotesque', sans-serif;
             font-size: 0.9rem;
             margin: 10px 0;
             text-align: center;
@@ -112,7 +112,7 @@
         }
 
         .VPH-header {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Hanken Grotesk', sans-serif;
             font-size: 4rem;
             font-weight: 700;
             text-align: center;
@@ -150,6 +150,43 @@
         nav a {
             text-decoration: none;
         }
+
+        @keyframes glowPulse {
+            0% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(0, 240, 255, 0.5),
+                0 0 20px rgba(0, 240, 255, 0.4),
+                0 0 30px rgba(0, 240, 255, 0.3);
+            }
+            33% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(204, 0, 255, 0.5),
+                0 0 20px rgba(204, 0, 255, 0.4),
+                0 0 30px rgba(204, 0, 255, 0.3);
+            }
+            66% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(255, 0, 128, 0.5),
+                0 0 20px rgba(255, 0, 128, 0.4),
+                0 0 30px rgba(255, 0, 128, 0.3);
+            }
+            100% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(0, 240, 255, 0.5),
+                0 0 20px rgba(0, 240, 255, 0.4),
+                0 0 30px rgba(0, 240, 255, 0.3);
+            }
+        }
+
+        .glow-pulse {
+            animation: glowPulse 5s ease-in-out infinite;
+            color: #ffffff;
+        }
+
     </style>
 </head>
 <body>
@@ -164,6 +201,12 @@
             <a href="/">
                 <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
             </a>
+            <a href="{% url 'aboutus' %}">
+                <button class="button-design">About Us</button>
+            </a>
+            <a href="{% url 'faqs' %}">
+                <button class="button-design">FAQs</button>
+            </a>
         </div>
         <div style="display: flex; gap: 0.8vw;">
             <a href="{% url 'login' %}">
@@ -172,21 +215,12 @@
             <a href="{% url 'signup' %}">
                 <button class="button-design">Sign Up</button>
             </a>
-            <a href="{% url 'leaderboard' %}">
-                <button class="button-design">Leaderboards</button>
-            </a>
-            <a href="/accounts/profile/">
-                <button class="button-design">Profile</button>
-            </a>
-            <a href="{% url 'logout' %}">
-                <button class="button-design">Log Out</button>
-            </a>
         </div>
     </nav>
 
     <!-- Content -->
     <div class="page-aligner">
-        <div class="VPH-header">Vision Play Hub</div>
+        <div class="VPH-header glow-pulse">Vision Play Hub</div>
 
         <div class="form-container">
             {% if messages %}

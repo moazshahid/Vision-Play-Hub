@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.http import JsonResponse, Http404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -12,12 +12,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
+from .models import Games, Leaderboards, Profile, UserProfiles, Sessions
 from rest_framework_simplejwt.tokens import RefreshToken
 import logging
 import time
 import json
+from .forms import ProfilePictureForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 
-from .models import Games, Sessions, Leaderboards, UserProfiles
 from .serializers import UserProfileSerializer
 
 logger = logging.getLogger(__name__)
@@ -103,6 +106,8 @@ def signup(request):
             )
             user.save()
             UserProfiles.objects.create(user=user, is_dark_mode=False, is_colorblind_mode=False)
+            # Create a profile for the new user
+            Profile.objects.create(user=user)
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -154,6 +159,10 @@ def signin(request):
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            # Ensure Profile exists before login
+            if not hasattr(user, 'profile'):
+                from .models import Profile
+                Profile.objects.create(user=user)
             login(request, user)
             # Ensure UserProfiles exists
             UserProfiles.objects.get_or_create(
@@ -310,3 +319,75 @@ def save_settings(request):
         logger.error("Error saving settings: %s", str(e))
         messages.error(request, 'Error saving settings.')
         return redirect('profile')
+def keep_session_alive(request):
+    request.session.modified = True  # refresh session expiry
+    return JsonResponse({'status': 'alive'})
+
+def faqs_view(request):
+    return render(request, 'cv_games_app/faqs.html')
+
+def about_us_view(request):
+    return render(request, 'cv_games_app/aboutus.html')
+
+@login_required
+def profile_view(request):
+    try:
+        profile = request.user.profile
+    except Profile.DoesNotExist:
+        profile = Profile.objects.create(user=request.user)
+    if request.method == 'POST':
+        form = ProfilePictureForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            # Return JSON response with the image URL
+            return JsonResponse({
+                'success': True,
+                'message': 'Profile picture updated successfully.',
+                'url': request.build_absolute_uri(profile.profile_picture.url) if profile.profile_picture else None
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': str(form.errors)
+            })
+    else:
+        form = ProfilePictureForm(instance=profile)
+    return render(request, 'cv_games_app/profile.html', {'form': form})
+
+@login_required
+def get_profile_pic(request):
+    try:
+        profile = request.user.profile
+        profile_pic_url = request.build_absolute_uri(profile.profile_picture.url) if profile.profile_picture else None
+        return JsonResponse({'profile_picture': profile_pic_url})
+    except Profile.DoesNotExist:
+        return JsonResponse({'profile_picture': None}, status=404)
+    except Exception as e:
+        logger.error("Error fetching profile picture: %s", str(e))
+        return JsonResponse({'profile_picture': None}, status=500)
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST['old_password']
+        new_password = request.POST['new_password']
+        confirm_password = request.POST['confirm_password']
+
+        if new_password != confirm_password:
+            return JsonResponse({'error': 'New passwords do not match'}, status=400)
+
+        user = request.user
+        if not user.check_password(old_password):
+            return JsonResponse({'error': 'Old password is incorrect'}, status=400)
+
+        user.set_password(new_password)
+        user.save()
+        # Ensure Profile exists after password change
+        if not hasattr(user, 'profile'):
+            from .models import Profile
+            Profile.objects.create(user=user)
+        update_session_auth_hash(request, user)  # Keep the user logged in
+        messages.success(request, 'Your password has been changed successfully.')
+        return JsonResponse({'success': True})
+
+    return render(request, 'profile.html')

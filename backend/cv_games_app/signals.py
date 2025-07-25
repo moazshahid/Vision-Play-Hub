@@ -1,6 +1,9 @@
 from django.contrib.auth.signals import user_logged_in
+from django.db.models.signals import post_save
+from django.contrib.auth.models import User
 from django.dispatch import receiver
 import logging
+from .models import Profile  # Adjust the import if your app or model name differs
 
 logger = logging.getLogger(__name__)
 
@@ -29,3 +32,23 @@ def set_jwt_cookies(sender, user, request, **kwargs):
                      user.username, access_token[:10], refresh_token[:10])
     except Exception as e:
         logger.error("Error generating JWT tokens for user %s: %s", user.username, str(e))
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """
+    Create a Profile for the User when the User is first created.
+    This ensures every new user has a Profile, complementing the signup view.
+    """
+    if created and not hasattr(instance, 'profile'):
+        Profile.objects.create(user=instance)
+        logger.debug("Created Profile for new user: %s", instance.username)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """
+    Save the Profile when the User is saved, ensuring it stays in sync.
+    This handles updates to the User that might affect the Profile.
+    """
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+        logger.debug("Saved Profile for user: %s", instance.username)
