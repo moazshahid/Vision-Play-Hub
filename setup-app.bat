@@ -51,7 +51,7 @@ echo %GREEN% Database structure set up successfully!
 
 REM Copy init_data.sql into the container
 echo Adding initial game data...
-docker cp .\database\init_data.sql dubai-team-1-db-1:/tmp/init_data.sql
+docker cp ./database/init_data.sql dubai-team-1-db-1:/tmp/init_data.sql
 if errorlevel 1 (
     echo %RED% Failed to copy initial data file. Check if database\init_data.sql exists.
     exit /b 1
