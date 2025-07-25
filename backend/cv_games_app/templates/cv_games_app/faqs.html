@@ -303,13 +303,10 @@
 
 <body>
   <!-- Video Background -->
-  <video autoplay loop muted playsinline>
-    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" width="100vw" height="100vh" frameBorder="0" style="opacity: 0.5;position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10;"></iframe>
+    <!-- Overlay to darken the video -->
+  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
 
-  <!-- Overlay -->
-  <div class="overlay"></div>
 
   <!-- Navbar -->
   <nav>
@@ -388,5 +385,26 @@
       </div>
     </div>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Apply themeMode (dark/light)
+      f = localStorage.getItem('colorFilter') 
+      t = localStorage.getItem('themeMode')
+      source = "{% static 'videos/Jowstick animation.svg' %}";
+      if (f === 'colorblind' && t === 'light') {
+          document.body.classList.add('light');
+          document.body.classList.add('colorblind');
+          source = "{% static 'videos/Jowstick animation colorblind light.svg' %}";
+      } else if (t === 'light') {
+          document.body.classList.add('light');
+          source = "{% static 'videos/Jowstick animation light.svg' %}";
+      } else if (f === 'colorblind') {
+          document.body.classList.add('colorblind');
+          source = "{% static 'videos/Jowstick animation colorblind.svg' %}";
+      }
+
+      document.getElementById('bg-anim').src = source;
+  });
+  </script>
 </body>
 </html>
