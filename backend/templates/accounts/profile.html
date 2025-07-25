@@ -515,10 +515,6 @@
       </div>
       <div class="profile-right">
         <h2>Settings</h2>
-        <div class="setting-option">
-          <label for="theme-toggle">Theme</label>
-          <button id="theme-toggle" class="back-button">Toggle Light/Dark</button>
-        </div>
         <form id="settings-form" method="POST" action="{% url 'save_settings' %}" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="setting-option">
