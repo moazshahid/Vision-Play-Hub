@@ -590,8 +590,8 @@ const WhackAMole = () => {
           <div style={{maxWidth:"40%"}}>
             <img src="static/images/pages/mole-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
-          <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{maxWidth:"20%", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: '5vh', gap: '10px'}}>
+            <button className="inter start-button" onClick={handleStartGame} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
