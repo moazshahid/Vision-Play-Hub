@@ -18,11 +18,11 @@ class Games(models.Model):
 class UserProfiles(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
-    is_dark_mode = models.BooleanField(default=False)  # Changed to False
+    is_dark_mode = models.BooleanField(default=False)
     is_colorblind_mode = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'user_profiles'  # Added for clarity
+        db_table = 'user_profiles'
         verbose_name_plural = 'User Profiles'
 
 class Sessions(models.Model):

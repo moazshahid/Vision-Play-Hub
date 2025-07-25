@@ -212,19 +212,38 @@
         </div>
     </div>
     <script>
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
+        async function getCsrfToken() {
+            try {
+                const response = await fetch('http://localhost:8000/csrf/', {
+                    method: 'GET',
+                    credentials: 'include',
+                });
+                if (!response.ok) throw new Error('Failed to fetch CSRF token');
+                const data = await response.json();
+                console.log('CSRF token fetched:', data.message);
+                const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+                if (csrfToken) localStorage.setItem('csrftoken', csrfToken);
+                return csrfToken;
+            } catch (error) {
+                console.error('CSRF fetch error:', error.message);
+                return null;
+            }
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = e.target.username.value;
             const password = e.target.password.value;
-            const csrfToken = getCookie('csrftoken');
-            console.log('CSRF token:', csrfToken || 'null');
+            let csrfToken = localStorage.getItem('csrftoken') || document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+            console.log('Initial CSRF token:', csrfToken || 'null');
+
+            if (!csrfToken) {
+                csrfToken = await getCsrfToken();
+                if (!csrfToken) {
+                    alert('Login failed: Unable to fetch CSRF token');
+                    return;
+                }
+            }
 
             try {
                 // Step 1: Get JWT tokens
@@ -235,6 +254,7 @@
                         'X-CSRFToken': csrfToken,
                     },
                     body: JSON.stringify({ username, password }),
+                    credentials: 'include',
                 });
                 const tokenText = await tokenResponse.text();
                 console.log('Token response:', tokenText);
@@ -265,6 +285,7 @@
                         'Authorization': `Bearer ${access}`,
                         'X-CSRFToken': csrfToken,
                     },
+                    credentials: 'include',
                 });
                 const profileText = await profileResponse.text();
                 console.log('Profile response:', profileText);
@@ -292,6 +313,7 @@
                     headers: {
                         'X-CSRFToken': csrfToken,
                     },
+                    credentials: 'include',
                     redirect: 'manual',
                 });
                 console.log('Login response status:', loginResponse.status, 'Redirected:', loginResponse.redirected);

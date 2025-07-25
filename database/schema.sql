@@ -882,7 +882,7 @@ ALTER TABLE ONLY public.leaderboards
 --
 
 ALTER TABLE ONLY public.leaderboards
-    ADD CONSTRAINT leaderboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id);
+    ADD CONSTRAINT leaderboards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.auth_users(user_id);
 
 
 --

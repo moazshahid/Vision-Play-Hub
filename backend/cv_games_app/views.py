@@ -38,14 +38,23 @@ class SubmitScoreAPIView(APIView):
         try:
             game_title = request.data.get('game')
             score = request.data.get('score')
-            logger.debug("Received data: game=%s, score=%s", game_title, score)
+            logger.debug("Received data: game=%s, score=%s, user=%s (id=%s)", game_title, score, request.user.username, request.user.id)
             if not game_title or score is None:
                 return Response({'error': 'Game title and score required'}, status=status.HTTP_400_BAD_REQUEST)
             score = int(score)
             if score < 0:
                 return Response({'error': 'Score cannot be negative'}, status=status.HTTP_400_BAD_REQUEST)
             user = request.user
-            game = Games.objects.get(title=game_title)  
+            if not User.objects.filter(id=user.id).exists():
+                logger.error("User with ID %s does not exist in auth_user", user.id)
+                return Response({'error': 'User not found in database'}, status=status.HTTP_404_NOT_FOUND)
+            games = Games.objects.filter(title=game_title)
+            if not games.exists():
+                logger.error("Game not found: %s", game_title)
+                return Response({'error': 'Game not found'}, status=status.HTTP_404_NOT_FOUND)
+            if games.count() > 1:
+                logger.warning("Multiple games found for title %s, using first one", game_title)
+            game = games.first()
             entry, created = Leaderboards.objects.update_or_create(
                 user=user,
                 game=game,
@@ -59,17 +68,15 @@ class SubmitScoreAPIView(APIView):
             for idx, entry in enumerate(all_entries, start=1):
                 entry.ranking = idx
                 entry.save()
-            logger.info("Score saved for user=%s, game=%s, score=%d", user.username, game_title, score)
+            logger.info("Score saved for user=%s (id=%s), game=%s, score=%d", user.username, user.id, game_title, score)
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
-        except Games.DoesNotExist:
-            logger.error("Game not found: %s", game_title)
-            return Response({'error': 'Game not found'}, status=status.HTTP_404_NOT_FOUND)
         except ValueError:
             logger.error("Invalid score format")
             return Response({'error': 'Invalid score format'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error("Unexpected error: %s", str(e))
+            logger.error("Unexpected error in submit score: %s", str(e))
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 def signup(request):
     if request.method == 'POST':
@@ -131,12 +138,12 @@ def signup(request):
                 secure=False,
                 samesite='Lax'
             )
-            logger.info("User %s signed up successfully, access_token set: %s, httponly=False", username, access_token[:10] + '...')
+            logger.info("User %s signed up successfully, access_token set: %s, httponly=False", username, access_token[:10])
             messages.success(request, f"Successfully signed up as {username}.")
             return response
         except Exception as e:
-            logger.error("Signup error: %s", str(e))
-            messages.error(request, 'Error creating account')
+            logger.error("Error during signup: %s", str(e))
+            messages.error(request, 'An error occurred during signup. Please try again.')
             return render(request, 'cv_games_app/signup.html')
     return render(request, 'cv_games_app/signup.html')
 
@@ -192,7 +199,7 @@ def signin(request):
                 secure=False,
                 samesite='Lax'
             )
-            logger.info("User %s logged in successfully, access_token set: %s, httponly=False", username, access_token[:10] + '...')
+            logger.info("User %s logged in successfully, access_token set: %s, httponly=False", username, access_token[:10])
             messages.success(request, f"Successfully signed in as {username}.")
             return response
         else:
