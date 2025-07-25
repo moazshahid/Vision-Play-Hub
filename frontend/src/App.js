@@ -9,6 +9,8 @@ import { login } from './utils/api';
 import TetrisGame from './TetrisGame';
 import SpaceWars from './SpaceWars';
 
+import Bg from './Background';
+
 const GameCarousel = ({ games, onSelectGame }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const intervalRef = useRef(null);
@@ -176,6 +178,14 @@ const GameCarousel = ({ games, onSelectGame }) => {
   );
 };
 
+function getCookie(name) {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(name + '='))
+    ?.split('=')[1];
+  return cookieValue || '';
+}
+
 const App = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showHero, setShowHero] = useState(true);
@@ -186,6 +196,9 @@ const App = () => {
   const [hasChosenAccess, setHasChosenAccess] = useState(isAuthenticated);
   const timerRef = useRef(null);
 
+  // Read themeMode and colorFilter from localStorage
+  const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'dark');
+  const [colorFilter, setColorFilter] = useState(localStorage.getItem('colorFilter') || 'trichromatic');
   // Fetch profile picture
   const fetchProfilePic = async () => {
     console.log('Fetching profile pic with token:', localStorage.getItem('access_token'));
@@ -226,7 +239,7 @@ const App = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (username === 'Guest' || !username) {
+    if (username === "Guest" || !username || timeLeft <= 0) {
       // Don't start countdown if username is "Guest" or empty
       return;
     }
@@ -245,35 +258,131 @@ const App = () => {
     return () => clearInterval(countdown);
   }, [username]);
 
+  // Apply light and colorblind classes to <body>
+  useEffect(() => {
+    const body = document.body;
+    // Remove existing classes
+    body.classList.remove('light', 'colorblind');
+    
+    // Map themeMode: 'light' -> add 'light' class, 'dark' -> no class
+    if (themeMode === 'light') {
+      body.classList.add('light');
+    }
+    
+    // Map colorFilter: 'colorblind' -> add 'colorblind' class, 'trichromatic' -> no class
+    if (colorFilter === 'colorblind') {
+      body.classList.add('colorblind');
+    }
+  }, [themeMode, colorFilter]);
+
+  // Sync localStorage changes to state
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setThemeMode(localStorage.getItem('themeMode') || 'dark');
+      setColorFilter(localStorage.getItem('colorFilter') || 'trichromatic');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   useEffect(() => {
     let lastPing = 0;
     const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const scriptSrc = '/static/js/bgAnimation.js';
+    const svgId = 'eszI2DbBTPV1';
+
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const injectScript = async () => {
+      await delay(1000); // Delay 1 second before injecting
+      if (!document.querySelector(`script[src="${scriptSrc}"]`)) {
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        script.async = true;
+        document.body.appendChild(script);
+        console.log('Injected bgAnimation.js');
+      }
+    };
+
+    const checkAndInject = async () => {
+      const svg = document.getElementById(svgId);
+      const script = document.querySelector(`script[src="${scriptSrc}"]`);
+      if (svg && !script) {
+        await injectScript();
+      }
+    };
 
     const pingServerIfDue = () => {
       const now = Date.now();
       if (now - lastPing >= PING_INTERVAL) {
         lastPing = now;
+
         fetch('/ping/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
           },
-        });
+          credentials: 'include',
+          body: JSON.stringify({ ping: true }),
+        })
+          .then(res => res.json())
+          .then(async data => {
+            if (data.new_expiry) {
+              setTimeLeft(data.new_expiry);
+            }
+            await checkAndInject();
+          })
+          .catch(async () => {
+            await checkAndInject();
+          });
       }
     };
 
-    // Attach event listeners
     document.addEventListener('click', pingServerIfDue);
     document.addEventListener('keydown', pingServerIfDue);
-    document.addEventListener('mousemove', pingServerIfDue);
 
-    // Cleanup listeners on unmount
+    // Initial delayed check
+    injectScript();
+
     return () => {
       document.removeEventListener('click', pingServerIfDue);
       document.removeEventListener('keydown', pingServerIfDue);
-      document.removeEventListener('mousemove', pingServerIfDue);
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedGame) {
+      return; // no game selected, don't ping
+    }
+
+    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    const pingServer = () => {
+      fetch('/ping/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ ping: true }),
+      });
+    };
+
+    // Immediately ping once when game selected
+    pingServer();
+
+    // Then set interval to keep pinging every 5 minutes
+    const intervalId = setInterval(pingServer, PING_INTERVAL);
+
+    // Cleanup interval on unmount or when selectedGame changes
+    return () => clearInterval(intervalId);
+  }, [selectedGame]);
 
   function genHexColorPair() {
     let r, g, b, avg;
@@ -346,27 +455,16 @@ const App = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setIsAuthenticated(false);
+    window.location.href = 'http://localhost:8000/auth/logout/';
+  };
+
   return (
     <div className="App">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: -2,
-        }}
-      >
-        <source src="http://localhost:8000/static/videos/BGV.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-
+      {/* Optional overlay for better text visibility */}
       <div
         style={{
           position: 'fixed',
@@ -380,6 +478,7 @@ const App = () => {
       ></div>
 
       <header></header>
+      <Bg themeMode={themeMode} colorFilter={colorFilter} />
 
       {(timeLeft <= 10 && timeLeft > 0) && (
         <div

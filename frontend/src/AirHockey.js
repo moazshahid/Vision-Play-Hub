@@ -845,7 +845,7 @@ const AirHockey = () => {
       <div style={{
         width: "100vw",
         minHeight: "95vh",
-        backgroundImage: "url(static/images/pages/hockey-bg.png)",
+        backgroundImage: `url(static/images/pages/${localStorage.getItem('colorFilter') == "colorblind" ? 'hockey-bg-colorblind' : 'hockey-bg'}.png)`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
         backgroundSize: "contain",
@@ -886,7 +886,7 @@ const AirHockey = () => {
           marginBottom: '20px'
         }}>
           <div style={{ maxWidth: "40%" }}>
-            <img src="static/images/pages/airhockey-colour.svg" alt="Air Hockey" style={{ width: '100%', height: 'auto' }} />
+            <img src={`static/images/pages/${localStorage.getItem('colorFilter') == "colorblind" ? 'airhockey-colour-colorblind' : 'airhockey-colour'}.svg`} alt="Air Hockey" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div style={{
             maxWidth: "20%",
@@ -898,7 +898,7 @@ const AirHockey = () => {
             gap: '10px'
           }}>
             <button className="inter start-button" onClick={handleStartGame} style={{
-              backgroundColor: '#4CAF50',
+              backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ? '#01fefcff' : '#4CAF50'}`,
               border: 'none',
               padding: '1em 1.5em',
               borderRadius: '1em',
@@ -953,7 +953,7 @@ const AirHockey = () => {
                   onMouseLeave={() => setHoveredMode(null)}
                   style={{
                     backgroundColor: '#2196F3',
-                    border: hoveredMode === mode ? '3px solid #4CAF50' : '3px solid transparent',
+                    border: hoveredMode === mode ? `3px solid ${localStorage.getItem('colorFilter') == "colorblind" ? '#01fefcff' : '#4CAF50'}` : '3px solid transparent',
                     borderRadius: '15px',
                     padding: '15px 30px',
                     cursor: 'pointer',
@@ -968,7 +968,7 @@ const AirHockey = () => {
               ))}
             </div>
             {confirmationMessage && (
-              <p style={{ color: '#4CAF50', fontSize: '1.5em', margin: '20px 0' }}>{confirmationMessage}</p>
+              <p style={{ color: `${localStorage.getItem('colorFilter') == "colorblind" ? '#01fefcff' : '#4CAF50'}`, fontSize: '1.5em', margin: '20px 0' }}>{confirmationMessage}</p>
             )}
           </div>
         )}
@@ -1000,8 +1000,8 @@ const AirHockey = () => {
                   onMouseEnter={() => setHoveredDifficulty(diff)}
                   onMouseLeave={() => setHoveredDifficulty(null)}
                   style={{
-                    backgroundColor: diff === 'easy' ? '#4CAF50' : diff === 'medium' ? '#FFC107' : '#F44336',
-                    border: hoveredDifficulty === diff ? '3px solid #4CAF50' : '3px solid transparent',
+                    backgroundColor: diff === 'easy' ? `${localStorage.getItem('colorFilter') == "colorblind" ? '#01fefcff' : '#4CAF50'}` : diff === 'medium' ? '#FFC107' : `${localStorage.getItem('colorFilter') == "colorblind" ? '#f96407' : '#F44336'}`,
+                    border: hoveredDifficulty === diff ? `3px solid ${localStorage.getItem('colorFilter') == "colorblind" ? '#01fefcff' : '#4CAF50'}` : '3px solid transparent',
                     borderRadius: '15px',
                     padding: '15px 30px',
                     cursor: 'pointer',

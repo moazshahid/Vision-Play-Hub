@@ -16,9 +16,15 @@
     body {
       font-family: "Bricolage Grotesque", sans-serif;
       color: #ffffff;
+      background-color: #09080e;
       height: 100vh;
       overflow-x: hidden;
       position: relative;
+    }
+
+    body.light {
+      color: #09080e;
+      background-color: #fff;
     }
 
     video {
@@ -270,13 +276,8 @@
 </head>
 <body>
 
-  <!-- Video Background -->
-  <video autoplay loop muted playsinline>
-    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-
-  <!-- Overlay -->
+  <!-- Iframe Animation Background -->
+  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" width="100%" height="100vh" frameborder="0" style="opacity: 0.5;position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10;"></iframe>
   <div class="overlay"></div>
 
   <!-- Navbar -->
@@ -352,6 +353,73 @@
   </div>
 
   <script>
+    function applyTheme() {
+      const themeMode = localStorage.getItem('themeMode') || 'dark';
+      const colorFilter = localStorage.getItem('colorFilter') || 'trichromatic';
+      const body = document.body;
+      const themeButton = document.getElementById('theme-toggle');
+      const colorblindButton = document.getElementById('colorblind-toggle');
+      const iframe = document.getElementById('bg-anim');
+
+      // Update theme classes and button text
+      if (themeMode === 'light') {
+        body.classList.add('light');
+        body.classList.remove('dark');
+        themeButton.textContent = 'Toggle Dark';
+      } else {
+        body.classList.add('dark');
+        body.classList.remove('light');
+        themeButton.textContent = 'Toggle Light';
+      }
+
+      // Update colorblind classes and button text
+      if (colorFilter === 'colorblind') {
+        body.classList.add('colorblind');
+        colorblindButton.textContent = 'Deuteranopia & Protanopia: Off';
+      } else {
+        body.classList.remove('colorblind');
+        colorblindButton.textContent = 'Deuteranopia & Protanopia: On';
+      }
+
+      // Update iframe source based on themeMode and colorFilter
+      let iframeSrc = '{% static "videos/Jowstick animation.svg" %}';
+      if (themeMode === 'light' && colorFilter === 'colorblind') {
+        iframeSrc = '{% static "videos/Jowstick animation colorblind light.svg" %}';
+      } else if (themeMode === 'light') {
+        iframeSrc = '{% static "videos/Jowstick animation light.svg" %}';
+      } else if (colorFilter === 'colorblind') {
+        iframeSrc = '{% static "videos/Jowstick animation colorblind.svg" %}';
+      }
+      if (iframe.src !== iframeSrc) {
+        iframe.src = iframeSrc;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      applyTheme();
+
+      // Toggle themeMode
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const currentTheme = localStorage.getItem('themeMode') || 'dark';
+        localStorage.setItem('themeMode', currentTheme === 'light' ? 'dark' : 'light');
+        applyTheme();
+      });
+
+      // Toggle colorFilter
+      document.getElementById('colorblind-toggle').addEventListener('click', () => {
+        const currentFilter = localStorage.getItem('colorFilter') || 'trichromatic';
+        localStorage.setItem('colorFilter', currentFilter === 'colorblind' ? 'trichromatic' : 'colorblind');
+        applyTheme();
+      });
+
+      // Listen for localStorage changes from other pages
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'themeMode' || event.key === 'colorFilter') {
+          applyTheme();
+        }
+      });
+    });
+  
     function filterLeaderboard() {
       const select = document.getElementById('gameFilter');
       const selectedGame = select.value;

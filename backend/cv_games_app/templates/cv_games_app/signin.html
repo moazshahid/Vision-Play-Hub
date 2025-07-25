@@ -23,6 +23,7 @@
             overflow: hidden;
             position: relative;
             color: white;
+            background-color: #09080e;
         }
 
         .form-container {
@@ -190,17 +191,7 @@
 </head>
 <body>
     <!-- Background video -->
-    <video
-        autoplay
-        loop
-        muted
-        playsinline
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;"
-    >
-        <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-        Your browser does not support the video tag.
-    </video>
-
+    <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" width="100vw" height="100vh" frameBorder="0" style="opacity: 0.5;position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10;"></iframe>
     <!-- Overlay to darken the video -->
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
 
@@ -237,7 +228,7 @@
                     <p>{{ message }}</p>
                 {% endfor %}
             {% endif %}
-            <form method="post">
+            <form id="login-form" method="post">
                 {% csrf_token %}
                 <input type="text" name="username" placeholder="Username" required><br>
                 <input type="password" name="password" placeholder="Password" required><br>
@@ -254,5 +245,125 @@
             </a>
         </div>
     </div>
+    <script>
+        async function getCsrfToken() {
+            try {
+                const response = await fetch('http://localhost:8000/csrf/', {
+                    method: 'GET',
+                    credentials: 'include',
+                });
+                if (!response.ok) throw new Error('Failed to fetch CSRF token');
+                const data = await response.json();
+                console.log('CSRF token fetched:', data.message);
+                const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+                if (csrfToken) localStorage.setItem('csrftoken', csrfToken);
+                return csrfToken;
+            } catch (error) {
+                console.error('CSRF fetch error:', error.message);
+                return null;
+            }
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = e.target.username.value;
+            const password = e.target.password.value;
+            let csrfToken = localStorage.getItem('csrftoken') || document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+            console.log('Initial CSRF token:', csrfToken || 'null');
+
+            if (!csrfToken) {
+                csrfToken = await getCsrfToken();
+                if (!csrfToken) {
+                    alert('Login failed: Unable to fetch CSRF token');
+                    return;
+                }
+            }
+
+            try {
+                // Step 1: Get JWT tokens
+                const tokenResponse = await fetch('http://localhost:8000/api/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                });
+                const tokenText = await tokenResponse.text();
+                console.log('Token response:', tokenText);
+                let tokenData;
+                try {
+                    tokenData = JSON.parse(tokenText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON from /api/token/: ${tokenText}`);
+                }
+                if (!tokenResponse.ok) {
+                    throw new Error(tokenData.detail || 'Failed to get tokens');
+                }
+                const { access, refresh } = tokenData;
+
+                // Store tokens
+                localStorage.setItem('access_token', access);
+                localStorage.setItem('refresh_token', refresh);
+                localStorage.setItem('csrftoken', csrfToken);
+                document.cookie = `access_token=${access};max-age=3600;path=/;samesite=Lax`;
+                document.cookie = `refresh_token=${refresh};max-age=86400;path=/;samesite=Lax`;
+                document.cookie = `csrftoken=${csrfToken};max-age=31449600;path=/;samesite=Lax`;
+                console.log('Tokens stored: access_token=', access.substring(0, 10) + '...', 'refresh_token=', refresh.substring(0, 10) + '...', 'csrftoken=', csrfToken);
+
+                // Step 2: Get user profile settings
+                const profileResponse = await fetch('http://localhost:8000/api/user-profile/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${access}`,
+                        'X-CSRFToken': csrfToken,
+                    },
+                    credentials: 'include',
+                });
+                const profileText = await profileResponse.text();
+                console.log('Profile response:', profileText);
+                let profileData;
+                try {
+                    profileData = JSON.parse(profileText);
+                } catch (parseError) {
+                    throw new Error(`Invalid JSON from /api/user-profile/: ${profileText}`);
+                }
+                if (!profileResponse.ok) {
+                    throw new Error(profileData.error || 'Failed to get profile settings');
+                }
+                localStorage.setItem('themeMode', profileData.is_dark_mode ? 'dark' : 'light');
+                localStorage.setItem('colorFilter', profileData.is_colorblind_mode ? 'colorblind' : 'normal');
+                console.log('Settings stored: themeMode=', localStorage.getItem('themeMode'), 'colorFilter=', localStorage.getItem('colorFilter'));
+
+                // Step 3: Server-side login
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                const loginResponse = await fetch('{% url "login" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                    credentials: 'include',
+                    redirect: 'manual',
+                });
+                console.log('Login response status:', loginResponse.status, 'Redirected:', loginResponse.redirected);
+                if (loginResponse.status === 0 || loginResponse.redirected) {
+                    console.log('Server-side login successful, redirecting to home');
+                    window.location.href = '{% url "home" %}';
+                } else {
+                    const loginText = await loginResponse.text();
+                    console.log('Login response:', loginText);
+                    throw new Error('Server-side login failed: ' + loginText);
+                }
+            } catch (error) {
+                console.error('Login error:', error.message);
+                alert('Login failed: ' + error.message);
+            }
+        });
+    </script>
 </body>
 </html>

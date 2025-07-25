@@ -5,20 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     {% load static %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="{% static 'js/canvas-filter.js' %}"></script>
     <style>
+    :root {
+      --color-filter: none;
+      --brightness-filter: none;
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+
+    light{
+      color: #0b0c10;
+
     }
 
     body {
       font-family: "Hanken Grotesk", sans-serif;
       letter-spacing: -0.05em;
-      color: #ffffff;
+      color: #09080e;
+      background-color: #09080e;
       height: 100vh;
       overflow-x: hidden;
       position: relative;
+      filter: var(--color-filter) var(--brightness-filter);
+      transition: filter 0.3s ease;
+    }
+
+    body.light {
+      font-family: "Hanken Grotesk", sans-serif;
+      letter-spacing: -0.05em;
+      color: #09080e;
+      background-color: #fff;
+      height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      filter: var(--color-filter) var(--brightness-filter);
+      transition: filter 0.3s ease;
+    }
+
+    body button {
+      cursor: pointer;
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-weight: 600;
+      color: #66fcf1;
+      background-color: #0b0c10;
+      border: 1px solid #66fcf1;
+      transition: color 0.3s, text-shadow 0.3s;
+      padding: 0.5em 1em;
+      border-radius: 10em;
+    }
+
+    body button:hover {
+      color: #ffffff;
+      background-color: #4fb5ae;
+      border: 1px solid #66fcf1;
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+    }
+
+    body.light button {
+      color: #0b0c10;
+      background-color: #ffffff;
+      border: 1px solid #66fcf1;
+    }
+
+    body.light button:hover {
+      color: #ffffff;
+      background-color: #66fcf1;
+      border: 1px solid #ffffff;
     }
 
     video {
@@ -69,7 +128,24 @@
       font-family: 'Hanken Grotesk', sans-serif;
     }
 
+    body.light .button-design {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+
     .button-design:hover {
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+      color: #ffffff;
+      background: none;
+      border: none;
+    }
+
+    body.light .button-design:hover {
       text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
       color: #ffffff;
       background: none;
@@ -101,6 +177,19 @@
       flex-wrap: wrap;
     }
 
+    body.light .profile-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      background-color: rgba(255, 255, 255, 0.9) !important;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
+      max-width: 820px;
+      width: 90%;
+      flex-wrap: wrap;
+    }
+
     .profile-left,
     .profile-right {
       flex: 1;
@@ -123,6 +212,13 @@
       text-align: center;
     }
 
+    body.light .profile-card p {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+      color: #000;
+    }
+
     .profile-left h1 {
       font-family: "Bricolage Grotesque", sans-serif;
       font-size: 3rem;
@@ -139,6 +235,13 @@
       text-align: center;
     }
 
+    .profile-left p {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+      color: #000;
+    }
+
     .highlight {
       color: #66fcf1;
       font-weight: 600;
@@ -152,7 +255,7 @@
       border: 1px solid #66fcf1;
       color: #66fcf1;
       cursor: pointer;
-      transition: background 0.3s, color 0.3s;
+      transition: background-color 0.3s, color 0.3s;
       font-family: "Bricolage Grotesque", sans-serif;
     }
 
@@ -193,6 +296,11 @@
     .setting-option {
       margin-bottom: 1.5rem;
       color: #c5c6c7;
+    }
+
+    body.light .setting-option {
+      margin-bottom: 1.5rem;
+      color: #000;
     }
 
     .setting-option label {
@@ -365,12 +473,10 @@
 </head>
 
 <body>
-  <video autoplay loop muted playsinline>
-    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-
-  <div class="overlay"></div>
+  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" width="100vw" height="100vh" frameBorder="0" style="opacity: 0.5;position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10;"></iframe>
+  <div
+      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-color: rgba(0, 0, 0, 0.5);">
+  </div>
 
   <nav>
     <div style="display: flex; align-items: center; gap: 0.8vw;">
@@ -426,10 +532,20 @@
       </div>
       <div class="profile-right">
         <h2>Settings</h2>
-        <div class="setting-option">
-          <label for="theme-toggle">Theme</label>
-          <button id="theme-toggle" class="back-button">Toggle Light/Dark</button>
-        </div>
+        <form id="settings-form" method="POST" action="{% url 'save_settings' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="setting-option">
+              <label for="theme">Theme</label>
+              <button type="button" id="theme-toggle" class="hanken-grotesk-bold">Toggle Light/Dark</button>
+              <input type="hidden" name="is_dark_mode" id="is_dark_mode" value="{{ profile.is_dark_mode|lower }}">
+          </div>
+          <div class="setting-option">
+              <label for="colorblind_mode">Deuteranopia & Protanopia Theme</label>
+              <button type="button" id="colorblind-toggle" class="hanken-grotesk-bold">On/Off</button>
+              <input type="hidden" name="is_colorblind_mode" id="is_colorblind_mode" value="{{ profile.is_colorblind_mode|lower }}">
+          </div>
+          <button type="submit" class="hanken-grotesk-bold">Save Theme</button>
+        </form>
         <div class="setting-option">
           <label for="upload">Change Profile Picture</label>
           <form method="post" enctype="multipart/form-data">
@@ -452,6 +568,118 @@
         </div>
       </div>
     </div>
-  </div>
+    <script>
+// Initialize localStorage defaults
+        if (!localStorage.getItem('themeMode')) {
+            localStorage.setItem('themeMode', 'dark');
+        }
+        if (!localStorage.getItem('colorFilter')) {
+            localStorage.setItem('colorFilter', 'trichromatic');
+        }
+
+        // Initialize classes and button text based on localStorage
+        function initializeClassesAndButtons() {
+            const themeMode = localStorage.getItem('themeMode');
+            const colorFilter = localStorage.getItem('colorFilter');
+            const body = document.body;
+            const themeButton = document.getElementById('theme-toggle');
+            const colorblindButton = document.getElementById('colorblind-toggle');
+            
+
+
+            if (!themeButton || !colorblindButton) {
+                console.error('Theme or colorblind toggle button not found');
+                return;
+            }
+
+            // Update theme classes and button text
+            if (themeMode === 'light') {
+                body.classList.add('light');
+                body.classList.remove('dark');
+                themeButton.textContent = 'Toggle Dark';
+
+                // Update background video source for light mode
+                document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation light.svg' %}");
+            } else {
+                body.classList.add('dark');
+                body.classList.remove('light');
+                themeButton.textContent = 'Toggle Light';
+                document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation.svg' %}");
+            }
+
+            // Update colorblind classes and button text
+            if (colorFilter === 'colorblind') {
+                body.classList.add('colorblind');
+                colorblindButton.textContent = 'Turn Off';
+                if (themeMode === 'dark') {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation colorblind.svg' %}");
+                } else {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation colorblind light.svg' %}");
+                }
+            } else {
+                body.classList.remove('colorblind');
+                colorblindButton.textContent = 'Turn On';
+                if (themeMode === 'dark') {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation.svg' %}");
+                } else {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation light.svg' %}");
+                }
+            }
+        }
+
+        // Toggle theme mode
+        function toggleTheme() {
+            const themeMode = localStorage.getItem('themeMode');
+            const newThemeMode = themeMode === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('themeMode', newThemeMode);
+            initializeClassesAndButtons();
+        }
+
+        // Toggle colorblind mode
+        function toggleColorblindMode() {
+            const colorFilter = localStorage.getItem('colorFilter');
+            const newColorFilter = colorFilter === 'colorblind' ? 'trichromatic' : 'colorblind';
+            localStorage.setItem('colorFilter', newColorFilter);
+            initializeClassesAndButtons();
+        }
+
+        // Update hidden inputs before form submission
+        function updateFormInputs(event) {
+            event.preventDefault();
+            const themeMode = localStorage.getItem('themeMode');
+            const colorFilter = localStorage.getItem('colorFilter');
+            const isDarkModeInput = document.getElementById('is_dark_mode');
+            const isColorblindModeInput = document.getElementById('is_colorblind_mode');
+            if (isDarkModeInput && isColorblindModeInput) {
+                isDarkModeInput.value = themeMode === 'dark' ? 'true' : 'false';
+                isColorblindModeInput.value = colorFilter === 'colorblind' ? 'true' : 'false';
+                event.target.submit();
+            } else {
+                console.error('Hidden inputs not found');
+            }
+        }
+
+        // Initialize and attach event listeners after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeButton = document.getElementById('theme-toggle');
+            const colorblindButton = document.getElementById('colorblind-toggle');
+            const form = document.getElementById('settings-form');
+
+            if (!themeButton || !colorblindButton || !form) {
+                console.error('Required elements not found:', {
+                    themeButton: !!themeButton,
+                    colorblindButton: !!colorblindButton,
+                    form: !!form
+                });
+                return;
+            }
+
+            themeButton.addEventListener('click', toggleTheme);
+            colorblindButton.addEventListener('click', toggleColorblindMode);
+            form.addEventListener('submit', updateFormInputs);
+
+            initializeClassesAndButtons();
+        });
+    </script>
 </body>
 </html>

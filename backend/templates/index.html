@@ -16,14 +16,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <title>Whack A Mole</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-</head>
+</head> 
 <body style="overflow-x: hidden;">
     <!-- Added: Root div for React app -->
     <div id="root"></div>
@@ -31,6 +29,12 @@
     <script>
         window.REACT_USERNAME = "{{ username|escapejs }}";
         window.SESSION_TIME_LEFT = parseInt("{{ time_left|default:0 }}", 10);
+        if (!localStorage.getItem('themeMode')) {
+            localStorage.setItem('themeMode', 'dark');
+        }
+        if (!localStorage.getItem('colorFilter')) {
+            localStorage.setItem('colorFilter', 'trichromatic');
+        }
     </script>
 </body>
 </html>
