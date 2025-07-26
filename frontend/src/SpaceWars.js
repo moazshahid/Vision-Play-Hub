@@ -850,7 +850,7 @@ const SpaceWars = () => {
       <div style={{
         width: "100vw",
         minHeight: "95vh",
-        backgroundImage: "url(/static/images/space.jpg)",
+        backgroundImage: "url(/static/images/pages/spacewars-bg.svg)",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
         backgroundSize: "cover",
@@ -878,7 +878,7 @@ const SpaceWars = () => {
           </div>
           <div style={{ maxWidth: "20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh' }}>
             <button className="inter start-button" onClick={() => setShowGame(true)} style={{
-              backgroundColor: '#4CAF50',
+              backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`,
               border: 'none',
               padding: '1em 1.5em',
               borderRadius: '1em',

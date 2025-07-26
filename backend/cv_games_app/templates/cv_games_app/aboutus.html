@@ -16,10 +16,14 @@
     body {
       font-family: "Hanken Grotesk", sans-serif;
       letter-spacing: -0.05em;
-      color: #ffffff;
-      height: 100vh;
-      overflow-x: hidden;
+      background-color: #09080e;
       position: relative;
+      height: 100vh;
+      overflow-y: hidden;
+    }
+
+    body.light {
+      background-color: #f0f0f0;
     }
 
     video {
@@ -31,6 +35,11 @@
       object-fit: cover;
       z-index: -2;
     }
+
+     h2 {
+      color: #66fcf1;
+    }
+
 
     .overlay {
       position: fixed;
@@ -266,23 +275,37 @@
     </div>
   </div>
   <script>
-    // Add any JavaScript functionality if needed
-    f = localStorage.getItem('colorFilter') 
+    document.addEventListener('DOMContentLoaded', () => {
+      // Apply themeMode (dark/light)
+      f = localStorage.getItem('colorFilter') 
       t = localStorage.getItem('themeMode')
       source = "{% static 'videos/Jowstick animation.svg' %}";
-      if (f === 'colorblind' && t === 'light') {
-          document.body.classList.add('light');
-          document.body.classList.add('colorblind');
-          source = "{% static 'videos/Jowstick animation colorblind light.svg' %}";
-      } else if (t === 'light') {
-          document.body.classList.add('light');
-          source = "{% static 'videos/Jowstick animation light.svg' %}";
-      } else if (f === 'colorblind') {
-          document.body.classList.add('colorblind');
-          source = "{% static 'videos/Jowstick animation colorblind.svg' %}";
+      function applyTheme() {
+        if (f == 'colorblind' && t == 'light') {
+            document.body.classList.add('light');
+            document.body.classList.add('colorblind');
+            source = "{% static 'videos/Jowstick animation colorblind light.svg' %}";
+            console.log("Theme and color filter applied: light + colorblind");
+        } else if (t == 'light') {
+            document.body.classList.add('light');
+            document.body.classList.remove('colorblind');
+            source = "{% static 'videos/Jowstick animation light.svg' %}";
+            console.log("Theme applied: light");
+        } else if (f == 'colorblind') {
+            document.body.classList.add('colorblind');
+            document.body.classList.remove('light');
+            source = "{% static 'videos/Jowstick animation colorblind.svg' %}";
+            console.log("Color filter applied: colorblind");
+        } else {
+            document.body.classList.remove('light');
+            document.body.classList.remove('colorblind');
+            source = "{% static 'videos/Jowstick animation.svg' %}";
+            console.log("No theme or color filter applied, using default video.");
+        }
       }
-
+      applyTheme();
       document.getElementById('bg-anim').src = source;
+    });
     </script>
 </body>
 </html>

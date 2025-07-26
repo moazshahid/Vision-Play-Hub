@@ -1153,7 +1153,7 @@ const SurfDash = ({ setSelectedGame }) => {
     <div className='inter'>
       <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/surfdash-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
         <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div className="instructions inter" style={{ color: "#fff" }}>
+          <div className="instructions inter" style={{ color: "#fff", paddingLeft: "10vw" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Surf Dash</h2>
             <ul>
               <li><strong>Choose character and skate:</strong> Select your character (1 or 2) and skate (1, 2, or 3) before starting.</li>
