@@ -26,20 +26,9 @@
       background-color: #f0f0f0;
     }
 
-    video {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -2;
-    }
-
      h2 {
       color: #66fcf1;
     }
-
 
     .overlay {
       position: fixed;
@@ -210,7 +199,7 @@
 
 <body>
   <!-- Video Background -->
-  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" width="100vw" height="100vh" frameBorder="0" style="opacity: 0.5;position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10;"></iframe>
+  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" style="opacity: 0.5;position: fixed; top: -7%; left: -10%; width: 120%; height: 120%; z-index: -10;"></iframe>
     <!-- Overlay to darken the video -->
   <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
 
