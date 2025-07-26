@@ -147,9 +147,9 @@ def signup(request):
             messages.success(request, f"Successfully signed up as {username}.")
             return response
         except Exception as e:
-            logger.error("Error during signup: %s", str(e))
-            messages.error(request, 'An error occurred during signup. Please try again.')
-            return render(request, 'cv_games_app/signup.html')
+            logger.error("Post-user creation error (login/cookies): %s", str(e))
+            messages.success(request, f"Account created for {username}. Please log in.")
+            return redirect('login')
     return render(request, 'cv_games_app/signup.html')
 
 @ensure_csrf_cookie
@@ -218,6 +218,8 @@ def signin(request):
     return render(request, 'cv_games_app/signin.html')
 
 def signout(request):
+    storage = messages.get_messages(request)
+    storage.used = True
     logout(request)
     request.session.flush()
     messages.success(request, 'You have been logged out.')
@@ -233,7 +235,11 @@ def home(request):
         time_left = max(0, 600 - elapsed)
     if not username:
         username = 'Guest'
-    return render(request, 'index.html', {'username': username, 'time_left': time_left})
+    return render(request, 'index.html', {
+        'username': username,
+        'time_left': time_left,
+        'messages': messages.get_messages(request)
+    })
 
 def leaderboard(request):
     games = Games.objects.all()

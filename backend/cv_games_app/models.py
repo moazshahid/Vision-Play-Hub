@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 class Games(models.Model):
     game_id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255,unique=True)
     genre = models.CharField(max_length=100, null=True, blank=True)
     release_date = models.DateField(null=True, blank=True)
 
