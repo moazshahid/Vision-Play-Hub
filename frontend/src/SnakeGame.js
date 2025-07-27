@@ -1,6 +1,6 @@
 import './Game.css';
 import React, { useState, useEffect, useRef } from 'react';
-import { submitScore } from './utils/api';
+import { submitScore, submitSessionScore } from './utils/api';
 
 // Define the SnakeGame component for the Hand Tracker Snake game
 const SnakeGame = () => {
@@ -94,6 +94,7 @@ const SnakeGame = () => {
     // Start the game, including camera initialization
     const startGame = () => {
       if (!gameStartedRef.current) {
+        setStartTime(new Date()); // Set start time when game starts
         startCamera()
           .then(() => {
             // Initialize a new GameLogic instance
@@ -123,6 +124,7 @@ const SnakeGame = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', () => {
       // Restart the game when the restart button is clicked
+      setStartTime(new Date()); // Reset start time on restart
       gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage); // Create a new game instance
       gameOver.style.display = 'none'; // Hide game over screen
       gameStartedRef.current = true; // Mark game as started
@@ -132,6 +134,7 @@ const SnakeGame = () => {
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
       // Restart the game when the play again button is clicked
+      setStartTime(new Date()); // Reset start time on play again
       gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage);
       gameOver.style.display = 'none';
       gameStartedRef.current = true;
@@ -141,6 +144,7 @@ const SnakeGame = () => {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
         // Restart game with 'R' key
+        setStartTime(new Date()); // Reset start time on restart
         gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage)
         gameOver.style.display = 'none';
         gameStartedRef.current = true;
@@ -149,6 +153,7 @@ const SnakeGame = () => {
       }
       if (e.key === 'q' || e.key === 'Q') {
         // Quit game with 'Q' key
+        setEndTime(new Date()); // Set end time on quit
         if (cameraRef.current) cameraRef.current.stop();
         gameStartedRef.current = false;
         gameObjectRef.current = null;
@@ -224,6 +229,10 @@ const SnakeGame = () => {
 
     // Draw the game over screen on the canvas
     const drawGameOverOnCanvas = (ctx, score, over, finalScore) => {
+      // Set end time when game ends
+      if (!endTime) {
+        setEndTime(new Date());
+      }
       // Draw a semi-transparent black overlay
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(0, 0, 1280, 720);
@@ -245,17 +254,28 @@ const SnakeGame = () => {
       finalScore.textContent = score;
       // over.style.display = 'block'; (commented out to avoid showing green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
-          gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
-          console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
-          submitScore('SnakeGame', score)
-           .then((response) => {
-             console.log('Score submitted successfully:', response);
-           })
-           .catch((error) => {
-             console.error('Failed to submit score:', error.response?.data || error.message);
-             alert('Failed to submit score. Please ensure you are logged in.');
-      });
-  }
+        gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
+        console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+        submitScore('SnakeGame', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+            alert('Failed to submit score. Please ensure you are logged in.');
+          });
+        // Submit session data
+        if (startTime && endTime) {
+          submitSessionScore(window.REACT_USERNAME || 'Guest', 'SnakeGame', score, startTime, endTime)
+            .then((response) => {
+              console.log('Session recorded successfully:', response);
+            })
+            .catch((error) => {
+              console.error('Failed to record session:', error.response?.data || error.message);
+              alert('Failed to record session. Please ensure you are logged in.');
+            });
+        }
+      }
     };
 
     // Define the GameLogic class to manage game logic (renamed to avoid conflict with component name)
@@ -767,7 +787,7 @@ const SnakeGame = () => {
             <img src={`static/images/pages/${localStorage.getItem('colorFilter') === "colorblind" ? "snake-colour-colorblind" : "snake-colour"}.svg`} alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="inter start-button" onClick={() => { setShowGame(true); setStartTime(new Date()); }} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>

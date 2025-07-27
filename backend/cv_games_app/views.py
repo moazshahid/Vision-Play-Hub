@@ -20,7 +20,6 @@ import json
 from .forms import ProfilePictureForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
-
 from .serializers import UserProfileSerializer
 
 logger = logging.getLogger(__name__)
@@ -80,7 +79,6 @@ class SubmitScoreAPIView(APIView):
             logger.error("Unexpected error in submit score: %s", str(e))
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 def signup(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -106,13 +104,12 @@ def signup(request):
             )
             user.save()
             UserProfiles.objects.create(user=user, is_dark_mode=False, is_colorblind_mode=False)
-            # Create a profile for the new user
             Profile.objects.create(user=user)
             login(request, user)
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
-            response = redirect('home')  
+            response = redirect('home')
             response.set_cookie(
                 'access_token',
                 access_token,
@@ -235,10 +232,45 @@ def home(request):
         time_left = max(0, 600 - elapsed)
     if not username:
         username = 'Guest'
+
+    # Fetch UserProfiles data if authenticated
+    profile_image = request.session.get('profile_image')
+    theme_mode = request.session.get('theme_mode', 'dark')
+    color_filter = request.session.get('color_filter', 'trichromatic')
+    if request.user.is_authenticated:
+        try:
+            user_profile = UserProfiles.objects.get(user=request.user)
+            theme_mode = 'light' if user_profile.is_dark_mode else 'dark'
+            color_filter = 'colorblind' if user_profile.is_colorblind_mode else 'trichromatic'
+            profile_image = request.build_absolute_uri(user_profile.profile_image.url) if user_profile.profile_image else None
+            # Update session with latest values
+            request.session['theme_mode'] = theme_mode
+            request.session['color_filter'] = color_filter
+            request.session['profile_image'] = profile_image
+            request.session['username'] = request.user.username
+        except UserProfiles.DoesNotExist:
+            logger.warning("UserProfiles not found for user: %s", request.user.username)
+            UserProfiles.objects.create(
+                user=request.user,
+                is_dark_mode=False,
+                is_colorblind_mode=False,
+                profile_image=None
+            )
+            theme_mode = 'dark'
+            color_filter = 'trichromatic'
+            profile_image = None
+            request.session['theme_mode'] = theme_mode
+            request.session['color_filter'] = color_filter
+            request.session['profile_image'] = profile_image
+            request.session['username'] = request.user.username
+
     return render(request, 'index.html', {
         'username': username,
         'time_left': time_left,
-        'messages': messages.get_messages(request)
+        'messages': messages.get_messages(request),
+        'profile_image': profile_image,
+        'theme_mode': theme_mode,
+        'color_filter': color_filter
     })
 
 def leaderboard(request):
@@ -325,6 +357,7 @@ def save_settings(request):
         logger.error("Error saving settings: %s", str(e))
         messages.error(request, 'Error saving settings.')
         return redirect('profile')
+
 def keep_session_alive(request):
     request.session.modified = True  # refresh session expiry
     return JsonResponse({'status': 'alive'})

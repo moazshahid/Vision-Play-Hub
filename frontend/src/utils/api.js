@@ -150,4 +150,54 @@ export const submitScore = async (gameTitle, score) => {
   }
 };
 
+export const submitSessionScore = async (game, score) => {
+  const token = localStorage.getItem('access_token');
+  try {
+    const response = await axios.post(
+      '/api/submit-score/',
+      { game, score },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('csrftoken'))
+            ?.split('=')[1],
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const recordGameSession = async (username, game_name, score, start_time, end_time) => {
+  try {
+    const response = await axios.post(
+      '/record_game_session/',
+      {
+        username,
+        game_name,
+        score,
+        start_time: start_time.toISOString(),
+        end_time: end_time.toISOString(),
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('csrftoken'))
+            ?.split('=')[1],
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export default api;

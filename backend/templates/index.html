@@ -6,6 +6,7 @@
     <link rel="icon" href="/static/images/pages/logo-colour.svg" type="image/x-icon" />
     <!-- Added: Page title -->
     <title>Vision Play Hub</title>
+    {% load static %}
     <link rel="stylesheet" href="/static/css/app.css">
     <!-- Added: React and ReactDOM scripts for frontend -->
     <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
@@ -30,11 +31,30 @@
         window.REACT_USERNAME = "{{ username|escapejs }}";
         window.SESSION_TIME_LEFT = parseInt("{{ time_left|default:0 }}", 10);
         if (!localStorage.getItem('themeMode')) {
-            localStorage.setItem('themeMode', 'dark');
+            localStorage.setItem('themeMode', "{{ theme_mode|escapejs }}");
         }
         if (!localStorage.getItem('colorFilter')) {
-            localStorage.setItem('colorFilter', 'trichromatic');
+            localStorage.setItem('colorFilter', "{{ color_filter|escapejs }}");
+        }
+        window.REACT_PROFILE_PIC = {% if profile_image %}"{{ profile_image|escapejs }}"{% else %}null{% endif %};
+        window.REACT_THEME_MODE = "{{ theme_mode|escapejs }}";
+        window.REACT_COLOR_FILTER = "{{ color_filter|escapejs }}";
+        // Add JWT tokens to localStorage
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        const accessToken = getCookie('access_token');
+        const refreshToken = getCookie('refresh_token');
+        if (accessToken) {
+            localStorage.setItem('access_token', accessToken);
+        }
+        if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
         }
     </script>
+    <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>
