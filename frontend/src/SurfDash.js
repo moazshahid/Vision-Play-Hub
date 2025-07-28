@@ -939,7 +939,7 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.font = '40px Arial';
     ctx.fillText('Press "R" to Restart', 640, 500);
     finalScore.textContent = score;
-    over.style.display = 'block';
+    // over.style.display = 'block'; (removed green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
           gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
           console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
