@@ -230,6 +230,8 @@ const DessertSlash = () => {
       ctx.drawImage(results.image, 0, 0, 1280, 720); // Draw the video frame
       ctx.restore();
 
+      const debug = debugRef.current; // Reference to debug element
+
       // If the game is started and a game object exists, process hand tracking
       if (started && gameObj) {
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && !gameObj.gameOver) {
@@ -242,6 +244,10 @@ const DessertSlash = () => {
           const baseY = Math.floor(fingerBase.y * 720);
           // Update the game cursor position based on finger coordinates
           gameObj.updateFingerPosition(fingerX, fingerY, baseX, baseY);
+          debug.innerHTML = ''; // Clear debug message when hand is detected
+        } else {
+          console.log('No hands detected in this frame');
+          debug.innerHTML = `<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam.</p>`;
         }
         gameObj.render(ctx); // Render the game objects (desserts, bombs, etc.)
         if (gameStartedRef.current && !gameObj.gameOver) {
@@ -271,7 +277,6 @@ const DessertSlash = () => {
       ctx.font = '40px Arial';
       ctx.fillText('Press "R" to Restart', 640, 500); // Display restart instructions
       finalScore.textContent = score; // Update the final score in the DOM
-      over.style.display = 'block'; // Show the game over screen in the DOM
       if (!gameObjectRef.current.scoreSubmitted) {
         gameObjectRef.current.scoreSubmitted = true;
         console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
@@ -304,7 +309,7 @@ const DessertSlash = () => {
         this.bombImage = bombImage; // Loaded bomb image
         this.powerUpImages = powerUpImages; // Loaded power-up images
         this.swordImage = swordImage; // Loaded sword image for the cursor
-        this.objectSize = 60; // Size of game objects (pixels)
+        this.objectSize = 90; // Size of game objects (pixels)
         this.gameDuration = 60000; // Game duration in milliseconds (60 seconds)
         this.startTime = performance.now(); // Time when the game starts
         this.lastSpawnTime = 0; // Time of the last object spawn
@@ -584,14 +589,14 @@ const DessertSlash = () => {
 
         // Draw lives (bombs) in the top-right corner
         for (let i = 0; i < 3; i++) {
-          const x = 1280 - 20 - i * 40; // Position from right side
+          const x = 1280 - 30 - i * 60; // Position from right side
           const y = 50;
           if (i < this.lives && this.bombImage && this.bombImage.complete) {
-            ctx.drawImage(this.bombImage, x - 15, y - 15, 30, 30); // Draw bomb image for remaining lives
+            ctx.drawImage(this.bombImage, x - 22.5, y - 22.5, 45, 45); // Draw bomb image for remaining lives
           } else {
             // Draw an empty circle for lost lives
             ctx.beginPath();
-            ctx.arc(x, y, 15, 0, 2 * Math.PI);
+            ctx.arc(x, y, 22.5, 0, 2 * Math.PI);
             ctx.fillStyle = '#000000';
             ctx.fill();
             ctx.strokeStyle = '#FFFFFF';
@@ -614,11 +619,11 @@ const DessertSlash = () => {
 
         // Draw the cursor (sword)
         if (this.swordImage && this.swordImage.complete) {
-          ctx.drawImage(this.swordImage, this.cursorPosition[0] - 25, this.cursorPosition[1] - 25, 50, 50);
+          ctx.drawImage(this.swordImage, this.cursorPosition[0] - 50, this.cursorPosition[1] - 50, 100, 100);
         } else {
           // Draw a fallback circle if the sword image isn't available
           ctx.beginPath();
-          ctx.arc(this.cursorPosition[0], this.cursorPosition[1], 10, 0, 2 * Math.PI);
+          ctx.arc(this.cursorPosition[0], this.cursorPosition[1], 20, 0, 2 * Math.PI);
           ctx.fillStyle = this.swordImage?.fallbackColor || '#FFFFFF';
           ctx.fill();
         }
@@ -708,8 +713,17 @@ const DessertSlash = () => {
       gameStartedRef.current = false; // Mark the game as stopped
       canvas.clearRect(0, 0, 1280, 720); // Clear the canvas
       canvas.fillStyle = 'black'; // Fill with black
-      canvas.fillRect(0, 0, 1280, 720);
+      canvas.fillRect(0, 0, 1280, 720); // Cover the entire canvas
+      canvas.fillStyle = '#FFFFFF'; // White text for the message
+      canvas.font = 'bold 48px Arial';
+      canvas.textAlign = 'center';
+      canvas.textBaseline = 'middle';
+      canvas.fillText('Game Quit', 640, 300); // Display "Game Quit" in the center
+      canvas.font = '24px Arial';
+      canvas.fillText('Refresh the page to play again', 640, 360); // Display instructions to refresh
       gameOver.style.display = 'none'; // Hide the game over screen
+      gameStats.style.display = 'none'; // Hide the stats display
+      console.log('Game quit via Q key');
     };
 
     // Function to handle keyboard input
@@ -788,10 +802,10 @@ const DessertSlash = () => {
         </div>
         <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div style={{maxWidth:"40%"}}>
-            <img src="static/images/pages/dessert-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
+            <img src={`static/images/pages/dessert-colour${localStorage.getItem('colorFilter') == "colorblind" ? '-colorblind' : ''}.svg`} alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>

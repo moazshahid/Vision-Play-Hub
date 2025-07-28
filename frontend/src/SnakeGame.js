@@ -1,9 +1,11 @@
 import './Game.css';
 import React, { useState, useEffect, useRef } from 'react';
-import { submitScore } from './utils/api';
+import { submitScore, submitSessionScore } from './utils/api';
 
 // Define the SnakeGame component for the Hand Tracker Snake game
 const SnakeGame = () => {
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
   const [showGame, setShowGame] = useState(false); // State to control game visibility
   // Initialize refs for DOM elements and game state
   const videoRef = useRef(null); // Ref for the video element (webcam feed)
@@ -31,10 +33,21 @@ const SnakeGame = () => {
     // Hide the game over screen initially
     gameOver.style.display = 'none';
 
-    // Load the apple image for food rendering
+    // Load images for apples, power-downs, obstacles, and background
     const appleImage = new Image();
     appleImage.src = '/static/images/apple.png';
-    appleImage.onload = () => console.log('Apple image loaded successfully');
+    const greenAppleImage = new Image();
+    greenAppleImage.src = '/static/images/green_apple.png';
+    const blueAppleImage = new Image();
+    blueAppleImage.src = '/static/images/blue_apple.png';
+    const goldenAppleImage = new Image();
+    goldenAppleImage.src = '/static/images/golden_apple.png';
+    const skullImage = new Image();
+    skullImage.src = '/static/images/skull.png';
+    const obstacleImage = new Image();
+    obstacleImage.src = '/static/images/obstacle.png';
+    const bgImage = new Image();
+    bgImage.src = '/static/images/pages/snake-bg2.svg';
 
     // Initialize MediaPipe Hands for hand tracking
     const initHandDetection = () => {
@@ -81,10 +94,11 @@ const SnakeGame = () => {
     // Start the game, including camera initialization
     const startGame = () => {
       if (!gameStartedRef.current) {
+        setStartTime(new Date()); // Set start time when game starts
         startCamera()
           .then(() => {
             // Initialize a new GameLogic instance
-            gameObjectRef.current = new GameLogic(canvas, gameStats);
+            gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage);
             gameStartedRef.current = true; // Mark the game as started
             lastRenderTimeRef.current = performance.now(); // Set initial timestamp
             gameOver.style.display = 'none'; // Hide game over screen
@@ -110,7 +124,8 @@ const SnakeGame = () => {
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', () => {
       // Restart the game when the restart button is clicked
-      gameObjectRef.current = new GameLogic(canvas, gameStats); // Create a new game instance
+      setStartTime(new Date()); // Reset start time on restart
+      gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage); // Create a new game instance
       gameOver.style.display = 'none'; // Hide game over screen
       gameStartedRef.current = true; // Mark game as started
       lastRenderTimeRef.current = performance.now(); // Reset timestamp
@@ -119,7 +134,8 @@ const SnakeGame = () => {
     document.getElementById('test-camera-btn').addEventListener('click', startCamera);
     document.getElementById('play-again-btn').addEventListener('click', () => {
       // Restart the game when the play again button is clicked
-      gameObjectRef.current = new GameLogic(canvas, gameStats);
+      setStartTime(new Date()); // Reset start time on play again
+      gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage);
       gameOver.style.display = 'none';
       gameStartedRef.current = true;
       lastRenderTimeRef.current = performance.now();
@@ -128,7 +144,8 @@ const SnakeGame = () => {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
         // Restart game with 'R' key
-        gameObjectRef.current = new GameLogic(canvas, gameStats);
+        setStartTime(new Date()); // Reset start time on restart
+        gameObjectRef.current = new GameLogic(canvas, gameStats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage)
         gameOver.style.display = 'none';
         gameStartedRef.current = true;
         lastRenderTimeRef.current = performance.now();
@@ -136,8 +153,36 @@ const SnakeGame = () => {
       }
       if (e.key === 'q' || e.key === 'Q') {
         // Quit game with 'Q' key
+        setEndTime(new Date()); // Set end time on quit
         if (cameraRef.current) cameraRef.current.stop();
         gameStartedRef.current = false;
+        gameObjectRef.current = null;
+        // Stop camera and cleanup
+        if (cameraRef.current) {
+          cameraRef.current.stop();
+          cameraRef.current = null;
+        }
+        if (handsRef.current) {
+          handsRef.current.close();
+          handsRef.current = null;
+        }
+        if (video.srcObject) {
+          const tracks = video.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+          video.srcObject = null;
+        }
+        // Draw quit message on canvas
+        canvas.clearRect(0, 0, 1280, 720);
+        canvas.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        canvas.fillRect(0, 0, 1280, 720);
+        canvas.fillStyle = '#FFFFFF';
+        canvas.font = 'bold 48px Arial';
+        canvas.textAlign = 'center';
+        canvas.textBaseline = 'middle';
+        canvas.fillText('Game Quit', 640, 300);
+        canvas.font = '24px Arial';
+        canvas.fillText('Refresh the page to play again', 640, 360);
+        console.log('Game quit via Q key');
       }
     });
 
@@ -165,6 +210,9 @@ const SnakeGame = () => {
           const baseX = Math.floor(1280 - fingerBase.x * 1280);
           const baseY = Math.floor(fingerBase.y * 720);
           gameObj.updateFingerPosition(fingerX, fingerY, baseX, baseY); // Update snake direction
+          debugRef.current.innerHTML = ''; // Clear warning when hand is detected
+        } else {
+          debugRef.current.innerHTML = '<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam</p>';
         }
         gameObj.render(ctx); // Render the game state
         // Continue the game loop if the game is active
@@ -181,6 +229,10 @@ const SnakeGame = () => {
 
     // Draw the game over screen on the canvas
     const drawGameOverOnCanvas = (ctx, score, over, finalScore) => {
+      // Set end time when game ends
+      if (!endTime) {
+        setEndTime(new Date());
+      }
       // Draw a semi-transparent black overlay
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(0, 0, 1280, 720);
@@ -200,24 +252,35 @@ const SnakeGame = () => {
       ctx.fillText('Press "R" to Restart', 640, 500);
       // Update the DOM game over overlay
       finalScore.textContent = score;
-      over.style.display = 'block';
+      // over.style.display = 'block'; (commented out to avoid showing green overlay)
       if (!gameObjectRef.current.scoreSubmitted) {
-          gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
-          console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
-          submitScore('SnakeGame', score)
-           .then((response) => {
-             console.log('Score submitted successfully:', response);
-           })
-           .catch((error) => {
-             console.error('Failed to submit score:', error.response?.data || error.message);
-             alert('Failed to submit score. Please ensure you are logged in.');
-      });
-  }
+        gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
+        console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+        submitScore('SnakeGame', score)
+          .then((response) => {
+            console.log('Score submitted successfully:', response);
+          })
+          .catch((error) => {
+            console.error('Failed to submit score:', error.response?.data || error.message);
+            alert('Failed to submit score. Please ensure you are logged in.');
+          });
+        // Submit session data
+        if (startTime && endTime) {
+          submitSessionScore(window.REACT_USERNAME || 'Guest', 'SnakeGame', score, startTime, endTime)
+            .then((response) => {
+              console.log('Session recorded successfully:', response);
+            })
+            .catch((error) => {
+              console.error('Failed to record session:', error.response?.data || error.message);
+              alert('Failed to record session. Please ensure you are logged in.');
+            });
+        }
+      }
     };
 
     // Define the GameLogic class to manage game logic (renamed to avoid conflict with component name)
     class GameLogic {
-      constructor(ctx, stats) {
+      constructor(ctx, stats, appleImage, greenAppleImage, blueAppleImage, goldenAppleImage, skullImage, obstacleImage, bgImage) {
         // Initialize snake body points and lengths
         this.points = [];
         this.lengths = [];
@@ -232,7 +295,29 @@ const SnakeGame = () => {
         this.foodHeight = 60;
         this.foodWidth = 60;
         this.foodLocation = [0, 0];
+        this.obstacles = []; // Array to store obstacles
+        this.apples = []; // Array to store multiple apples
+        this.powerDowns = []; // Array to store power-downs (skulls)
+        this.moveSpeed = 300; // Base movement speed
+        this.appleImage = appleImage;
+        this.greenAppleImage = greenAppleImage;
+        this.blueAppleImage = blueAppleImage;
+        this.goldenAppleImage = goldenAppleImage;
+        this.skullImage = skullImage;
+        this.obstacleImage = obstacleImage;
+        this.bgImage = bgImage;
+        this.collisionWarnings = new Map(); // Store collision warnings
+        this.warningDistance = 100; // Distance threshold for warnings
+        this.eatSound = new Audio('/static/sounds/eat.mp3'); // Load eating sound effect
         this.setRandomFoodLocation(); // Place food at a random location
+        for (let i = 0; i < 3; i++) { // Spawn three obstacles
+          this.spawnObstacle();
+        }
+        // Spawn four apples initially, prioritizing red
+        for (let i = 0; i < 4; i++) {
+          this.spawnApple();
+        }
+        this.spawnPowerDown(); // Spawn initial power-down
         // Initialize game state
         this.score = 0;
         this.gameOver = false;
@@ -243,30 +328,191 @@ const SnakeGame = () => {
 
       // Initialize the snake with starting points
       initializeSnake() {
+        let headX = 640;
+        let headY = 360;
+        let attempts = 0;
+        const maxAttempts = 20; // Reduced attempts to prevent performance issues
+        const margin = 100; // Larger margin for safer positioning
+        // Ensure initial snake position does not overlap with obstacles or power-downs
+        this.points = [];
+        this.lengths = [];
+        this.currentLength = 0;
         // Add initial points to form a short vertical snake
-        this.points.push([640, 420]);
-        this.points.push([640, 400]);
-        this.points.push([640, 380]);
-        this.points.push([640, 360]); // Head position
+        this.points.push([headX, headY + 60]);
+        this.points.push([headX, headY + 40]);
+        this.points.push([headX, headY + 20]);
+        this.points.push([headX, headY]); // Head position
         // Calculate distances between points and total length
         for (let i = 1; i < this.points.length; i++) {
           const dist = Math.hypot(this.points[i - 1][0] - this.points[i][0], this.points[i - 1][1] - this.points[i][1]);
           this.lengths.push(dist);
           this.currentLength += dist;
         }
-        this.headPosition = [...this.points[3]]; // Set head position
-        this.targetPosition = [...this.headPosition]; // Set initial target
+        this.headPosition = [headX, headY]; // Set head position
+        this.targetPosition = [headX, headY]; // Set initial target
       }
 
       // Place food at a random location within canvas bounds
       setRandomFoodLocation() {
         const margin = this.foodWidth * 2; // Ensure food stays within bounds
-        this.foodLocation = [
-          Math.floor(Math.random() * (1280 - margin * 2)) + margin,
-          Math.floor(Math.random() * (720 - margin * 2)) + margin,
-        ];
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for food');
+            return;
+          }
+        } while (this.checkOverlap(x, y, this.foodWidth, this.foodHeight));
+        this.foodLocation = [x, y];
       }
 
+      // Check if a new position overlaps with existing objects
+      checkOverlap(x, y, width, height, excludeIndex = -1) {
+        const buffer = 20; // Additional buffer to prevent objects from being too close
+        // Check apples (excluding the one at excludeIndex, if any)
+        for (let i = 0; i < this.apples.length; i++) {
+          if (i === excludeIndex) continue;
+          const apple = this.apples[i];
+          const dist = Math.hypot(x - apple.x, y - apple.y);
+          // Use the larger of the two widths/heights for collision check
+          const effectiveWidth = Math.max(width, apple.width) / 2;
+          const effectiveHeight = Math.max(height, apple.height) / 2;
+          if (dist < (effectiveWidth + effectiveHeight + buffer)) {
+            return true;
+          }
+        }
+        // Check obstacles
+        for (const obstacle of this.obstacles) {
+          const dist = Math.hypot(x - obstacle.x, y - obstacle.y);
+          if (dist < (width / 2 + obstacle.width / 2 + buffer)) {
+            return true;
+          }
+        }
+        // Check power-downs
+        for (const powerDown of this.powerDowns) {
+          const dist = Math.hypot(x - powerDown.x, y - powerDown.y);
+          if (dist < (width / 2 + powerDown.width / 2 + buffer)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Spawn a random obstacle across the entire game screen
+      spawnObstacle() {
+        const margin = 60;
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for obstacle');
+            return;
+          }
+        } while (this.checkOverlap(x, y, 60, 60));
+        const obstacle = {
+          x,
+          y,
+          width: 60,
+          height: 60,
+        };
+        this.obstacles.push(obstacle);
+      }
+
+      // Spawn a random apple with a type across the entire game screen
+      spawnApple() {
+        const margin = this.foodWidth * 2;
+        // Determine available apple types based on existing apples
+        const existingTypes = this.apples.map(apple => apple.type);
+        const allTypes = ['red', 'red', 'red', 'blue', 'green', 'golden']; // Bias towards red
+        // Allow multiple red apples, but only one of each other type
+        const availableTypes = allTypes.filter(type => type === 'red' || !existingTypes.includes(type));
+        if (availableTypes.length === 0) {
+          console.warn('No available apple types to spawn');
+          return;
+        }
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        const appleType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        const appleSize = appleType === 'golden' ? 80 : 60; // Golden apple is larger
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for apple');
+            return;
+          }
+        } while (this.checkOverlap(x, y, appleSize, appleSize));
+        const apple = {
+          x,
+          y,
+          width: appleSize,
+          height: appleSize,
+          type: appleType,
+        };
+        this.apples.push(apple);
+      }
+
+      // Spawn a random power-down (skull) across the entire game screen
+      spawnPowerDown() {
+        const margin = 60;
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        do {
+          x = Math.floor(Math.random() * (1280 - margin * 2)) + margin;
+          y = Math.floor(Math.random() * (720 - margin * 2)) + margin;
+          attempts++;
+          if (attempts > maxAttempts) {
+            console.warn('Could not find non-overlapping position for power-down');
+            return;
+          }
+        } while (this.checkOverlap(x, y, 60, 60));
+        const powerDown = {
+          x,
+          y,
+          width: 60,
+          height: 60,
+        };
+        this.powerDowns.push(powerDown);
+      }
+
+      // Update collision warnings for obstacles and skulls
+      updateCollisionWarnings() {
+        this.collisionWarnings.clear();
+        // Check obstacles
+        this.obstacles.forEach((obstacle, index) => {
+          const distToObstacle = Math.hypot(this.headPosition[0] - obstacle.x, this.headPosition[1] - obstacle.y);
+          if (distToObstacle < this.warningDistance && distToObstacle > (obstacle.width / 2) + 10) {
+            this.collisionWarnings.set(`obstacle_${index}`, {
+              type: 'obstacle',
+              object: obstacle,
+              intensity: Math.max(0, 1 - (distToObstacle - ((obstacle.width / 2) + 10)) / (this.warningDistance - ((obstacle.width / 2) + 10)))
+            });
+          }
+        });
+        // Check power-downs (skulls)
+        this.powerDowns.forEach((powerDown, index) => {
+          const distToPowerDown = Math.hypot(this.headPosition[0] - powerDown.x, this.headPosition[1] - powerDown.y);
+          if (distToPowerDown < this.warningDistance && distToPowerDown > (powerDown.width / 2) + 10) {
+            this.collisionWarnings.set(`powerDown_${index}`, {
+              type: 'powerDown',
+              object: powerDown,
+              intensity: Math.max(0, 1 - (distToPowerDown - ((powerDown.width / 2) + 10)) / (this.warningDistance - ((powerDown.width / 2) + 10)))
+            });
+          }
+        });
+      }
+        
       // Update snake direction based on finger position
       updateFingerPosition(fingerX, fingerY, baseX, baseY) {
         if (!this.gameOver) {
@@ -285,7 +531,7 @@ const SnakeGame = () => {
         if (this.gameOver) return; // Exit if game is over
         const deltaSeconds = deltaTime / 1000; // Convert deltaTime to seconds
         if (this.fingerDetected) {
-          const moveSpeed = 300 * deltaSeconds; // Movement speed scaled by time
+          const moveSpeed = this.moveSpeed * deltaSeconds; // Movement speed scaled by time
           const dx = this.targetPosition[0] - this.headPosition[0]; // X distance to target
           const dy = this.targetPosition[1] - this.headPosition[1]; // Y distance to target
           const dist = Math.sqrt(dx * dx + dy * dy); // Total distance to target
@@ -308,24 +554,61 @@ const SnakeGame = () => {
                 this.currentLength -= removedLength;
                 this.points.shift();
               }
-              // Check if snake ate the food
-              const [foodX, foodY] = this.foodLocation;
+              
+              // Check collisions with apples
               const [headX, headY] = this.headPosition;
-              const distToFood = Math.hypot(headX - foodX, headY - foodY);
-              if (distToFood < (this.foodWidth / 2) + 10) { // Collision with food
-                this.setRandomFoodLocation(); // Move food to new location
-                this.totalAllowedLength += 50; // Increase snake length
-                this.score += 1; // Increment score
-                this.stats.textContent = `Score: ${this.score}`; // Update score display
-                // Play eat sound effect
-                try {
-                  const eatSound = new Audio('/static/sounds/eat.mp3');
-                  eatSound.volume = 0.5;
-                  eatSound.play().catch((e) => console.log('Error playing sound:', e));
-                } catch (e) {
-                  console.log('Could not load or play sound:', e);
+              for (let i = this.apples.length - 1; i >= 0; i--) {
+                const apple = this.apples[i];
+                const distToApple = Math.hypot(headX - apple.x, headY - apple.y);
+                if (distToApple < (apple.width / 2) + 10) {
+                  this.apples.splice(i, 1);
+                  this.eatSound.play().catch((error) => {
+                    console.warn('Failed to play eat sound:', error.message);
+                  });
+                  switch (apple.type) {
+                    case 'red':
+                      this.totalAllowedLength += 50;
+                      this.score += 1;
+                      break;
+                    case 'blue':
+                      this.moveSpeed *= 1.5; // Speed boost
+                      setTimeout(() => { this.moveSpeed /= 1.5; }, 5000); // Reset after 5 seconds
+                      break;
+                    case 'green':
+                      this.moveSpeed *= 0.5; // Slow down
+                      setTimeout(() => { this.moveSpeed /= 0.5; }, 5000); // Reset after 5 seconds
+                      break;
+                    case 'golden':
+                      this.score += 5; // Bonus points
+                      break;
+                  }
+                  this.stats.textContent = `Score: ${this.score}`;
+                  this.spawnApple(); // Spawn new apple
                 }
               }
+              // Check collisions with power-downs
+              for (let i = this.powerDowns.length - 1; i >= 0; i--) {
+                const powerDown = this.powerDowns[i];
+                const distToPowerDown = Math.hypot(headX - powerDown.x, headY - powerDown.y);
+                if (distToPowerDown < (powerDown.width / 2) + 10) {
+                  this.powerDowns.splice(i, 1);
+                  if (this.score <= 2) {
+                    this.score = 0; // Set score to 0
+                    this.stats.textContent = `Score: ${this.score}`; // Update UI immediately
+                    this.gameOver = true; // End game
+                  } else {
+                    this.score -= 2; // Reduce score
+                    if (this.points.length > 4) {
+                      this.points.splice(1, 2); // Shrink snake by removing 2 points
+                      this.lengths.splice(0, 1); // Adjust lengths
+                      this.currentLength -= this.lengths[0];
+                    }
+                  }
+                  this.stats.textContent = `Score: ${this.score}`;
+                  this.spawnPowerDown(); // Spawn new power-down
+                }
+              }
+
               // Check for self-collision with body
               if (this.points.length > 10) {
                 const bodyPoints = this.points.slice(0, -10); // Exclude last 10 points to avoid head collision
@@ -339,6 +622,17 @@ const SnakeGame = () => {
                   }
                 }
               }
+              // Check collision with obstacles
+              for (let i = 0; i < this.obstacles.length; i++) {
+                const obstacle = this.obstacles[i];
+                const distToObstacle = Math.hypot(headX - obstacle.x, headY - obstacle.y);
+                if (distToObstacle < (obstacle.width / 2) + 10) {
+                  this.gameOver = true;
+                  return;
+                }
+              }
+              // Update collision warnings
+              this.updateCollisionWarnings();
             }
           }
         }
@@ -346,6 +640,10 @@ const SnakeGame = () => {
 
       // Render the game state on the canvas
       render(ctx) {
+        // Draw background image
+        if (this.bgImage.complete) {
+          ctx.drawImage(this.bgImage, 0, 0, 1280, 720);
+        }
         // Set line properties for smooth rendering
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -390,17 +688,48 @@ const SnakeGame = () => {
             ctx.fill();
           }
         }
-        // Draw the apple using the loaded image or a fallback
-        if (appleImage.complete) {
-          ctx.drawImage(appleImage, this.foodLocation[0] - 30, this.foodLocation[1] - 30, 60, 60);
-        } else {
-          ctx.beginPath();
-          ctx.arc(this.foodLocation[0], this.foodLocation[1], 30, 0, 2 * Math.PI);
-          ctx.fillStyle = '#FF0000';
-          ctx.fill();
-        }
-        this.stats.textContent = `Score: ${this.score}`; // Update score display
+        // Draw apples using images
+        this.apples.forEach(apple => {
+          const img = apple.type === 'red' ? this.appleImage :
+                     apple.type === 'blue' ? this.blueAppleImage :
+                     apple.type === 'green' ? this.greenAppleImage :
+                     this.goldenAppleImage;
+          if (img.complete) {
+            ctx.drawImage(img, apple.x - apple.width / 2, apple.y - apple.height / 2, apple.width, apple.height);
+          }
+        });
+        // Draw obstacles using image with collision warnings
+        this.obstacles.forEach(obstacle => {
+          if (this.obstacleImage.complete) {
+            ctx.drawImage(this.obstacleImage, obstacle.x - obstacle.width / 2, obstacle.y - obstacle.height / 2, obstacle.width, obstacle.height);
+          }
+          // Draw collision warning if present
+          const warning = this.collisionWarnings.get(`obstacle_${this.obstacles.indexOf(obstacle)}`);
+          if (warning) {
+            ctx.beginPath();
+            ctx.arc(obstacle.x, obstacle.y, obstacle.width / 2 + 40, 0, 2 * Math.PI); // Increased warning size
+            ctx.fillStyle = `rgba(255, 0, 0, ${warning.intensity * 0.5})`; // Red warning with variable opacity
+            ctx.fill();
+          }
+        });
+        // Draw power-downs (skulls) using image with collision warnings
+        this.powerDowns.forEach(powerDown => {
+          if (this.skullImage.complete) {
+            ctx.drawImage(this.skullImage, powerDown.x - powerDown.width / 2, powerDown.y - powerDown.height / 2, powerDown.width, powerDown.height);
+          }
+          // Draw collision warning if present
+          const warning = this.collisionWarnings.get(`powerDown_${this.powerDowns.indexOf(powerDown)}`);
+          if (warning) {
+            ctx.beginPath();
+            ctx.arc(powerDown.x, powerDown.y, powerDown.width / 2 + 40, 0, 2 * Math.PI); // Increased warning size
+            ctx.fillStyle = `rgba(255, 0, 0, ${warning.intensity * 0.5})`; // Red warning with variable opacity
+            ctx.fill();
+          }
+        });
+
+        this.stats.textContent = `Score: ${this.score}`;
       }
+
 
       // Calculate distance from a point to a line segment (for collision detection)
       distanceToLineSegment(point, lineStart, lineEnd) {
@@ -435,50 +764,52 @@ const SnakeGame = () => {
     };
   }, []);
 
+
   // Render the game UI
   return (
     <div className='inter'> 
-      <div style={{Width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/snake-bg.svg)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
+      <div style={{Width: "100vw", minHeight: "95vh", backgroundImage: `url(static/images/pages/${localStorage.getItem('colorFilter') === "colorblind" ? "snake-bg-colorblind" : "snake-bg"}.svg)`, backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none'}}>
         <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div className="instructions inter" style={{ color: "#fff" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0}}>Snake</h2>
             <ul>
               <li><strong>Show your hand:</strong> Make sure your hand is clearly visible to the webcam.</li>
               <li><strong>Move the snake:</strong> Use your index finger to control the snake.</li>
-              <li><strong>Collect apples:</strong> Guide the snake to eat apples and grow longer.</li>
-              <li><strong>Don't hit yourself:</strong> Avoid collisions with your own snake body!</li>
+              <li><strong>Collect apples:</strong> Eat red to grow, blue for speed, green to slow down, golden for bonus points.</li>
+              <li><strong>Avoid obstacles:</strong> Steer clear of obstacles.</li>
+              <li><strong>Avoid skulls:</strong> Touching skull reduces score or shrinks the snake.</li>
               <li><strong>Keyboard controls:</strong> Press 'R' to restart and 'Q' to quit.</li>
             </ul>
           </div>
         </div>
         <div style={{maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div style={{maxWidth:"40%"}}>
-            <img src="static/images/pages/snake-colour.svg" alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
+            <img src={`static/images/pages/${localStorage.getItem('colorFilter') === "colorblind" ? "snake-colour-colorblind" : "snake-colour"}.svg`} alt="Whack A Mole" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div style={{maxWidth:"20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh'}}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="inter start-button" onClick={() => { setShowGame(true); setStartTime(new Date()); }} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.5em', fontWeight: 600 , color: "#fff"}}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>
           </div>
         </div>
       </div>
-      <div style={{Width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none' , flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'space-between', marginBottom: '20px' }}>
-            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+      <div style={{width: "100%", minHeight: "95vh", display: showGame ? 'flex' : 'none', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative'}}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', width: '100%' }}>
+          <div className="controls" style={{ maxWidth: "70vw", display: 'flex', flexDirection: "row", alignItems: "center", justifyContent: 'center', marginBottom: '20px' }}>
+            <button id="restart-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', margin: '0 10px' }}>
               <img src="static/images/pages/replay.svg" alt="Restart" style={{ width: '35px', height: '35px' }} />
             </button>
-            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <button id="start-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', margin: '0 10px' }}>
               <img src="static/images/pages/play.svg" alt="Play" style={{ width: '40px', height: '40px' }} />
             </button>
-            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <button id="test-camera-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', margin: '0 10px' }}>
               <img src="static/images/pages/testing.svg" alt="Test Camera" style={{ width: '35px', height: '35px' }} />
             </button>
           </div>
         </div>
         <div ref={debugRef} className="debug-box" style={{backgroundColor:"transparent"}}></div>
-        <div className="game-container inter">
+        <div className="game-container inter" style={{ position: 'relative' }}>
           <canvas ref={canvasRef} width="1280" height="720"></canvas>
           <video ref={videoRef} autoPlay playsInline style={{ display: 'none' }}></video>
           <div ref={gameStatsRef} className="game-stats">Score: 0</div>
@@ -486,6 +817,60 @@ const SnakeGame = () => {
             <h2>Game Over!</h2>
             <p>Your Score: <span ref={finalScoreRef}>0</span></p>
             <button id="play-again-btn">Play Again</button>
+          </div>
+          <div
+            className="instructions-box inter"
+            style={{
+              position: 'absolute',
+              left: '1300px',
+              top: '160px',
+              width: '220px',
+              height: '400px',
+              background: 'linear-gradient(to bottom, #2a2a2a, #1a1a1a)',
+              border: '3px solid #1E90FF',
+              boxShadow: '0 0 15px #1E90FF',
+              padding: '5px',
+              boxSizing: 'border-box'
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#1E90FF',
+                width: '100%',
+                height: '35px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '10px'
+              }}
+            >
+              <span style={{ color: '#FFFFFF', font: 'bold 18px Arial', textAlign: 'center' }}>
+                HOW TO PLAY
+              </span>
+            </div>
+            <div style={{ paddingLeft: '5px' }}>
+              {[
+                { icon: '👆', text: 'Move finger', subtext: 'to control snake direction' },
+                { icon: '🍎', text: 'Collect red apple', subtext: 'to grow snake' },
+                { icon: '🔵', text: 'Collect blue apple', subtext: 'for speed boost (5s)' },
+                { icon: '🟢', text: 'Collect green apple', subtext: 'to slow down (5s)' },
+                { icon: '💰', text: 'Collect golden apple', subtext: 'for bonus points' },
+                { icon: '💀', text: 'Avoid skull', subtext: 'reduces score/shrinks snake' },
+                { icon: '🛑', text: 'Avoid obstacle', subtext: 'causes game over' },
+                { icon: '⌨️', text: 'Press R to restart', subtext: 'Press Q to quit' }
+              ].map((item, index) => (
+                <div key={index} style={{ marginBottom: item.subtext ? '15px' : '5px' }}>
+                  <span style={{ font: '19px Arial', color: '#FFD700', marginRight: '5px' }}>{item.icon}</span>
+                  <div style={{ display: 'inline-block', verticalAlign: 'top' }}>
+                    <div style={{ font: 'bold 12px Arial', color: '#FFFFFF' }}>{item.text}</div>
+                    {item.subtext && (
+                      <div style={{ font: '11px Arial', color: '#CCCCCC', marginTop: '2px' }}>{item.subtext}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ position: 'absolute', bottom: '15px', left: '10px', right: '10px', height: '2px', backgroundColor: '#1E90FF' }}></div>
           </div>
         </div>
       </div>

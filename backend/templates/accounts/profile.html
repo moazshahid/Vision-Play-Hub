@@ -5,30 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     {% load static %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="{% static 'js/canvas-filter.js' %}"></script>
     <style>
+    :root {
+      --color-filter: none;
+      --brightness-filter: none;
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+
+    light{
+      color: #0b0c10;
+
     }
 
     body {
       font-family: "Hanken Grotesk", sans-serif;
       letter-spacing: -0.05em;
-      color: #ffffff;
+      color: #09080e;
+      background-color: #09080e;
       height: 100vh;
       overflow-x: hidden;
       position: relative;
+      filter: var(--color-filter) var(--brightness-filter);
+      transition: filter 0.3s ease;
     }
 
-    video {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: -2;
+    body.light {
+      font-family: "Hanken Grotesk", sans-serif;
+      letter-spacing: -0.05em;
+      color: #09080e;
+      background-color: #fff;
+      height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      filter: var(--color-filter) var(--brightness-filter);
+      transition: filter 0.3s ease;
+    }
+
+    body button {
+      cursor: pointer;
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-weight: 600;
+      color: #66fcf1;
+      background-color: #0b0c10;
+      border: 1px solid #66fcf1;
+      transition: color 0.3s, text-shadow 0.3s;
+      padding: 0.5em 1em;
+      border-radius: 10em;
+    }
+
+    body button:hover {
+      color: #ffffff;
+      background-color: #4fb5ae;
+      border: 1px solid #66fcf1;
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+    }
+
+    body.light button {
+      color: #0b0c10;
+      background-color: #ffffff;
+      border: 1px solid #66fcf1;
+    }
+
+    body.light button:hover {
+      color: #ffffff;
+      background-color: #66fcf1;
+      border: 1px solid #ffffff;
     }
 
     .overlay {
@@ -65,10 +114,28 @@
       border: none;
       color: #ffffff;
       cursor: pointer;
-      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+
+    body.light .button-design {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
     }
 
     .button-design:hover {
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+      color: #ffffff;
+      background: none;
+      border: none;
+    }
+
+    body.light .button-design:hover {
       text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
       color: #ffffff;
       background: none;
@@ -100,6 +167,18 @@
       flex-wrap: wrap;
     }
 
+    body.light .profile-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
+      max-width: 820px;
+      width: 90%;
+      flex-wrap: wrap;
+    }
+
     .profile-left,
     .profile-right {
       flex: 1;
@@ -107,7 +186,7 @@
     }
 
     .profile-card h1 {
-      font-family: "Inter", sans-serif;
+      font-family: "Bricolage Grotesque", sans-serif;
       font-size: 3rem;
       font-weight: 700;
       margin-bottom: 1rem;
@@ -119,10 +198,17 @@
       font-size: 1.1rem;
       margin: 0.5rem 0;
       color: #c5c6c7;
+      text-align: center;
+    }
+
+    body.light .profile-card p {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
     }
 
     .profile-left h1 {
-      font-family: "Inter", sans-serif;
+      font-family: "Bricolage Grotesque", sans-serif;
       font-size: 3rem;
       font-weight: 700;
       margin-bottom: 1rem;
@@ -134,6 +220,13 @@
       font-size: 1.1rem;
       margin: 0.5rem 0;
       color: #c5c6c7;
+      text-align: center;
+    }
+
+    .profile-left p {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
     }
 
     .highlight {
@@ -142,7 +235,24 @@
     }
 
     .back-button {
-      margin-top: 1.8rem;
+      margin-top: 0.3rem;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: none;
+      border: 1px solid #66fcf1;
+      color: #66fcf1;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+      font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .back-button:hover {
+      background-color: #66fcf1;
+      color: #0b0c10;
+    }
+
+    .upload-button {
+      margin-top: 0.3rem;
       padding: 8px 18px;
       border-radius: 10px;
       background: none;
@@ -153,7 +263,7 @@
       font-family: "Bricolage Grotesque", sans-serif;
     }
 
-    .back-button:hover {
+    .upload-button:hover {
       background-color: #66fcf1;
       color: #0b0c10;
     }
@@ -175,6 +285,10 @@
       color: #c5c6c7;
     }
 
+    body.light .setting-option {
+      margin-bottom: 1.5rem;
+    }
+
     .setting-option label {
       display: block;
       font-weight: 600;
@@ -185,70 +299,373 @@
     .setting-option input[type="file"] {
       width: 100%;
     }
+
+    .profile-picture {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 0 auto 1rem;
+      border: 2px solid transparent;
+      background-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      font-family: "Bricolage Grotesque", sans-serif;
+      color: #66fcf1;
+    }
+
+    .profile-picture.default {
+      background-color: #4a4a4a;
+    }
+
+    .profile-picture-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid transparent;
+      background-color: transparent;
+      cursor: pointer;
+      padding: 0;
+      margin: 0 0.25vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: #66fcf1;
+    }
+
+    .profile-picture-btn.default {
+      background-color: #4a4a4a;
+    }
+
+    .profile-picture-btn:hover {
+      border-color: #66fcf1;
+    }
+
+    .change-password-form {
+        margin-top: 1.5rem;
+    }
+    .change-password-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        color: #c5c6c7;
+    }
+    .change-password-form input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid #66fcf1;
+        border-radius: 10px;
+        background: none;
+        color: #ffffff;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+    .change-password-form button {
+        margin-top: 0.3rem;
+        padding: 8px 18px;
+        border-radius: 10px;
+        background: none;
+        border: 1px solid #66fcf1;
+        color: #66fcf1;
+        cursor: pointer;
+        transition: background 0.3s, color 0.3s;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+    .change-password-form button:hover {
+        background-color: #66fcf1;
+        color: #0b0c10;
+    }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            if (changePasswordForm) {
+                changePasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(changePasswordForm); // Now targets the form
+                    const response = await fetch('/profile/change-password/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Password changed successfully!');
+                        changePasswordForm.reset();
+                    } else {
+                        alert(data.error || 'An error occurred');
+                    }
+                });
+            }
+
+            const uploadInput = document.getElementById('upload');
+            const profilePic = document.getElementById('profile-pic');
+            const form = document.querySelector('.setting-option form');
+
+            uploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        profilePic.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+
+                    const formData = new FormData(form);
+                    fetch('/profile/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Server response:', data);
+                        if (data.success) {
+                            alert('Profile picture updated successfully!');
+                            window.location.reload();
+                        } else {
+                            alert('Error updating profile picture: ' + (data.error || 'Unknown error'));
+                            profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('An error occurred while uploading.');
+                        profilePic.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+                    });
+                } else {
+                    alert('Please upload a valid image file.');
+                }
+            });
+
+            document.querySelector('.upload-button').addEventListener('click', () => {
+                uploadInput.click();
+            });
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                console.log('Form submit prevented');
+            });
+        });
+    </script>
 </head>
 
 <body>
-  <!-- Video Background -->
-  <video autoplay loop muted playsinline>
-    <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" style="opacity: 0.5;position: fixed; top: -7%; left: -10%; width: 120%; height: 120%; z-index: -10;"></iframe>
+  <div
+      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-color: rgba(0, 0, 0, 0.5);">
+  </div>
 
-  <!-- Overlay -->
-  <div class="overlay"></div>
-
-  <!-- Navbar -->
   <nav>
-    <a href="/">
-      <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
-    </a>
-    <div style="display: flex; gap: 0.8vw;">
-      <a href="{% url 'login' %}"><button class="button-design">Log In</button></a>
-      <a href="{% url 'signup' %}"><button class="button-design">Sign Up</button></a>
-      <a href="{% url 'leaderboard' %}"><button class="button-design">Leaderboards</button></a>
-      <a href="http://localhost:8000/accounts/profile/"><button class="button-design">Profile</button></a>
-      <a href="{% url 'logout' %}"><button class="button-design">Log Out</button></a>
+    <div style="display: flex; align-items: center; gap: 0.8vw;">
+        <a href="/">
+            <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
+        </a>
+        <a href="{% url 'aboutus' %}">
+            <button class="button-design">About Us</button>
+        </a>
+        <a href="{% url 'faqs' %}">
+            <button class="button-design">FAQs</button>
+        </a>
+    </div>
+    <div style="display: flex; gap: 0.8vw; align-items: center;">
+        {% if user.is_authenticated %}
+            <a href="{% url 'leaderboard' %}">
+                <button class="button-design">Leaderboard</button>
+            </a>
+            <a href="{% url 'profile' %}">
+                <div class="profile-picture-btn {% if not user.profile.profile_picture %}default{% endif %}">
+                    {% if user.profile.profile_picture %}
+                        <img src="{{ user.profile.profile_picture.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+            </a>
+        {% endif %}
     </div>
   </nav>
 
-  <!-- Profile Content -->
   <div class="profile-container">
     <div class="profile-card">
-      <!-- Left: Profile Info -->
       <div class="profile-left">
-        <h1>Profile</h1>
         {% if user %}
+          <div class="profile-picture {% if not user.profile.profile_picture %}default{% endif %}" id="profile-pic">
+            {% if user.profile.profile_picture %}
+              <img src="{{ user.profile.profile_picture.url }}" alt="Profile Picture" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            {% else %}
+              {{ user.username|first|upper }}
+            {% endif %}
+          </div>
           <p>Username: <span class="highlight">{{ user.username }}</span></p>
           <p>Email: <span class="highlight">{{ user.email }}</span></p>
           <p>Created: <span class="highlight">{{ user.date_joined }}</span></p>
           <p>Last Login: <span class="highlight">{{ user.last_login|default:"Never" }}</span></p>
+          <a href="{% url 'logout' %}">
+            <button class="back-button">Log Out</button>
+          </a>
         {% else %}
           <p>{{ error }}</p>
         {% endif %}
-        <a href="{% url 'home' %}"><button class="back-button">Back to Home</button></a>
       </div>
-
-      <!-- Right: Settings -->
       <div class="profile-right">
         <h2>Settings</h2>
-
-        <div class="setting-option">
-          <label for="volume">Volume</label>
-          <input type="range" id="volume" name="volume" min="0" max="100" value="50">
-        </div>
-
-        <div class="setting-option">
-          <label for="theme-toggle">Theme</label>
-          <button id="theme-toggle" class="back-button">Toggle Light/Dark</button>
-        </div>
-
+        <form id="settings-form" method="POST" action="{% url 'save_settings' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="setting-option">
+              <label for="theme">Theme</label>
+              <button type="button" id="theme-toggle" class="hanken-grotesk-bold">Toggle Light/Dark</button>
+              <input type="hidden" name="is_dark_mode" id="is_dark_mode" value="{{ profile.is_dark_mode|lower }}">
+          </div>
+          <div class="setting-option">
+              <label for="colorblind_mode">Deuteranopia & Protanopia Theme</label>
+              <button type="button" id="colorblind-toggle" class="hanken-grotesk-bold">On/Off</button>
+              <input type="hidden" name="is_colorblind_mode" id="is_colorblind_mode" value="{{ profile.is_colorblind_mode|lower }}">
+          </div>
+          <button type="submit" class="hanken-grotesk-bold">Save Theme</button>
+        </form>
         <div class="setting-option">
           <label for="upload">Change Profile Picture</label>
-          <input type="file" id="upload" accept="image/*">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" id="upload" name="profile_picture" accept="image/*" style="display: none;">
+            <button type="button" class="upload-button">Upload Picture</button>
+          </form>
+        </div>
+        <div class="change-password-form">
+          <form method="post" id="changePasswordForm">
+            {% csrf_token %}
+            <label for="old_password">Old Password</label>
+            <input type="password" id="old_password" name="old_password" required>
+            <label for="new_password">New Password</label>
+            <input type="password" id="new_password" name="new_password" required>
+            <label for="confirm_password">Confirm New Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+            <button type="submit">Change Password</button>
+          </form>
         </div>
       </div>
     </div>
-  </div>
+    <script>
+// Initialize localStorage defaults
+        if (!localStorage.getItem('themeMode')) {
+            localStorage.setItem('themeMode', 'dark');
+        }
+        if (!localStorage.getItem('colorFilter')) {
+            localStorage.setItem('colorFilter', 'trichromatic');
+        }
+
+        // Initialize classes and button text based on localStorage
+        function initializeClassesAndButtons() {
+            const themeMode = localStorage.getItem('themeMode');
+            const colorFilter = localStorage.getItem('colorFilter');
+            const body = document.body;
+            const themeButton = document.getElementById('theme-toggle');
+            const colorblindButton = document.getElementById('colorblind-toggle');
+            
+
+
+            if (!themeButton || !colorblindButton) {
+                console.error('Theme or colorblind toggle button not found');
+                return;
+            }
+
+            // Update theme classes and button text
+            if (themeMode === 'light') {
+                body.classList.add('light');
+                body.classList.remove('dark');
+                themeButton.textContent = 'Toggle Dark';
+
+                // Update background video source for light mode
+                document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation light.svg' %}");
+            } else {
+                body.classList.add('dark');
+                body.classList.remove('light');
+                themeButton.textContent = 'Toggle Light';
+                document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation.svg' %}");
+            }
+
+            // Update colorblind classes and button text
+            if (colorFilter === 'colorblind') {
+                body.classList.add('colorblind');
+                colorblindButton.textContent = 'Turn Off';
+                if (themeMode === 'dark') {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation colorblind.svg' %}");
+                } else {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation colorblind light.svg' %}");
+                }
+            } else {
+                body.classList.remove('colorblind');
+                colorblindButton.textContent = 'Turn On';
+                if (themeMode === 'dark') {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation.svg' %}");
+                } else {
+                    document.getElementById('bg-anim')?.setAttribute('src', "{% static 'videos/Jowstick animation light.svg' %}");
+                }
+            }
+        }
+
+        // Toggle theme mode
+        function toggleTheme() {
+            const themeMode = localStorage.getItem('themeMode');
+            const newThemeMode = themeMode === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('themeMode', newThemeMode);
+            initializeClassesAndButtons();
+        }
+
+        // Toggle colorblind mode
+        function toggleColorblindMode() {
+            const colorFilter = localStorage.getItem('colorFilter');
+            const newColorFilter = colorFilter === 'colorblind' ? 'trichromatic' : 'colorblind';
+            localStorage.setItem('colorFilter', newColorFilter);
+            initializeClassesAndButtons();
+        }
+
+        // Update hidden inputs before form submission
+        function updateFormInputs(event) {
+            event.preventDefault();
+            const themeMode = localStorage.getItem('themeMode');
+            const colorFilter = localStorage.getItem('colorFilter');
+            const isDarkModeInput = document.getElementById('is_dark_mode');
+            const isColorblindModeInput = document.getElementById('is_colorblind_mode');
+            if (isDarkModeInput && isColorblindModeInput) {
+                isDarkModeInput.value = themeMode === 'dark' ? 'true' : 'false';
+                isColorblindModeInput.value = colorFilter === 'colorblind' ? 'true' : 'false';
+                event.target.submit();
+            } else {
+                console.error('Hidden inputs not found');
+            }
+        }
+
+        // Initialize and attach event listeners after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeButton = document.getElementById('theme-toggle');
+            const colorblindButton = document.getElementById('colorblind-toggle');
+            const form = document.getElementById('settings-form');
+
+            if (!themeButton || !colorblindButton || !form) {
+                console.error('Required elements not found:', {
+                    themeButton: !!themeButton,
+                    colorblindButton: !!colorblindButton,
+                    form: !!form
+                });
+                return;
+            }
+
+            themeButton.addEventListener('click', toggleTheme);
+            colorblindButton.addEventListener('click', toggleColorblindMode);
+            form.addEventListener('submit', updateFormInputs);
+
+            initializeClassesAndButtons();
+        });
+    </script>
 </body>
 </html>

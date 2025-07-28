@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesk:opsz,wght@12..96,200..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Hanken Grotesk", sans-serif;
+      letter-spacing: -0.05em;
+      background-color: #09080e;
+      position: relative;
+      height: 100vh;
+      overflow-y: hidden;
+    }
+
+    body.light {
+      background-color: #f0f0f0;
+    }
+    
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2vh 2vw;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: transparent;
+      z-index: 30;
+      color: white;
+    }
+
+    nav a {
+      text-decoration: none;
+    }
+
+    .button-design {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+
+    .button-design:hover {
+      text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 16px #00f0ff;
+      color: #ffffff;
+      background: none;
+      border: none;
+    }
+
+    .faq-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      padding: 1rem;
+      z-index: 20;
+      position: relative;
+      margin-top: 13vh;
+      height: calc(100vh - 18vh);
+    }
+
+    .faq-card {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 1.3rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
+      max-width: 820px;
+      width: 90%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .faq-card .fixed-title {
+      position: sticky;
+      top: 0;
+      background-color: transparent;
+      z-index: 10;
+      padding-bottom: 1em;
+      flex-shrink: 0;
+    }
+
+    .faq-card h1 {
+      font-family: "Hanken Grotesk", sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    .faq-card .scrollable-content {
+      flex-grow: 1;
+      padding: 1rem 1.5rem 1rem 1rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #272727 transparent;
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar {
+      width: 8px;
+      background: transparent;
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar-thumb {
+      background-color: #66fcf1;
+      border-radius: 4px;
+      background-clip: padding-box;
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .faq-card .scrollable-content::-webkit-scrollbar-button {
+      display: none;
+    }
+
+    .faq-item-card {
+      display: block;
+      background-color: rgba(11, 12, 16, 0.9);
+      padding: 1rem;
+      border: 1px solid #66fcf1;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      width: 100%;
+      box-sizing: border-box;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+
+    .faq-item-card:hover,
+    .faq-item-card.active {
+      background-color: rgba(20, 21, 25, 0.9);
+      transform: scale(1.01);
+    }
+
+    .faq-item-card .icon {
+      font-size: 12px;
+      margin-right: 0.5rem;
+      color: #66fcf1;
+      transition: transform 0.3s;
+    }
+
+    .faq-item-card h3 {
+      font-size: 1.2rem;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      display: inline;
+      transition: color 0.3s;
+    }
+
+    .faq-item-card:hover h3 {
+      color: #66fcf1;
+    }
+
+    .faq-item-card.active h3 {
+      color: #66fcf1;
+    }
+
+    .faq-item-card p {
+      font-family: "Bricolage Grotesk", sans-serif;
+      font-size: 1.1rem;
+      color: #c5c6c7;
+      line-height: 1.4;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, margin-top 0.3s ease-out; /* Add margin-top transition */
+    }
+
+    .faq-item-card.active p {
+      margin-top: 1em; /* Add space between question and answer when active */
+      max-height: 200px; /* Sufficient height for most answers; adjust as needed */
+      display: block;
+    }
+
+    .back-button {
+      margin-top: 1.8rem;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: none;
+      border: 1px solid #66fcf1;
+      color: #66fcf1;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      font-family: "Hanken Grotesk", sans-serif;
+      margin-bottom: 1rem;
+    }
+
+    .back-button:hover {
+      background-color: #66fcf1;
+      color: #0b0c10;
+    }
+
+    @keyframes glowPulse {
+      0% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+      33% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(204, 0, 255, 0.5),
+          0 0 20px rgba(204, 0, 255, 0.4),
+          0 0 30px rgba(204, 0, 255, 0.3);
+      }
+      66% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(255, 0, 128, 0.5),
+          0 0 20px rgba(255, 0, 128, 0.4),
+          0 0 30px rgba(255, 0, 128, 0.3);
+      }
+      100% {
+        text-shadow:
+          0 0 7px rgba(255, 255, 255, 0.6),
+          0 0 15px rgba(0, 240, 255, 0.5),
+          0 0 20px rgba(0, 240, 255, 0.4),
+          0 0 30px rgba(0, 240, 255, 0.3);
+      }
+    }
+
+    .glow-pulse {
+      animation: glowPulse 5s ease-in-out infinite;
+      color: #ffffff;
+    }
+
+    .profile-pic-nav {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid transparent;
+      background-color: transparent;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-family: "Bricolage Grotesk", sans-serif;
+      color: #66fcf1;
+    }
+
+    .profile-pic-nav.default {
+      background-color: #4a4a4a;
+    }
+
+    .profile-pic-nav:hover {
+      border-color: #66fcf1;
+    }
+    </style>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const faqCards = document.querySelectorAll('.faq-item-card');
+        faqCards.forEach(card => {
+          const icon = document.createElement('span');
+          icon.className = 'icon';
+          icon.textContent = '+';
+          card.insertBefore(icon, card.firstChild);
+          card.addEventListener('click', () => {
+            card.classList.toggle('active');
+            icon.textContent = card.classList.contains('active') ? '-' : '+';
+          });
+        });
+      });
+    </script>
+</head>
+
+<body>
+  <!-- Video Background -->
+  <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" style="opacity: 0.5;position: fixed; top: -7%; left: -10%; width: 120%; height: 120%; z-index: -10;"></iframe>
+    <!-- Overlay to darken the video -->
+  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
+
+
+  <!-- Navbar -->
+  <nav>
+    <div style="display: flex; align-items: center; gap: 0.8vw;">
+      <a href="/">
+        <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;">
+      </a>
+      <a href="{% url 'aboutus' %}">
+        <button class="button-design">About Us</button>
+      </a>
+      <a href="{% url 'faqs' %}">
+        <button class="button-design">FAQs</button>
+      </a>
+    </div>
+    <div style="display: flex; gap: 0.8vw;">
+      {% if not user.is_authenticated %}
+        <a href="{% url 'login' %}">
+          <button class="button-design">Log In</button>
+        </a>
+        <a href="{% url 'signup' %}">
+          <button class="button-design">Sign Up</button>
+        </a>
+      {% endif %}
+      {% if user.is_authenticated %}
+        <a href="{% url 'leaderboard' %}">
+          <button class="button-design">Leaderboard</button>
+        </a>
+        <a href="/accounts/profile/">
+          <div class="profile-pic-nav {% if not user.profile.profile_picture %}default{% endif %}">
+              {% if user.profile.profile_picture %}
+                  <img src="{{ user.profile.profile_picture.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+              {% else %}
+                  {{ user.username|first|upper }}
+              {% endif %}
+          </div>
+        </a>  
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- FAQ Content -->
+  <div class="faq-container">
+    <div class="faq-card">
+      <div class="fixed-title">
+        <h1 class="glow-pulse">Frequently Asked Questions</h1>
+      </div>
+      <div class="scrollable-content">
+        <div class="faq-item-card">
+          <h3>Do I need to create an account to play?</h3>
+          <p>No! There is an option to play as a guest, but creating an account is recommended to save your game statistics.</p>
+        </div>
+        <div class="faq-item-card">
+          <h3>How can I track my high scores?</h3>
+          <p>After logging in, your scores are automatically submitted to the leaderboard page. Navigate there to check your high scores!</p>
+        </div>
+        <div class="faq-item-card">
+          <h3>What devices are supported by Vision Play Hub?</h3>
+          <p>At the moment Vision Play Hub is only accessible and optimised on a desktop browser. Make sure to use your browser's latest version for the best gaming experience!</p>
+        </div>
+        <div class="faq-item-card">
+          <h3>How do I report a bug or issue?</h3>
+          <p>If you find any bug or issues kindly reach out to the contact us details in our About Us page!</p>
+        </div>
+        <div class="faq-item-card">
+          <h3>Can I play with friends?</h3>
+          <p>Yes! Some of our game options allow for co-op gameplay, which requires one screen for two players!</p>
+        </div>
+        <div class="faq-item-card">
+          <h3>Can I sign in with my google account?</h3>
+          <p>Absolutely! Signing up using your google account is an available option when creating an account.</p>
+        </div>
+        <div class="faq-item-card">
+          <h3>Do I need sound to play the games?</h3>
+          <p>No, but it is recommended for the best game experiencing.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Apply themeMode (dark/light)
+      f = localStorage.getItem('colorFilter') 
+      t = localStorage.getItem('themeMode')
+      source = "{% static 'videos/Jowstick animation.svg' %}";
+      function applyTheme() {
+        if (f == 'colorblind' && t == 'light') {
+            document.body.classList.add('light');
+            document.body.classList.add('colorblind');
+            source = "{% static 'videos/Jowstick animation colorblind light.svg' %}";
+            console.log("Theme and color filter applied: light + colorblind");
+        } else if (t == 'light') {
+            document.body.classList.add('light');
+            document.body.classList.remove('colorblind');
+            source = "{% static 'videos/Jowstick animation light.svg' %}";
+            console.log("Theme applied: light");
+        } else if (f == 'colorblind') {
+            document.body.classList.add('colorblind');
+            document.body.classList.remove('light');
+            source = "{% static 'videos/Jowstick animation colorblind.svg' %}";
+            console.log("Color filter applied: colorblind");
+        } else {
+            document.body.classList.remove('light');
+            document.body.classList.remove('colorblind');
+            source = "{% static 'videos/Jowstick animation.svg' %}";
+            console.log("No theme or color filter applied, using default video.");
+        }
+      }
+      applyTheme();
+      document.getElementById('bg-anim').src = source;
+    });
+  </script>
+</body>
+</html>

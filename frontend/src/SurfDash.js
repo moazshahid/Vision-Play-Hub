@@ -1,7 +1,7 @@
 // Importing necessary React hooks for managing component state, lifecycle, and references
 import React, { useEffect, useRef, useState } from 'react';
 import './Game.css'; // Importing CSS for styling the game interface
-
+import { submitScore } from './utils/api';
 // SurfDash is a React functional component that implements a lane-based runner game
 // It uses hand-tracking via MediaPipe for controls and supports character/skate selection
 const SurfDash = ({ setSelectedGame }) => {
@@ -897,6 +897,9 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.scale(-1, 1); // Mirror video feed
     ctx.drawImage(results.image, 0, 0, 1280, 720);
     ctx.restore();
+
+    const debug = debugRef.current; // Reference to debug element
+
     if (started && gameObj) {
       if (!gameObj.gameOver || gameObj.deathAnimation) {
         // Update runner position based on hand tracking
@@ -905,6 +908,10 @@ const SurfDash = ({ setSelectedGame }) => {
           const fingerX = Math.floor(1280 - indexFinger.x * 1280); // Mirror X-coordinate
           const fingerY = Math.floor(indexFinger.y * 720);
           gameObj.updateFingerPosition(fingerX, fingerY);
+          debug.innerHTML = ''; // Clear debug message when hand is detected
+        } else {
+          console.log('No hands detected in this frame');
+          debug.innerHTML = `<p class="warning">❌ No hands detected - Please ensure one hand is visible to the webcam.</p>`;
         }
         gameObj.render(ctx); // Render game
       }
@@ -932,8 +939,21 @@ const SurfDash = ({ setSelectedGame }) => {
     ctx.font = '40px Arial';
     ctx.fillText('Press "R" to Restart', 640, 500);
     finalScore.textContent = score;
-    over.style.display = 'block';
-  };
+    // over.style.display = 'block'; (removed green overlay)
+      if (!gameObjectRef.current.scoreSubmitted) {
+          gameObjectRef.current.scoreSubmitted = true; // Set immediately to prevent retries
+          console.log('Attempting to submit score:', score, 'Token:', localStorage.getItem('access_token'));
+          submitScore('SurfDash', score)
+           .then((response) => {
+             console.log('Score submitted successfully:', response);
+           })
+           .catch((error) => {
+             console.error('Failed to submit score:', error.response?.data || error.message);
+             alert('Failed to submit score. Please ensure you are logged in.');
+      });
+  }
+    };
+  
 
   // Restarts the game
   const restartGame = () => {
@@ -962,7 +982,7 @@ const SurfDash = ({ setSelectedGame }) => {
     }
   };
 
-  // Quits the game and returns to the main menu
+  // Updated quitGame function to render quit message directly
   const quitGame = () => {
     console.log('Quitting game...');
     if (cameraRef.current) cameraRef.current.stop();
@@ -977,9 +997,32 @@ const SurfDash = ({ setSelectedGame }) => {
     immunitySoundRef.current.currentTime = 0;
     setImmunityMessage(false);
     setSkateMessage(false);
-    setShowGame(false);
-    setSelectedGame(null); // Return to game selection
+    setShowGame(true);
+    setSelectedGame(null);
+    // Render quit message directly on canvas
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, 1280, 720);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, 0, 1280, 720);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Game Quit', 640, 300);
+        ctx.font = '24px Arial';
+        ctx.fillText('Refresh the page to play again', 640, 360);
+        console.log('Quit message rendered on canvas');
+      } else {
+        console.error('Canvas context not available');
+      }
+    } else {
+      console.error('Canvas reference not available');
+    }
+    console.log('Game quit via Q key');
   };
+
 
   // useEffect hook for initialization and cleanup
   useEffect(() => {
@@ -1110,7 +1153,7 @@ const SurfDash = ({ setSelectedGame }) => {
     <div className='inter'>
       <div style={{ width: "100vw", minHeight: "95vh", backgroundImage: "url(static/images/pages/surfdash-bg.png)", backgroundRepeat: "no-repeat", backgroundPosition: "center center", backgroundSize: "contain", flexDirection: 'row', alignItems: 'center', justifyContent: 'center', display: !showGame ? 'flex' : 'none' }}>
         <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <div className="instructions inter" style={{ color: "#fff" }}>
+          <div className="instructions inter" style={{ color: "#fff", paddingLeft: "10vw" }}>
             <h2 style={{ "--inter-weight": 900, fontSize: "6em", margin: 0 }}>Surf Dash</h2>
             <ul>
               <li><strong>Choose character and skate:</strong> Select your character (1 or 2) and skate (1, 2, or 3) before starting.</li>
@@ -1128,10 +1171,10 @@ const SurfDash = ({ setSelectedGame }) => {
         </div>
         <div style={{ maxWidth: "50vw", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
           <div style={{ maxWidth: "40%" }}>
-            <img src="static/images/pages/surfdash-lineart.svg" alt="Surf Dash" style={{ width: '100%', height: 'auto' }} />
+            <img src="static/images/pages/surfdash-colour.svg" alt="Surf Dash" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div style={{ maxWidth: "20%", display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '5vh' }}>
-            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: '#4CAF50', border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="inter start-button" onClick={() => setShowGame(true)} style={{ backgroundColor: `${localStorage.getItem('colorFilter') == "colorblind" ?'#01fefcff': '#4CAF50'}`, border: 'none', padding: '1em 1.5em', borderRadius: '1em', cursor: 'pointer', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '1.5em', fontWeight: 600, color: "#fff" }}>Start Game</span>
               <img src="static/images/pages/play-1.svg" alt="Start Game" style={{ width: '2vw', height: 'auto' }} />
             </button>

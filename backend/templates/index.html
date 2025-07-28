@@ -6,6 +6,7 @@
     <link rel="icon" href="/static/images/pages/logo-colour.svg" type="image/x-icon" />
     <!-- Added: Page title -->
     <title>Vision Play Hub</title>
+    {% load static %}
     <link rel="stylesheet" href="/static/css/app.css">
     <!-- Added: React and ReactDOM scripts for frontend -->
     <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
@@ -16,11 +17,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-</head>
+</head> 
 <body style="overflow-x: hidden;">
     <!-- Added: Root div for React app -->
     <div id="root"></div>
@@ -28,6 +30,31 @@
     <script>
         window.REACT_USERNAME = "{{ username|escapejs }}";
         window.SESSION_TIME_LEFT = parseInt("{{ time_left|default:0 }}", 10);
+        if (!localStorage.getItem('themeMode')) {
+            localStorage.setItem('themeMode', "{{ theme_mode|escapejs }}");
+        }
+        if (!localStorage.getItem('colorFilter')) {
+            localStorage.setItem('colorFilter', "{{ color_filter|escapejs }}");
+        }
+        window.REACT_PROFILE_PIC = {% if profile_image %}"{{ profile_image|escapejs }}"{% else %}null{% endif %};
+        window.REACT_THEME_MODE = "{{ theme_mode|escapejs }}";
+        window.REACT_COLOR_FILTER = "{{ color_filter|escapejs }}";
+        // Add JWT tokens to localStorage
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        const accessToken = getCookie('access_token');
+        const refreshToken = getCookie('refresh_token');
+        if (accessToken) {
+            localStorage.setItem('access_token', accessToken);
+        }
+        if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
+        }
     </script>
+    <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: "Hanken Grotesque", sans-serif;
+            font-family: "Hanken Grotesk", sans-serif;
             font-optical-sizing: auto;
             font-weight: 700;
             letter-spacing: -0.05em;
@@ -23,19 +23,40 @@
             overflow: hidden;
             position: relative;
             color: white;
+            background-color: #09080e;
         }
 
         .form-container {
             text-align: center;
-            background-color: transparent;
+            background-color: rgba(255, 255, 255, 0.1); 
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 400px;
-            color: black;
+            color: white; 
             position: relative;
             z-index: 20;
+        }
+
+        .message-success {
+            background-color: #28a745; 
+            color: white;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .message-error {
+            background-color: #dc3545; 
+            color: white;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
         }
 
         .button-design {
@@ -44,8 +65,8 @@
             border: none;
             color: #ffffff;
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: 'Hanken Grotesk', sans-serif;
         }
 
         .button-design:hover {
@@ -64,7 +85,7 @@
             border: 1px solid #ccc;
             border-radius: 20px;
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Bricolage Grotesque', sans-serif;
             font-size: 0.9rem;
             color: #000000;
             text-decoration: none;
@@ -84,7 +105,7 @@
 
         .or-text {
             color: white;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Bricolage Grotesque', sans-serif;
             font-size: 0.9rem;
             margin: 10px 0;
             text-align: center;
@@ -111,7 +132,7 @@
         }
 
         .VPH-header {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Hanken Grotesk', sans-serif;
             font-size: 4rem;
             font-weight: 700;
             text-align: center;
@@ -149,29 +170,63 @@
         nav a {
             text-decoration: none;
         }
+
+        @keyframes glowPulse {
+            0% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(0, 240, 255, 0.5),
+                0 0 20px rgba(0, 240, 255, 0.4),
+                0 0 30px rgba(0, 240, 255, 0.3);
+            }
+            33% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(204, 0, 255, 0.5),
+                0 0 20px rgba(204, 0, 255, 0.4),
+                0 0 30px rgba(204, 0, 255, 0.3);
+            }
+            66% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(255, 0, 128, 0.5),
+                0 0 20px rgba(255, 0, 128, 0.4),
+                0 0 30px rgba(255, 0, 128, 0.3);
+            }
+            100% {
+                text-shadow:
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(0, 240, 255, 0.5),
+                0 0 20px rgba(0, 240, 255, 0.4),
+                0 0 30px rgba(0, 240, 255, 0.3);
+            }
+        }
+
+        .glow-pulse {
+            animation: glowPulse 5s ease-in-out infinite;
+            color: #ffffff;
+        }
+
     </style>
 </head>
 <body>
     <!-- Background video -->
-    <video
-        autoplay
-        loop
-        muted
-        playsinline
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;"
-    >
-        <source src="{% static 'videos/BGV.mp4' %}" type="video/mp4" />
-        Your browser does not support the video tag.
-    </video>
-
+    <iframe id="bg-anim" src="{% static 'videos/Jowstick animation.svg' %}" style="opacity: 0.5;position: fixed; top: -7%; left: -10%; width: 120%; height: 120%; z-index: -10;"></iframe>
     <!-- Overlay to darken the video -->
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: -1;"></div>
+
 
     <!-- Nav bar -->
     <nav>
         <div style="display: flex; align-items: center; gap: 0.8vw;">
             <a href="/">
                 <img src="{% static 'images/pages/logo-colour.svg' %}" alt="Vision Play Hub Logo" style="height: 6vh; width: auto;" />
+            </a>
+            <a href="{% url 'aboutus' %}">
+                <button class="button-design">About Us</button>
+            </a>
+            <a href="{% url 'faqs' %}">
+                <button class="button-design">FAQs</button>
             </a>
         </div>
         <div style="display: flex; gap: 0.8vw;">
@@ -181,26 +236,17 @@
             <a href="{% url 'signup' %}">
                 <button class="button-design">Sign Up</button>
             </a>
-            <a href="{% url 'leaderboard' %}">
-                <button class="button-design">Leaderboards</button>
-            </a>
-            <a href="/accounts/profile/">
-                <button class="button-design">Profile</button>
-            </a>
-            <a href="{% url 'logout' %}">
-                <button class="button-design">Log Out</button>
-            </a>
         </div>
     </nav>
 
     <!-- Content -->
     <div class="page-aligner">
-        <div class="VPH-header">Vision Play Hub</div>
+        <div class="VPH-header glow-pulse">Vision Play Hub</div>
 
         <div class="form-container">
             {% if messages %}
                 {% for message in messages %}
-                    <p>{{ message }}</p>
+                    <p class="{% if message.tags == 'success' %}message-success{% else %}message-error{% endif %}">{{ message }}</p>
                 {% endfor %}
             {% endif %}
             <form method="post">
