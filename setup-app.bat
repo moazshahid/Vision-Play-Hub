@@ -64,7 +64,7 @@ if not exist "database\init_data.sql" (
 
 REM Copy init_data.sql into the container
 echo Adding initial game data...
-docker cp "database\init_data.sql" dubai-team-1-db-1:/tmp/init_data.sql
+docker cp "database\init_data.sql" vision-play-hub-db-1:/tmp/init_data.sql
 if %errorlevel% neq 0 (
     echo %RED% Failed to copy initial data file. Check if database\init_data.sql exists and Docker is running.
     exit /b 1

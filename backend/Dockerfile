@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 # Collect static files
-RUN python manage.py collectstatic --noinput
+RUN SECRET_KEY=dummy-build-key python manage.py collectstatic --noinput
 
 # Expose port 8000 for Django
 EXPOSE 8000
