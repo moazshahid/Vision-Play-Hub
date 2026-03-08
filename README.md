@@ -1,45 +1,201 @@
-**Edit a file, create a new file, and clone from Bitbucket in under 2 minutes**
+<div align="center">
 
-When you're done, you can delete the content in this README and update the file with details for others getting started with your repository.
+```
+██╗   ██╗██╗███████╗██╗ ██████╗ ███╗   ██╗    ██████╗ ██╗      █████╗ ██╗   ██╗    ██╗  ██╗██╗   ██╗██████╗ 
+██║   ██║██║██╔════╝██║██╔═══██╗████╗  ██║    ██╔══██╗██║     ██╔══██╗╚██╗ ██╔╝    ██║  ██║██║   ██║██╔══██╗
+██║   ██║██║███████╗██║██║   ██║██╔██╗ ██║    ██████╔╝██║     ███████║ ╚████╔╝     ███████║██║   ██║██████╔╝
+╚██╗ ██╔╝██║╚════██║██║██║   ██║██║╚██╗██║    ██╔═══╝ ██║     ██╔══██║  ╚██╔╝      ██╔══██║██║   ██║██╔══██╗
+ ╚████╔╝ ██║███████║██║╚██████╔╝██║ ╚████║    ██║     ███████╗██║  ██║   ██║       ██║  ██║╚██████╔╝██████╔╝
+  ╚═══╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
+```
 
-*We recommend that you open this README in another tab as you perform the tasks below. You can [watch our video](https://youtu.be/0ocf7u76WSo) for a full demo of all the steps in this tutorial. Open the video in a new tab to avoid leaving Bitbucket.*
+### 🎮 Play with your hands. No controller needed.
 
----
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org)
+[![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-00897B?style=for-the-badge&logo=google&logoColor=white)](https://mediapipe.dev)
 
-## Edit a file
-
-You’ll start by editing this README file to learn how to edit a file in Bitbucket.
-
-1. Click **Source** on the left side.
-2. Click the README.md link from the list of files.
-3. Click the **Edit** button.
-4. Delete the following text: *Delete this line to make a change to the README from Bitbucket.*
-5. After making your change, click **Commit** and then **Commit** again in the dialog. The commit page will open and you’ll see the change you just made.
-6. Go back to the **Source** page.
-
----
-
-## Create a file
-
-Next, you’ll add a new file to this repository.
-
-1. Click the **New file** button at the top of the **Source** page.
-2. Give the file a filename of **contributors.txt**.
-3. Enter your name in the empty file space.
-4. Click **Commit** and then **Commit** again in the dialog.
-5. Go back to the **Source** page.
-
-Before you move on, go ahead and explore the repository. You've already seen the **Source** page, but check out the **Commits**, **Branches**, and **Settings** pages.
+</div>
 
 ---
 
-## Clone a repository
+## 🕹️ What is Vision Play Hub?
 
-Use these steps to clone from SourceTree, our client for using the repository command-line free. Cloning allows you to work on your files locally. If you don't yet have SourceTree, [download and install first](https://www.sourcetreeapp.com/). If you prefer to clone from the command line, see [Clone a repository](https://confluence.atlassian.com/x/4whODQ).
+**Vision Play Hub** is a full-stack, browser-based arcade gaming platform where your hands *are* the controller. Powered by [MediaPipe](https://mediapipe.dev) computer vision, the platform tracks your hand and facial gestures in real time — no mouse, no keyboard, no hardware required.
 
-1. You’ll see the clone button under the **Source** heading. Click that button.
-2. Now click **Check out in SourceTree**. You may need to create a SourceTree account or log in.
-3. When you see the **Clone New** dialog in SourceTree, update the destination path and name if you’d like to and then click **Clone**.
-4. Open the directory you just created to see your repository’s files.
+Seven uniquely designed arcade games. One webcam. Zero controllers.
 
-Now that you're more familiar with your Bitbucket repository, go ahead and add a new file locally. You can [push your change back to Bitbucket with SourceTree](https://confluence.atlassian.com/x/iqyBMg), or you can [add, commit,](https://confluence.atlassian.com/x/8QhODQ) and [push from the command line](https://confluence.atlassian.com/x/NQ0zDQ).
+> 🎬 **[Watch the Demo Video](#demo)**
+
+---
+
+## 🎮 Games
+
+| Game | Controls | Mode |
+|------|----------|------|
+| 🐍 **Snake** | Hand tracking | Single Player |
+| 🔨 **Whack-a-Mole** | Hand + Nose tracking | Single Player |
+| 🏒 **Air Hockey** | Hand tracking | Single & Two Player |
+| 🍰 **Dessert Slash** | Hand tracking | Single Player |
+| 🏄 **Surf Dash** | Hand gestures for lane switching | Single Player |
+| 🧱 **Tetris** | Hand tracking | Single Player |
+| 🚀 **Space Wars** | Hand tracking | Single Player |
+
+---
+
+## ✨ Features
+
+**🖐️ Gesture-Based Controls**
+Real-time hand and facial tracking via MediaPipe. A live camera preview lets you see your gestures as you play. Detection latency reduced by **25%** through optimized processing pipelines.
+
+**♿ Accessibility First**
+- Colorblind mode (Deuteranopia & Protanopia)
+- Light / Dark mode
+- Nose-tracking controls in Whack-a-Mole for players with limited hand mobility
+- High-contrast visuals and adjustable UI settings
+
+**🏆 Live Leaderboards**
+Real-time leaderboard with per-game filtering. Scores are submitted and ranked instantly via JWT-authenticated API calls.
+
+**🔐 Secure Authentication**
+Google OAuth + JWT + CSRF protection. User passwords are encrypted. Webcam footage is **never stored or transmitted** — all gesture processing happens entirely client-side.
+
+**🐳 Docker Deployment**
+One-command setup. The entire stack (React frontend, Django backend, PostgreSQL) runs in isolated Docker containers for consistent, reproducible environments.
+
+**👥 Multiplayer**
+Air Hockey supports real-time two-player mode — two hands, one screen, one game.
+
+**🎨 Retro Arcade Theme**
+A fully responsive retro-arcade UI built in React, with a game carousel, animated transitions, and a unified visual style across all games.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React.js |
+| **Backend** | Django (Python) |
+| **Database** | PostgreSQL |
+| **Computer Vision** | MediaPipe |
+| **Authentication** | Google OAuth, JWT, CSRF |
+| **Deployment** | Docker, Docker Compose |
+| **Version Control** | Git |
+
+---
+
+## 📋 Prerequisites
+
+Before running the project, ensure you have the following installed:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Node.js 20+](https://nodejs.org/)
+- [Python 3.10+](https://python.org/)
+- [PostgreSQL 17.4+](https://postgresql.org/)
+- [Git](https://git-scm.com/)
+- A **webcam-enabled device**
+- **OS:** Windows 10+ or macOS 10.15+
+
+---
+
+## 🚀 Getting Started
+
+### Step 1 — Clone the Repository
+
+```bash
+git clone https://github.com/moazshahid/Vision-Play-Hub.git
+cd Vision-Play-Hub
+```
+
+### Step 2 — Start Docker Desktop
+
+Open Docker Desktop and make sure it is running in the background before proceeding.
+
+### Step 3 — Run the Setup Script
+
+This step launches the full application stack. It may take **2–5 minutes** on first run.
+
+**On macOS / Linux:**
+```bash
+chmod +x setup-app.sh
+./setup-app.sh
+```
+
+**On Windows:**
+```bash
+./setup-app.bat
+```
+
+The setup script will automatically:
+- ✅ Verify Docker is installed and running
+- ✅ Start all Docker containers (frontend, backend, database)
+- ✅ Wait for PostgreSQL to be ready
+- ✅ Apply Django migrations to set up the database schema
+- ✅ Load initial game data from `database/init_data.sql`
+
+### Step 4 — Open the App
+
+Once you see:
+```
+✅ Setup complete! You can now access the app at http://localhost:8000/
+```
+
+Open your browser and go to:
+
+```
+http://localhost:8000/
+```
+
+---
+
+## 🎬 Demo
+
+<a name="demo"></a>
+
+> 📹 Add your demo video link here — e.g. `[![Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)`
+
+---
+
+## 📁 Project Structure
+
+```
+Vision-Play-Hub/
+├── frontend/          # React.js application
+├── backend/           # Django backend & API
+│   └── cv_games/      # Core Django app & settings
+├── database/          # PostgreSQL init scripts & migrations
+├── testing/           # Integration test suite
+├── docs/              # Documentation
+├── setup-app.sh       # Linux/macOS setup script
+└── setup-app.bat      # Windows setup script
+```
+
+---
+
+## 👥 Contributors
+
+| Contributor | Role |
+|-------------|------|
+| **Moaz Shahid** | Snake, Air Hockey, Tetris & Space Wars — full game logic, UI & gesture integration. SurfDash UI redesign. |
+| **Aahana Bhowmick** | Whack-a-Mole, Dessert Slash & Surf Dash — game logic, UI, nose-tracking, merge master. |
+| **Farheen Faisal** | PostgreSQL database, Google OAuth, JWT auth, leaderboards, Docker deployment. |
+| **Nhlonipho Marwala** | Accessibility features — colorblind & light/dark mode frontend & backend implementation. |
+| **Yuri Bautista** | Full website UI/UX — home, leaderboard, profile, FAQs, About Us pages. Merge master. |
+
+---
+
+## 📄 License
+
+This project is open source. Contributions are welcome — feel free to fork, improve, and submit a pull request.
+
+---
+
+<div align="center">
+
+*Built with 🎮 and a lot of hand gestures.*
+
+</div>
